@@ -2,51 +2,68 @@
 import re
 
 
+def parse_game_results(s):
+    game_extractor = re.search("Game (\d+): (.*)", s)
+    assert game_extractor
+
+    game_id = int(game_extractor.group(1))
+    cube_sets_results = game_extractor.group(2).split(";")
+    cube_sets = []
+
+    for cube_set_result in cube_sets_results:
+        cube_sets.append(parse_cube_set(cube_set_result))
+
+    return (game_id, cube_sets)
+
+
+def parse_cube_set(s):
+    """NUM COLOR, NUM COLOR..."""
+    cubes = dict()
+
+    for cube_color_result in s.split(","):
+        (color, count) = parse_cube_color_count(cube_color_result)
+        cubes[color] = count
+
+    return cubes
+
+
+def parse_cube_color_count(s):
+    """Parses a count followed by a cube color, eg '3 blue'"""
+    matcher = re.search("(\d+) (\w+)", s)
+    assert matcher
+
+    count = int(matcher.group(1))
+    color = str(matcher.group(2))
+
+    return (color, count)
+
+
 def main_1():
-    max_red = 12
-    max_green = 13
-    max_blue = 14
+    MAX_CUBES = {"red": 12, "green": 13, "blue": 14}
     id_sum = 0
 
     with open("inputs/day2.txt", "r", encoding="utf-8") as file:
         for line in file:
-            game_extractor = re.search("Game (\d+): (.*)", line)
-            assert game_extractor
+            (game_id, cube_sets) = parse_game_results(line)
+            max_cubes = dict()
 
-            game_id = int(game_extractor.group(1))
-            sets = game_extractor.group(2).split(";")
+            for cube_set in cube_sets:
+                for color, count in cube_set.items():
+                    if color not in max_cubes.keys():
+                        max_cubes[color] = count
 
-            cube_sum = dict()
+                    max_cubes[color] = max(max_cubes[color], count)
 
-            for cube_set in sets:
-                for cube_color_result in cube_set.split(","):
-                    matcher = re.search("(\d+) (\w+)", cube_color_result)
-                    assert matcher
+            valid = True
 
-                    count = int(matcher.group(1))
-                    color = str(matcher.group(2))
+            for COLOR, COUNT in MAX_CUBES.items():
+                if COLOR in max_cubes.keys() and max_cubes[COLOR] > COUNT:
+                    # print(f"SKIP {COLOR} {max_cubes[COLOR]} > {COUNT}")
+                    valid = False
 
-                    if color not in cube_sum.keys():
-                        cube_sum[color] = 0
-
-                    cube_sum[color] = max(cube_sum[color], count)
-
-            # print(f"{game_id}: {cube_sum}")
-
-            print(cube_sum)
-
-            if "red" in cube_sum.keys() and cube_sum["red"] > max_red:
-                # print(f"SKIP red {cube_sum['red']} > {max_red}")
-                continue
-            elif "blue" in cube_sum.keys() and cube_sum["blue"] > max_blue:
-                # print(f"SKIP blue {cube_sum['blue']} > {max_blue}")
-                continue
-            elif "green" in cube_sum.keys() and cube_sum["green"] > max_green:
-                # print(f"SKIP green {cube_sum['green']} > {max_green}")
-                continue
-            else:
+            if valid:
                 id_sum += game_id
-                print(f"ACCEPT {game_id} -> {id_sum}")
+                # print(f"ACCEPT {game_id} -> {id_sum}")
     print(f"sum of game_ids: {id_sum}")
 
 
@@ -55,32 +72,23 @@ def main_2():
 
     with open("inputs/day2.txt", "r", encoding="utf-8") as file:
         for line in file:
-            game_extractor = re.search("Game (\d+): (.*)", line)
-            assert game_extractor
+            (game_id, cube_sets) = parse_game_results(line)
+            max_cubes = dict()
 
-            sets = game_extractor.group(2).split(";")
-            cubes = dict()
+            for cube_set in cube_sets:
+                for color, count in cube_set.items():
+                    if color not in max_cubes.keys():
+                        max_cubes[color] = count
 
-            for cube_set in sets:
-                for cube_color_result in cube_set.split(","):
-                    matcher = re.search("(\d+) (\w+)", cube_color_result)
-                    assert matcher
-
-                    count = int(matcher.group(1))
-                    color = str(matcher.group(2))
-
-                    if color not in cubes.keys():
-                        cubes[color] = count
-
-                    cubes[color] = max(cubes[color], count)
+                    max_cubes[color] = max(max_cubes[color], count)
 
             cube_set_power = 1
 
-            for color, count in cubes.items():
+            for color, count in max_cubes.items():
                 cube_set_power *= count
 
-            print(f"{cubes} -> {cube_set_power} -> {sum_cube_set_power}")
             sum_cube_set_power += cube_set_power
+
     print(f"sum of cube set power: {sum_cube_set_power}")
 
 
