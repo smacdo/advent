@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import unittest
+import utils
 
 SYMBOLS = "`~!@#$%^&*()_-=+[]{}|\\;:'<>,/?"
 
@@ -150,5 +151,5 @@ class TestPartNumberFinder(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    utils.init_logging()
     unittest.main()
