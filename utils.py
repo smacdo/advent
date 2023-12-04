@@ -117,6 +117,63 @@ class TestPoint(unittest.TestCase):
         self.assertNotIn(Point(16, 7), points)
 
 
+class Grid:
+    __slots__ = ("cells", "x_count", "y_count")
+
+    def __init__(self, tiles2d):
+        # Get the number of rows in the 2d initializer array. There must be at
+        # least one row.
+        self.y_count = len(tiles2d)
+
+        if self.y_count < 1:
+            raise Exception("Grid `tiles2d` initializer must have at least one row")
+
+        # Get the nubmer of columns in the 2d initializer array. There must be
+        # at least one column, and each row must have the same number of cols.
+        self.x_count = len(tiles2d[0])
+
+        if self.x_count < 1:
+            raise Exception("Grid `tiles2d` initializer must have at least one col")
+
+        # Preallocate the grid's internal 2d array and set all cell values to
+        # `None`.
+        self.cells = [None for i in self.y_count * self.x_count]
+
+        # Copy all the values from the initializer into the grid, and verify
+        # that each row has the same number of columns.
+        for y, tile_row in enumerate(tiles2d):
+            if len(tile_row) != self.x_count:
+                raise Exception(
+                    f"Grid row {y} col size {len(tile_row)} != {self.y_count}"
+                )
+
+            for x, tile_cell in enumerate(tile_row):
+                self.cells[y][x] = tile_cell
+
+    def check_in_bounds(self, pt):
+        return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
+
+    def validate_in_bounds(self, pt):
+        if not self.check_in_bounds(pt):
+            raise Exception(
+                f"Point out of bounds; x: 0<={pt.x}<{self.x_count}, y: 0<={pt.y}<{self.y_count}"
+            )
+
+    def __getitem__(self, pt):
+        self.validate_in_bounds(pt)
+        return self.cells[pt.y * self.x_count + pt.x]
+
+    def __setitem__(self, pt, value):
+        self.validate_in_bounds(pt)
+        self.cells[pt.y * self.x_count + pt.x] = value
+
+    def __len__(self):
+        return len(self.cells)
+
+    def __iter__(self):
+        return iter(self.cells)
+
+
 def init_logging(default_level=logging.INFO):
     add_logging_level("TRACE", logging.DEBUG - 5)
     logging.basicConfig(level=default_level)
