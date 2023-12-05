@@ -4,6 +4,7 @@ import unittest
 
 from utils import AdventDaySolver, AdventDayTestCase, init_logging
 
+
 class Solver(AdventDaySolver, day=0, year=0, name="", solution=(None, None)):
     def __init__(self, input):
         super().__init__(input)
@@ -13,14 +14,16 @@ class Solver(AdventDaySolver, day=0, year=0, name="", solution=(None, None)):
 
 
 class Tests(AdventDayTestCase):
-    def setUp(self):        
+    def setUp(self):
         init_logging(logging.DEBUG)
         super().setUp(Solver)
 
     def test_sample(self):
-        d = self._create_sample_solver("""line_1
+        d = self._create_sample_solver(
+            """line_1
 line_2
-line_3""")
+line_3"""
+        )
         s = d.solve()
 
         self.assertEqual(None, s[0])

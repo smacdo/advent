@@ -4,6 +4,7 @@ import re
 
 from utils import AdventDaySolver, AdventDayTestCase, init_logging
 
+
 def parse_game_results(s):
     game_extractor = re.search("Game (\\d+): (.*)", s)
     assert game_extractor
@@ -39,7 +40,10 @@ def parse_cube_color_count(s):
 
     return (color, count)
 
-class Solver(AdventDaySolver, day=2, year=2023, name="Cube Conundrum", solution=(2239, 83435)):
+
+class Solver(
+    AdventDaySolver, day=2, year=2023, name="Cube Conundrum", solution=(2239, 83435)
+):
     def __init__(self, input):
         super().__init__(input)
 
@@ -115,8 +119,9 @@ class Solver(AdventDaySolver, day=2, year=2023, name="Cube Conundrum", solution=
         # Return the solutions to both parts for day 2.
         return (id_sum, sum_cube_set_power)
 
+
 class Tests(AdventDayTestCase):
-    def setUp(self):        
+    def setUp(self):
         init_logging(logging.DEBUG)
         super().setUp(Solver)
 
@@ -124,6 +129,7 @@ class Tests(AdventDayTestCase):
         s = self._create_real_solver().solve()
         self.assertEqual(2239, s[0])
         self.assertEqual(83435, s[1])
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

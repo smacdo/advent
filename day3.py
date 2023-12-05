@@ -65,7 +65,9 @@ def capture_number(lines, start_x, start_y):
     return int(number)
 
 
-class Solver(AdventDaySolver, day=3, year=2023, name="Gear Ratios", solution=(533784, 78826761)):
+class Solver(
+    AdventDaySolver, day=3, year=2023, name="Gear Ratios", solution=(533784, 78826761)
+):
     def __init__(self, input):
         super().__init__(input)
 
@@ -73,7 +75,16 @@ class Solver(AdventDaySolver, day=3, year=2023, name="Gear Ratios", solution=(53
         return self.find_part_numbers(make_schematic(self.input))
 
     def find_part_numbers(self, lines):
-        NEIGHBORS = [(1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1)]
+        NEIGHBORS = [
+            (1, 0),
+            (1, -1),
+            (0, -1),
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+            (0, 1),
+            (1, 1),
+        ]
 
         part_numbers = []
         gear_ratio_sum = 0
@@ -125,12 +136,13 @@ class Solver(AdventDaySolver, day=3, year=2023, name="Gear Ratios", solution=(53
 
 
 class TestPartNumberFinder(AdventDayTestCase):
-    def setUp(self):        
+    def setUp(self):
         init_logging(logging.INFO)
         super().setUp(Solver)
 
     def test_sample(self):
-        d = self._create_sample_solver("""467..114..
+        d = self._create_sample_solver(
+            """467..114..
 ...*......
 ..35..633.
 ......#...
@@ -139,7 +151,8 @@ class TestPartNumberFinder(AdventDayTestCase):
 ..592.....
 ......755.
 ...$.*....
-.664.598..""")
+.664.598.."""
+        )
         s = d.solve()
 
         self.assertEqual(4361, s[0])

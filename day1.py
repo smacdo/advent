@@ -17,7 +17,10 @@ def get_first_last(itr):
 
     return (first, last)
 
-class Solver(AdventDaySolver, day=1, year=2023, name="Trebuchet?!", solution=(55108, 56324)):
+
+class Solver(
+    AdventDaySolver, day=1, year=2023, name="Trebuchet?!", solution=(55108, 56324)
+):
     def __init__(self, input):
         super().__init__(input)
 
@@ -112,7 +115,7 @@ class Solver(AdventDaySolver, day=1, year=2023, name="Trebuchet?!", solution=(55
 
 
 class Tests(AdventDayTestCase):
-    def setUp(self):        
+    def setUp(self):
         init_logging(logging.DEBUG)
         super().setUp(Solver)
 

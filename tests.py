@@ -6,17 +6,22 @@ from utils import AdventDaySolver, Point
 import typing
 import unittest
 
+
 class AdventDaySolverTests(unittest.TestCase):
     class Day0_0(AdventDaySolver, year=0, day=0, name="", solution=None):
         pass
+
     class Day1(AdventDaySolver, year=2023, day=1, name="", solution=None):
         def secret_token(self):
             return 22
+
     class Day2(AdventDaySolver, year=2023, day=2, name="", solution=None):
         pass
+
     class Day4(AdventDaySolver, year=2023, day=4, name="", solution=None):
         def secret_token(self):
             return "hello"
+
     class Day2_2022(AdventDaySolver, year=2022, day=2, name="", solution=None):
         pass
 
@@ -38,11 +43,18 @@ class AdventDaySolverTests(unittest.TestCase):
         self.assertSequenceEqual(days, [2])
 
     def test_create_day(self):
-        d = typing.cast(Type[AdventDaySolverTests.Day1], AdventDaySolver.new_solver(day=1, year=2023))
+        d = typing.cast(
+            Type[AdventDaySolverTests.Day1],
+            AdventDaySolver.new_solver(day=1, year=2023),
+        )
         self.assertEqual(22, d.secret_token())
 
-        d = typing.cast(Type[AdventDaySolverTests.Day4], AdventDaySolver.new_solver(day=4, year=2023))
+        d = typing.cast(
+            Type[AdventDaySolverTests.Day4],
+            AdventDaySolver.new_solver(day=4, year=2023),
+        )
         self.assertEqual("hello", d.secret_token())
+
 
 class TestPoint(unittest.TestCase):
     def test_new_points(self):
@@ -103,6 +115,7 @@ class TestPoint(unittest.TestCase):
         self.assertIn(Point(3, -15), points)
         self.assertNotIn(Point(3, 15), points)
         self.assertNotIn(Point(16, 7), points)
+
 
 class Grid:
     __slots__ = ("cells", "x_count", "y_count")
