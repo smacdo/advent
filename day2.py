@@ -2,9 +2,10 @@
 import logging
 import re
 
+from utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 def parse_game_results(s):
-    game_extractor = re.search("Game (\d+): (.*)", s)
+    game_extractor = re.search("Game (\\d+): (.*)", s)
     assert game_extractor
 
     game_id = int(game_extractor.group(1))
@@ -30,7 +31,7 @@ def parse_cube_set(s):
 
 def parse_cube_color_count(s):
     """Parses a count followed by a cube color, eg '3 blue'"""
-    matcher = re.search("(\d+) (\w+)", s)
+    matcher = re.search("(\\d+) (\\w+)", s)
     assert matcher
 
     count = int(matcher.group(1))
@@ -38,18 +39,19 @@ def parse_cube_color_count(s):
 
     return (color, count)
 
+class Solver(AdventDaySolver, day=2, year=2023, name="Cube Conundrum", solution=(2239, 83435)):
+    def __init__(self, input):
+        super().__init__(input)
 
-def main():
-    # The maximum number of cubes of each color loaded in the bag (part 1).
-    MAX_CUBES = {"red": 12, "green": 13, "blue": 14}
+    def solve(self):
+        # The maximum number of cubes of each color loaded in the bag (part 1).
+        MAX_CUBES = {"red": 12, "green": 13, "blue": 14}
 
-    sum_cube_set_power = 0
-    id_sum = 0
+        sum_cube_set_power = 0
+        id_sum = 0
 
-    # Open the inputs file and calculate both solutions at the same time:
-    with open("inputs/day2.txt", "r", encoding="utf-8") as file:
         # Treat each line in the input file as a separate game result:
-        for line in file:
+        for line in self.input:
             # Parse the line into structured representation of the text.
             # (game_id, [{"red?": i, "blue?": j, "green?": k}...])
             (game_id, cube_sets) = parse_game_results(line)
@@ -110,11 +112,18 @@ def main():
             # Log traces for when we _really_ want to debug what's going on.
             logging.debug("GAME {game_id} DONE")
 
-    # Print the solutions to both parts for day 2.
-    logging.info(f"part 1: {id_sum}")
-    logging.info(f"part 2: {sum_cube_set_power}")
+        # Return the solutions to both parts for day 2.
+        return (id_sum, sum_cube_set_power)
 
+class Tests(AdventDayTestCase):
+    def setUp(self):        
+        init_logging(logging.DEBUG)
+        super().setUp(Solver)
+
+    def test_real_input(self):
+        s = self._create_real_solver().solve()
+        self.assertEqual(2239, s[0])
+        self.assertEqual(83435, s[1])
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    main()

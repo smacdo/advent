@@ -4,7 +4,7 @@ import unittest
 
 from utils import AdventDaySolver, AdventDayTestCase, init_logging
 
-class Solver(AdventDaySolver, day=0, year=0):
+class Solver(AdventDaySolver, day=0, year=0, name="", solution=(None, None)):
     def __init__(self, input):
         super().__init__(input)
 
@@ -28,8 +28,8 @@ line_3""")
 
     def test_real_input(self):
         s = self._create_real_solver().solve()
-        #self.assertEqual(None, s[0])
-        #self.assertEqual(None, s[1])
+        self.assertEqual(None, s[0])
+        self.assertEqual(None, s[1])
 
 
 if __name__ == "__main__":

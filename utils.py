@@ -25,24 +25,28 @@ class AdventDaySolver:
     #==========================================================================#
     # Subclass registration                                                    #
     #==========================================================================#
-    def __init_subclass__(cls, day: Union[int, str], year: Union[int, str]) -> None:
-        AdventDaySolver._add_day_class(cls, int(day), int(year))
+    def __init_subclass__(cls, day: Union[int, str], year: Union[int, str], name: str, solution: Optional[Tuple[Any, Any]]) -> None:
+        AdventDaySolver._add_day_class(cls, day, year, name, solution)
 
     @classmethod
-    def _add_day_class(cls, day_class: Type[AdventDay], day: Union[int, str], year: Union[int, str]) -> None:
+    def _add_day_class(cls, day_class: Type[AdventDay], day: Union[int, str], year: Union[int, str], name: str, solution: Optional[Tuple[Any, Any]]) -> None:
         if year not in AdventDaySolver.day_classes:
             AdventDaySolver.day_classes[int(year)] = dict()
 
         if day in AdventDaySolver.day_classes[int(year)]:
             raise Exception(f"Advent day {day} year {year} class already registered")
         
-         # Skip test / template / etc subclasses.
+        # Skip test / template / etc subclasses.
         if int(day) < 1 or int(year) < 1:
             return
         
+        # Remember the solver's advent properties.
         setattr(day_class, "advent_day", day)
         setattr(day_class, "advent_year", year)
+        setattr(day_class, "advent_name", name)
+        setattr(day_class, "advent_solution", solution)
 
+        # Register the solver into our list of solvers.
         AdventDaySolver.day_classes[int(year)][int(day)] = day_class
 
     #==========================================================================#
@@ -67,6 +71,14 @@ class AdventDaySolver:
     @classmethod
     def year(cls) -> int:
         return int(getattr(cls, "advent_year"))
+    
+    @classmethod
+    def name(cls) -> str:
+        return getattr(cls, "advent_name")
+    
+    @classmethod
+    def solution(cls) -> Optional[Tuple[Any, Any]]:
+        return getattr(cls, "advent_solution")
 
     #==========================================================================#
     # AdventDaySolver virtual method                                           #
@@ -141,7 +153,7 @@ class Point:
 def load_input(day: Union[int, str], year: Union[int, str]) -> Iterable[Iterable[str]]:
     # Load the actual input if no input was given.
     with open(f"inputs/{year}/day{day}.txt", "r", encoding="utf-8") as file:
-        input: Iterable[Iterable[str]] = [line.rstrip() for line in file]
+        input: Iterable[Iterable[str]] = [line for line in file]
         return input
 
 def init_logging(default_level=logging.INFO):

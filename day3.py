@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import logging
 import unittest
-import utils
+
+from utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 SYMBOLS = "`~!@#$%^&*()_-=+[]{}|\\;:'<>,/?"
 
@@ -64,61 +65,72 @@ def capture_number(lines, start_x, start_y):
     return int(number)
 
 
-def find_part_numbers(lines):
-    NEIGHBORS = [(1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1)]
+class Solver(AdventDaySolver, day=3, year=2023, name="Gear Ratios", solution=(533784, 78826761)):
+    def __init__(self, input):
+        super().__init__(input)
 
-    part_numbers = []
-    gear_ratio_sum = 0
+    def solve(self):
+        return self.find_part_numbers(make_schematic(self.input))
 
-    y_count = len(lines)
-    x_count = len(lines[0])  # TODO: Is this always true?
+    def find_part_numbers(self, lines):
+        NEIGHBORS = [(1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1)]
 
-    for y, line in enumerate(lines):
-        for x, c in enumerate(line):
-            # Skip any characters that are not a symbol.
-            if c not in SYMBOLS:
-                continue
+        part_numbers = []
+        gear_ratio_sum = 0
 
-            # This is a symbol - search the neighbor tiles to see if they
-            # contain a number
-            logging.debug(f"({x}, {y}) is symbol {c}")
-            neighbor_numbers = []
+        y_count = len(lines)
+        x_count = len(lines[0])  # TODO: Is this always true?
 
-            for n in NEIGHBORS:
-                n_x = x + n[0]
-                n_y = y + n[1]
-
-                # Skip if not in bounds
-                if n_x < 0 or n_x >= x_count or n_y < 0 or n_y >= y_count:
-                    logging.debug(f"skip ({n_x}, {n_y}) because out of bounds")
+        for y, line in enumerate(lines):
+            for x, c in enumerate(line):
+                # Skip any characters that are not a symbol.
+                if c not in SYMBOLS:
                     continue
 
-                # Skip if the neighbor is not a number:
-                if not lines[n_y][n_x].isdigit():
-                    logging.debug(
-                        f"skip ({n_x}, {n_y}) because {lines[n_y][n_x]} not a digit"
-                    )
-                    continue
+                # This is a symbol - search the neighbor tiles to see if they
+                # contain a number
+                logging.debug(f"({x}, {y}) is symbol {c}")
+                neighbor_numbers = []
 
-                # Capture the number.
-                number = capture_number(lines, n_x, n_y)
-                logging.debug(f"captured {number}")
-                neighbor_numbers.append(number)
+                for n in NEIGHBORS:
+                    n_x = x + n[0]
+                    n_y = y + n[1]
 
-            # Add captured numbers to parts list
-            part_numbers += neighbor_numbers
+                    # Skip if not in bounds
+                    if n_x < 0 or n_x >= x_count or n_y < 0 or n_y >= y_count:
+                        logging.debug(f"skip ({n_x}, {n_y}) because out of bounds")
+                        continue
 
-            # Is this a gear ratio? If so add it the product of the two numbers
-            # to a running sum.
-            if len(neighbor_numbers) == 2:
-                gear_ratio_sum += neighbor_numbers[0] * neighbor_numbers[1]
+                    # Skip if the neighbor is not a number:
+                    if not lines[n_y][n_x].isdigit():
+                        logging.debug(
+                            f"skip ({n_x}, {n_y}) because {lines[n_y][n_x]} not a digit"
+                        )
+                        continue
 
-    return (part_numbers, gear_ratio_sum)
+                    # Capture the number.
+                    number = capture_number(lines, n_x, n_y)
+                    logging.debug(f"captured {number}")
+                    neighbor_numbers.append(number)
+
+                # Add captured numbers to parts list
+                part_numbers += neighbor_numbers
+
+                # Is this a gear ratio? If so add it the product of the two numbers
+                # to a running sum.
+                if len(neighbor_numbers) == 2:
+                    gear_ratio_sum += neighbor_numbers[0] * neighbor_numbers[1]
+
+        return (sum_part_numbers(part_numbers), gear_ratio_sum)
 
 
-class TestPartNumberFinder(unittest.TestCase):
+class TestPartNumberFinder(AdventDayTestCase):
+    def setUp(self):        
+        init_logging(logging.INFO)
+        super().setUp(Solver)
+
     def test_sample(self):
-        lines = """467..114..
+        d = self._create_sample_solver("""467..114..
 ...*......
 ..35..633.
 ......#...
@@ -127,29 +139,18 @@ class TestPartNumberFinder(unittest.TestCase):
 ..592.....
 ......755.
 ...$.*....
-.664.598.."""
-        part_numbers, gear_ratio_sum = find_part_numbers(
-            make_schematic(lines.split("\n"))
-        )
+.664.598..""")
+        s = d.solve()
 
-        self.assertEqual(
-            4361,
-            sum_part_numbers(part_numbers),
-        )
-
-        self.assertEqual(467835, gear_ratio_sum)
+        self.assertEqual(4361, s[0])
+        self.assertEqual(467835, s[1])
 
     def test_real_input(self):
-        with open("inputs/day3.txt", "r", encoding="utf-8") as file:
-            part_numbers, gear_ratio_sum = find_part_numbers(make_schematic(file))
-            sum = sum_part_numbers(part_numbers)
+        s = self._create_real_solver().solve()
 
-            self.assertEqual(533784, sum)
-            self.assertEqual(78826761, gear_ratio_sum)
-            logging.info(f"part 1 solution: {sum}")
-            logging.info(f"part 2 solution: {gear_ratio_sum}")
+        self.assertEqual(533784, s[0])
+        self.assertEqual(78826761, s[1])
 
 
 if __name__ == "__main__":
-    utils.init_logging()
     unittest.main()

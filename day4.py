@@ -60,7 +60,7 @@ def scoring_with_copy(cards_in):
 
     return cards
 
-class Solver(AdventDaySolver, day=4, year=2023):
+class Solver(AdventDaySolver, day=4, year=2023, name="Scratchcards", solution=(17803, 5554894)):
     def __init__(self, input):
         super().__init__(input)
 

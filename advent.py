@@ -17,12 +17,25 @@ def solve(day, year):
   print(f"    part 1: {solution[0]}")
   print(f"    part 2: {solution[1]}")
 
-def list(year = None):
-  if year is None:
-    for year in AdventDaySolver.years():
-      pretty_print_year(year)
+def solve_all():
+  for year in AdventDaySolver.years():
+    for day in AdventDaySolver.days(year):
+      s = AdventDaySolver.new_solver(day, year)
+      answer = s.solve()
+
+      part_1 = format_answer(answer[0], type(s).solution()[0])
+      part_2 = format_answer(answer[0], type(s).solution()[0])
+
+      print(f"Day {s.day()} - {s.name()}: {part_1}, {part_2}")
+      
+def format_answer(actual, expected):
+  if actual is None:
+    # Answer is missing - the solver has not been completed.
+    return "❗"
+  elif actual != expected:
+    return f"{actual} ❌"
   else:
-    pretty_print_year(year)
+    return f"{actual} ✅"
 
 def pretty_print_year(year):
   print(f"Year {year}:")
@@ -47,13 +60,21 @@ def main():
   # Dispatch to a solver if requested otherwise print out a list of available
   # solvers.
   args = parser.parse_args()
-  args.action = args.action if args.action is not None else "list"
   
   if args.action == "solve":
+    # Solve the request day.
     solve(args.day, args.year)
   elif args.action == "list":
-    year = args.year if "year" in args else None
-    list(year)
+    # Print a list of available days.
+    if args.year is None:
+      for year in AdventDaySolver.years():
+        pretty_print_year(year)
+    else:
+      pretty_print_year(args.year)
+  else:
+    solve_all()
+
+
 
 
 if __name__ == "__main__":
