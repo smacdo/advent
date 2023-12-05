@@ -1,6 +1,89 @@
+from typing import Any, ClassVar, Dict, Iterable, Optional, Self, Tuple, Type, TypeVar, Union
+
 import logging
+import typing
 import unittest
 
+AdventDay = TypeVar("AdventDay", bound="AdventDaySolver")
+
+class AdventDaySolver:
+    """The parent class for all Advent day solutions which will take care of 
+    self registration and other goodies."""
+
+    day_classes: ClassVar[Dict[int, Dict[int, Any]]] = dict()
+
+    def __init__(self, input: Optional[Iterable[Iterable[str]]] = None):
+        # Load the actual input if no input was given.
+        if not input:
+            day = getattr(type(self), "advent_day")
+            year = getattr(type(self), "advent_year")
+            
+            self.input = load_input(day, year)
+        else:
+            self.input = input
+
+    #==========================================================================#
+    # Subclass registration                                                    #
+    #==========================================================================#
+    def __init_subclass__(cls, day: Union[int, str], year: Union[int, str]) -> None:
+        AdventDaySolver._add_day_class(cls, int(day), int(year))
+
+    @classmethod
+    def _add_day_class(cls, day_class: Type[AdventDay], day: Union[int, str], year: Union[int, str]) -> None:
+        if year not in AdventDaySolver.day_classes:
+            AdventDaySolver.day_classes[int(year)] = dict()
+
+        if day in AdventDaySolver.day_classes[int(year)]:
+            raise Exception(f"Advent day {day} year {year} class already registered")
+        
+         # Skip test / template / etc subclasses.
+        if int(day) < 1 or int(year) < 1:
+            return
+        
+        setattr(day_class, "advent_day", day)
+        setattr(day_class, "advent_year", year)
+
+        AdventDaySolver.day_classes[int(year)][int(day)] = day_class
+
+    #==========================================================================#
+    # AdventDaySolver public class methods                                     #
+    #==========================================================================#
+    @classmethod
+    def years(cls) -> list[int]:
+        return list(AdventDaySolver.day_classes.keys())
+    
+    @classmethod
+    def days(cls, year: Union[int, str]) -> list[int]:
+        return list(AdventDaySolver.day_classes[int(year)].keys())
+
+    @classmethod
+    def new_solver(cls, day: Union[int, str], year: Union[int, str]) -> Self:
+        return typing.cast(Self, AdventDaySolver.day_classes[int(year)][int(day)](None))
+    
+    @classmethod
+    def day(cls) -> int:
+        return int(getattr(cls, "advent_day"))
+        
+    @classmethod
+    def year(cls) -> int:
+        return int(getattr(cls, "advent_year"))
+
+    #==========================================================================#
+    # AdventDaySolver virtual method                                           #
+    #==========================================================================#
+    def solve(self) -> Tuple[Any, Any]:
+        raise NotImplementedError()
+    
+class AdventDayTestCase(unittest.TestCase):
+    def setUp(self, solver):
+        super().setUp()
+        self.solver = solver
+
+    def _create_real_solver(self):
+        return self.solver(load_input(day=self.solver.day(), year=self.solver.year()))
+    
+    def _create_sample_solver(self, input: str):
+        return self.solver(input.split("\n"))
 
 class Point:
     __slots__ = ("x", "y")
@@ -55,124 +138,11 @@ class Point:
     def __hash__(self):
         return hash((self.x, self.y))
 
-
-class TestPoint(unittest.TestCase):
-    def test_new_points(self):
-        p = Point(-16, 2)
-        self.assertEqual(p.x, -16)
-        self.assertEqual(p.y, 2)
-
-    def test_point_to_string(self):
-        self.assertEqual("-4, -123", f"{Point(-4, -123)}")
-
-    def test_point_repr(self):
-        self.assertEqual("Point(x=-4, y=-123)", repr(Point(-4, -123)))
-
-    def test_get_set_by_index(self):
-        p = Point(16, 8123)
-        self.assertEqual(p[0], 16)
-        self.assertEqual(p[1], 8123)
-
-        p[0] = 2
-        p[1] = -4
-
-        self.assertEqual(p[0], 2)
-        self.assertEqual(p[1], -4)
-
-    def test_get_set_by_index_throw_exception_if_not_0_or_1(self):
-        def try_get_invalid():
-            p = Point(5, 6)
-            p[2]
-
-        def try_set_invalid():
-            p = Point(5, 6)
-            p[2] = 0
-
-        self.assertRaises(Exception, try_get_invalid)
-        self.assertRaises(Exception, try_set_invalid)
-
-    def test_equal_not_equal(self):
-        self.assertEqual(Point(5, 13), Point(5 + 0, 15 - 2))
-        self.assertNotEqual(Point(5, 13), Point(6, 13))
-        self.assertNotEqual(Point(5, 13), Point(5, 12))
-
-    def test_math_ops(self):
-        self.assertEqual(Point(18, -4), Point(20, -5) + Point(-2, 1))
-        self.assertEqual(Point(17, 1), Point(20, -5) - Point(3, -6))
-        self.assertEqual(Point(-24, -8), Point(6, 2) * -4)
-        self.assertEqual(Point(6, 2), Point(-24, -8) / -4)
-        self.assertEqual(Point(4, -123), -Point(-4, 123))
-        self.assertEqual(Point(4, 123), abs(Point(-4, 123)))
-
-    def test_hash(self):
-        points = dict()
-        points[Point(3, -15)] = "hello"
-
-        self.assertIn(Point(3, -15), points)
-        self.assertEqual(points[Point(3, -15)], "hello")
-        self.assertEqual(points[Point(2, -18) + Point(1, 3)], "hello")
-
-        self.assertIn(Point(3, -15), points)
-        self.assertNotIn(Point(3, 15), points)
-        self.assertNotIn(Point(16, 7), points)
-
-
-class Grid:
-    __slots__ = ("cells", "x_count", "y_count")
-
-    def __init__(self, tiles2d):
-        # Get the number of rows in the 2d initializer array. There must be at
-        # least one row.
-        self.y_count = len(tiles2d)
-
-        if self.y_count < 1:
-            raise Exception("Grid `tiles2d` initializer must have at least one row")
-
-        # Get the nubmer of columns in the 2d initializer array. There must be
-        # at least one column, and each row must have the same number of cols.
-        self.x_count = len(tiles2d[0])
-
-        if self.x_count < 1:
-            raise Exception("Grid `tiles2d` initializer must have at least one col")
-
-        # Preallocate the grid's internal 2d array and set all cell values to
-        # `None`.
-        self.cells = [None for i in self.y_count * self.x_count]
-
-        # Copy all the values from the initializer into the grid, and verify
-        # that each row has the same number of columns.
-        for y, tile_row in enumerate(tiles2d):
-            if len(tile_row) != self.x_count:
-                raise Exception(
-                    f"Grid row {y} col size {len(tile_row)} != {self.y_count}"
-                )
-
-            for x, tile_cell in enumerate(tile_row):
-                self.cells[y][x] = tile_cell
-
-    def check_in_bounds(self, pt):
-        return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
-
-    def validate_in_bounds(self, pt):
-        if not self.check_in_bounds(pt):
-            raise Exception(
-                f"Point out of bounds; x: 0<={pt.x}<{self.x_count}, y: 0<={pt.y}<{self.y_count}"
-            )
-
-    def __getitem__(self, pt):
-        self.validate_in_bounds(pt)
-        return self.cells[pt.y * self.x_count + pt.x]
-
-    def __setitem__(self, pt, value):
-        self.validate_in_bounds(pt)
-        self.cells[pt.y * self.x_count + pt.x] = value
-
-    def __len__(self):
-        return len(self.cells)
-
-    def __iter__(self):
-        return iter(self.cells)
-
+def load_input(day: Union[int, str], year: Union[int, str]) -> Iterable[Iterable[str]]:
+    # Load the actual input if no input was given.
+    with open(f"inputs/{year}/day{day}.txt", "r", encoding="utf-8") as file:
+        input: Iterable[Iterable[str]] = [line.rstrip() for line in file]
+        return input
 
 def init_logging(default_level=logging.INFO):
     add_logging_level("TRACE", logging.DEBUG - 5)
@@ -201,8 +171,7 @@ def add_logging_level(level_name, level_num):
 
 
 class TestUtilsModule(unittest.TestCase):
-    pass
+    def test_load_input(self):
+        input = load_input(0, 0)
+        self.assertEqual(input, ["hello", "123"])
 
-
-if __name__ == "__main__":
-    unittest.main()

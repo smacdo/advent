@@ -2,7 +2,8 @@
 import logging
 import re
 import unittest
-import utils
+
+from utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 
 # TODO: rename read_space_delim_input ?
@@ -29,7 +30,7 @@ class Card:
 
 
 def parse_card_input(input):
-    card_matcher = re.search("Card\s+(\d+): ([0-9 ]+) \| ([0-9 ]+)", input)
+    card_matcher = re.search("Card\\s+(\\d+): ([0-9 ]+) \\| ([0-9 ]+)", input)
 
     if not card_matcher:
         raise Exception(f"failed to regex parse card input `{input}`")
@@ -59,44 +60,48 @@ def scoring_with_copy(cards_in):
 
     return cards
 
+class Solver(AdventDaySolver, day=4, year=2023):
+    def __init__(self, input):
+        super().__init__(input)
 
-class Day4Tests(unittest.TestCase):
+    def solve(self):
+        self.cards = parse_card_inputs(self.input)
+
+        # Part one scoring
+        self.scores = [s.points() for s in self.cards]
+        score_sum = sum(self.scores)
+
+        # Part two scoring
+        p2_cards = scoring_with_copy(self.cards)
+        card_count_sum = sum([s.copies + 1 for s in p2_cards])
+
+        return (score_sum, card_count_sum)
+
+
+class Tests(AdventDayTestCase):
+    def setUp(self):        
+        init_logging(logging.DEBUG)
+        super().setUp(Solver)
+
     def test_sample(self):
-        lines = """Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+        d = self._create_sample_solver("""Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
 Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
 Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
 Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
-Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
-        cards = parse_card_inputs(lines.split("\n"))
+Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11""")
+        s = d.solve()
 
-        # Verify each card's score matches what is expected.
-        scores = [s.points() for s in cards]
-        self.assertEqual([8, 2, 2, 1, 0, 0], scores)
-        self.assertEqual(13, sum(scores))
+        self.assertEqual([8, 2, 2, 1, 0, 0], d.scores)
+        self.assertEqual(13, sum(d.scores))
 
-        # Part two scoring
-        p2_cards = scoring_with_copy(cards)
-        card_counts = [s.copies + 1 for s in p2_cards]
-        self.assertEqual([1, 2, 4, 8, 14, 1], card_counts)
-        self.assertEqual(30, sum(card_counts))
+        self.assertEqual(13, s[0])
+        self.assertEqual(30, s[1])
 
     def test_real_input(self):
-        with open("inputs/day4.txt", "r", encoding="utf-8") as file:
-            cards = parse_card_inputs(file)
-
-            # Part one scoring
-            score_sum = sum([s.points() for s in cards])
-
-            logging.info(f"part 1 solution: {score_sum}")
-            self.assertEqual(17803, score_sum)
-
-            # Part two scoring
-            p2_cards = scoring_with_copy(cards)
-            card_count_sum = sum([s.copies + 1 for s in p2_cards])
-
-            logging.info(f"part 2 solution: {card_count_sum}")
-            self.assertEqual(5554894, card_count_sum)
+        s = self._create_real_solver().solve()
+        self.assertEqual(17803, s[0])
+        self.assertEqual(5554894, s[1])
 
     def test_parse_card_input(self):
         card = parse_card_input("Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1")
@@ -113,5 +118,4 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
 
 
 if __name__ == "__main__":
-    utils.init_logging(logging.DEBUG)
     unittest.main()
