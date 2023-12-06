@@ -181,7 +181,7 @@ class Point:
 def load_input(day: Union[int, str], year: Union[int, str]) -> Iterable[Iterable[str]]:
     # Load the actual input if no input was given.
     with open(f"inputs/{year}/day{day}.txt", "r", encoding="utf-8") as file:
-        input: Iterable[Iterable[str]] = [line for line in file]
+        input: Iterable[Iterable[str]] = [line.rstrip() for line in file]
         return input
 
 
