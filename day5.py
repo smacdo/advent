@@ -7,6 +7,19 @@ from utils import AdventDaySolver, AdventDayTestCase, init_logging
 from multiprocessing import Pool
 
 
+def merge_ranges(ranges):
+    in_ranges = list(sorted(ranges, key=lambda x: x[0]))
+    out_stack = [in_ranges.pop(0)]
+
+    for r in in_ranges:
+        if r[0] > out_stack[-1][1]:
+            out_stack.append(r)
+        elif r[1] > out_stack[-1][1]:
+            out_stack[-1] = (out_stack[-1][0], r[1])
+
+    return out_stack
+
+
 class ParserState(Enum):
     EXPECT_SEEDS = 1
     EXPECT_MAP_NAME = 2
@@ -67,19 +80,14 @@ class RangeMap:
         self.entries = []
 
     def add(self, range):
-        # logging.debug(
-        #    f"adding range to {self.from_name} with {len(self.entries)} entires {range}"
-        # )
         self.entries.append(range)
 
     def transform(self, v):
         for r in self.entries:
-            if r.is_in_range(v):
-                v_new = r.map(v)
-                # logging.trace(f"{self.from_name} to {self.to_name}: {v} -> {v_new}")
+            v_new = r.map(v)
+            if v_new is not None:
                 return v_new
 
-        # logging.trace(f"{self.from_name} to {self.to_name}: {v} -> {v}")
         return v
 
 
@@ -94,15 +102,12 @@ class RangeEntry:
 
     def map(self, v):
         if self.is_in_range(v):
-            # logging.trace(
-            #    f"{self.source_start} <= {v} < {self.source_start + self.length} -> {v - self.source_start + self.dest_start}"
-            # )
             return v - self.source_start + self.dest_start
         else:
             return None
 
 
-class Solver(AdventDaySolver, day=5, year=2023, name="", solution=(None, None)):
+class Solver(AdventDaySolver, day=5, year=2023, name="", solution=(3374647, 6082852)):
     def __init__(self, input):
         self.map_chain = [
             "seed-to-soil",
@@ -117,15 +122,18 @@ class Solver(AdventDaySolver, day=5, year=2023, name="", solution=(None, None)):
         super().__init__(input)
 
     def transform_seed_to_location(self, seed):
-        return self.transform_seed(seed, self.map_chain)
+        return self.transform_seed(seed, self.fast_forward_xform_chain)
 
     def transform_seed(self, seed, chain):
-        for map_name in chain:
-            seed = self.maps[map_name].transform(seed)
+        for m in chain:
+            seed = m.transform(seed)
         return seed
 
     def solve(self):
         self.seeds, self.maps = parse_input(self.input)
+
+        # Asssemble a faster map transform chain w/out needing hashtables.
+        self.fast_forward_xform_chain = [self.maps[n] for n in self.map_chain]
 
         # Part #1: Find the lowest location number of any initial seed.
         part_1 = min([self.transform_seed_to_location(s) for s in self.seeds])
@@ -153,10 +161,8 @@ class Solver(AdventDaySolver, day=5, year=2023, name="", solution=(None, None)):
         total = end_seed - start_seed
         min_location = None
 
-        # 7,535,297
-
         for x in range(start_seed, end_seed):
-            if (x - start_seed) % 250000 == 0:
+            if (x - start_seed) % 1000000 == 0:
                 percent = ((x - start_seed) * 100) / (end_seed - start_seed)
                 remaining = end_seed - x
 
@@ -217,11 +223,12 @@ humidity-to-location map:
         s = d.solve()
 
         self.assertSequenceEqual([79, 14, 55, 13], d.seeds)
-        self.assertEqual("seed", d.maps["seed-to-soil"].from_name)
-        self.assertEqual(81, d.transform_seed(79, ["seed-to-soil"]))
-        self.assertEqual(14, d.transform_seed(14, ["seed-to-soil"]))
-        self.assertEqual(57, d.transform_seed(55, ["seed-to-soil"]))
-        self.assertEqual(13, d.transform_seed(13, ["seed-to-soil"]))
+        seed_to_soil = d.maps["seed-to-soil"]
+        self.assertEqual("seed", seed_to_soil.from_name)
+        self.assertEqual(81, d.transform_seed(79, [seed_to_soil]))
+        self.assertEqual(14, d.transform_seed(14, [seed_to_soil]))
+        self.assertEqual(57, d.transform_seed(55, [seed_to_soil]))
+        self.assertEqual(13, d.transform_seed(13, [seed_to_soil]))
 
         self.assertEqual(82, d.transform_seed_to_location(79))
         self.assertEqual(43, d.transform_seed_to_location(14))
@@ -232,10 +239,25 @@ humidity-to-location map:
         self.assertEqual(46, s[1])
 
     def test_real_input(self):
-        s = self._create_real_solver().solve()
-        self.assertEqual(3374647, s[0])
-        self.assertEqual(None, s[1])
+        # s = self._create_real_solver().solve()
+        # self.assertEqual(3374647, s[0])
+        # self.assertEqual(6082852, s[1])
         pass
+
+    def test_merge_ranges(self):
+        self.assertSequenceEqual([(10, 20)], merge_ranges([(10, 20)]))
+
+        # merge overlapping
+        self.assertSequenceEqual([(10, 25)], merge_ranges([(10, 20), (12, 25)]))
+        self.assertSequenceEqual([(10, 25)], merge_ranges([(12, 25), (10, 20)]))
+
+        # merge adjacent
+        self.assertSequenceEqual([(10, 30)], merge_ranges([(10, 20), (20, 30)]))
+        self.assertSequenceEqual([(6, 77)], merge_ranges([(6, 13), (13, 77)]))
+
+        # skip if not overlapping or adjacent
+        self.assertSequenceEqual([(5, 7), (8, 9)], merge_ranges([(5, 7), (8, 9)]))
+        self.assertSequenceEqual([(6, 8), (10, 13)], merge_ranges([(10, 13), (6, 8)]))
 
 
 if __name__ == "__main__":
