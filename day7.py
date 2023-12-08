@@ -6,19 +6,19 @@ import unittest
 from utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 CARD_SCORE = {
-    "2": 1,
-    "3": 2,
-    "4": 3,
-    "5": 4,
-    "6": 5,
-    "7": 6,
-    "8": 7,
-    "9": 8,
-    "T": 9,
-    "J": 10,
-    "Q": 11,
-    "K": 12,
-    "A": 13,
+    "2": (1, 2),
+    "3": (2, 3),
+    "4": (3, 4),
+    "5": (4, 5),
+    "6": (5, 6),
+    "7": (6, 7),
+    "8": (7, 8),
+    "9": (8, 9),
+    "T": (9, 10),
+    "J": (10, 1),
+    "Q": (11, 11),
+    "K": (12, 12),
+    "A": (13, 13),
 }
 
 
@@ -33,7 +33,7 @@ def parse_input(lines):
     entries = []
     for line in lines:
         hand, bid = line.split()
-        entries.append(InputEntry(Hand(hand), int(bid)))
+        entries.append(InputEntry(hand, int(bid)))
     return entries
 
 
@@ -49,14 +49,16 @@ class HandType(enum.IntEnum):
 
 class InputEntry:
     def __init__(self, hand, bid):
-        self.hand = hand
+        self.hand = Hand(hand, with_jokers=False)
+        self.hand_p2 = Hand(hand, with_jokers=True)
         self.bid = bid
 
 
 class Hand:
-    def __init__(self, cards):
+    def __init__(self, cards, with_jokers):
         self.cards = cards
-        self.type = Hand.classify(self.cards)
+        self.with_jokers = with_jokers
+        self.type = Hand.classify(self.cards, self.with_jokers)
 
     def __str__(self):
         return self.cards
@@ -72,14 +74,15 @@ class Hand:
         #                          10
         #         E =            * 1
         score = 0
+        tuple_i = 1 if self.with_jokers else 0
 
         for c in self.cards:
-            score = score * 100 + CARD_SCORE[c]
+            score = score * 100 + CARD_SCORE[c][tuple_i]
 
         return score + (100000000000 * int(self.type))
 
     @staticmethod
-    def classify(cards):
+    def classify(cards, with_jokers):
         assert len(cards) == 5
         lut = dict()
 
@@ -89,6 +92,14 @@ class Hand:
             else:
                 lut[c] = 1
 
+        # Remove jokers from the card list (if present) and re-add them to
+        # the best scoring card.
+        joker_count = 0
+
+        if with_jokers and "J" in cards:
+            joker_count = lut["J"]
+            del lut["J"]
+
         # Sort keys by occurence of cards in descending order.
         keys = [k for k in lut.keys()]
         keys.sort(key=lambda x: lut[x], reverse=True)
@@ -96,6 +107,12 @@ class Hand:
         # Replace keys with their occurence count
         counts = [lut[k] for k in keys]
         logging.debug(f"{cards} => {counts} (LUT: {lut})")
+
+        if with_jokers:
+            if len(counts) == 0:
+                counts = [joker_count]
+            else:
+                counts[0] += joker_count
 
         if counts[0] == 5:
             return HandType.FiveKind
@@ -114,7 +131,11 @@ class Hand:
 
 
 class Solver(
-    AdventDaySolver, day=7, year=2023, name="Camel Cards", solution=(250957639, None)
+    AdventDaySolver,
+    day=7,
+    year=2023,
+    name="Camel Cards",
+    solution=(250957639, 251515496),
 ):
     def __init__(self, input):
         super().__init__(input)
@@ -128,10 +149,18 @@ class Solver(
         for i, e in enumerate(entries):
             e.hand.rank = i + 1
 
+        # part2: resort entries by rank again using p2 score rules
+        entries = [e for e in self.entries]
+        entries.sort(key=lambda x: x.hand_p2.score() + 1)
+
+        for i, e in enumerate(entries):
+            e.hand_p2.rank = i + 1
+
     def solve(self):
         part_1 = sum(e.bid * e.hand.rank for e in self.entries)
+        part_2 = sum(e.bid * e.hand_p2.rank for e in self.entries)
 
-        return (part_1, None)
+        return (part_1, part_2)
 
 
 class Tests(AdventDayTestCase):
@@ -161,20 +190,34 @@ QQQJA 483"""
         self.assertEqual(HandType.ThreeKind, d.entries[4].hand.type)
 
         self.assertEqual(1, d.entries[0].hand.rank)
-        self.assertEqual(2, d.entries[3].hand.rank)
-        self.assertEqual(3, d.entries[2].hand.rank)
         self.assertEqual(4, d.entries[1].hand.rank)
+        self.assertEqual(3, d.entries[2].hand.rank)
+        self.assertEqual(2, d.entries[3].hand.rank)
         self.assertEqual(5, d.entries[4].hand.rank)
 
+        # Part two
+        self.assertEqual(HandType.OnePair, d.entries[0].hand_p2.type)
+        self.assertEqual(HandType.FourKind, d.entries[1].hand_p2.type)
+        self.assertEqual(HandType.TwoPair, d.entries[2].hand_p2.type)
+        self.assertEqual(HandType.FourKind, d.entries[3].hand_p2.type)
+        self.assertEqual(HandType.FourKind, d.entries[4].hand_p2.type)
+
+        self.assertEqual(1, d.entries[0].hand_p2.rank)
+        self.assertEqual(3, d.entries[1].hand_p2.rank)
+        self.assertEqual(2, d.entries[2].hand_p2.rank)
+        self.assertEqual(5, d.entries[3].hand_p2.rank)
+        self.assertEqual(4, d.entries[4].hand_p2.rank)
+
+        # Actual solver
         s = d.solve()
 
         self.assertEqual(6440, s[0])
-        self.assertEqual(None, s[1])
+        self.assertEqual(5905, s[1])
 
     def test_real_input(self):
         s = self._create_real_solver().solve()
         self.assertEqual(250957639, s[0])
-        self.assertEqual(None, s[1])
+        self.assertEqual(251515496, s[1])
         pass
 
 
