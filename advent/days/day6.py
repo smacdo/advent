@@ -3,7 +3,12 @@ import logging
 import re
 import unittest
 
-from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import (
+    AdventDaySolver,
+    AdventDayTestCase,
+    init_logging,
+    run_tests_for_solver,
+)
 from functools import reduce
 
 
@@ -87,11 +92,6 @@ Distance:  9  40  200"""
         self.assertEqual(288, s[0])
         self.assertEqual(71503, s[1])
 
-    def test_real_input(self):
-        s = self._create_real_solver().solve()
-        self.assertEqual(4403592, s[0])
-        self.assertEqual(38017587, s[1])
-
     def test_parse_input_line(self):
         field_name, values = parse_input_line("Time:      7  15   30")
         self.assertEqual("Time", field_name)
@@ -103,4 +103,4 @@ Distance:  9  40  200"""
 
 
 if __name__ == "__main__":
-    unittest.main()
+    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)

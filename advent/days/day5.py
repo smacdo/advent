@@ -4,7 +4,12 @@ import unittest
 
 from enum import Enum
 from multiprocessing import Pool
-from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import (
+    AdventDaySolver,
+    AdventDayTestCase,
+    init_logging,
+    run_tests_for_solver,
+)
 
 
 def merge_ranges(ranges):
@@ -238,12 +243,6 @@ humidity-to-location map:
         self.assertEqual(35, s[0])
         self.assertEqual(46, s[1])
 
-    def test_real_input(self):
-        # s = self._create_real_solver().solve()
-        # self.assertEqual(3374647, s[0])
-        # self.assertEqual(6082852, s[1])
-        pass
-
     def test_merge_ranges(self):
         self.assertSequenceEqual([(10, 20)], merge_ranges([(10, 20)]))
 
@@ -261,4 +260,4 @@ humidity-to-location map:
 
 
 if __name__ == "__main__":
-    unittest.main()
+    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)

@@ -2,7 +2,12 @@
 import logging
 import unittest
 
-from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import (
+    AdventDaySolver,
+    AdventDayTestCase,
+    init_logging,
+    run_tests_for_solver,
+)
 
 
 def get_first_last(itr):
@@ -119,11 +124,6 @@ class Tests(AdventDayTestCase):
         init_logging(logging.DEBUG)
         super().setUp(Solver)
 
-    def test_real_input(self):
-        s = self._create_real_solver().solve()
-        self.assertEqual(55108, s[0])
-        self.assertEqual(56324, s[1])
-
 
 if __name__ == "__main__":
-    unittest.main()
+    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)

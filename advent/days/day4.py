@@ -3,7 +3,12 @@ import logging
 import re
 import unittest
 
-from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import (
+    AdventDaySolver,
+    AdventDayTestCase,
+    init_logging,
+    run_tests_for_solver,
+)
 
 
 # TODO: rename read_space_delim_input ?
@@ -103,11 +108,6 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
         self.assertEqual(13, s[0])
         self.assertEqual(30, s[1])
 
-    def test_real_input(self):
-        s = self._create_real_solver().solve()
-        self.assertEqual(17803, s[0])
-        self.assertEqual(5554894, s[1])
-
     def test_parse_card_input(self):
         card = parse_card_input("Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1")
         self.assertEqual(card.id, 3)
@@ -123,4 +123,4 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
 
 
 if __name__ == "__main__":
-    unittest.main()
+    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)

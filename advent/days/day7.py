@@ -3,7 +3,12 @@ import enum
 import logging
 import unittest
 
-from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import (
+    AdventDaySolver,
+    AdventDayTestCase,
+    init_logging,
+    run_tests_for_solver,
+)
 
 CARD_SCORE = {
     "2": (1, 2),
@@ -222,4 +227,4 @@ QQQJA 483"""
 
 
 if __name__ == "__main__":
-    unittest.main()
+    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)

@@ -2,9 +2,16 @@
 import logging
 import unittest
 
-from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import (
+    AdventDaySolver,
+    AdventDayTestCase,
+    init_logging,
+    run_tests_for_solver,
+)
 
 SYMBOLS = "`~!@#$%^&*()_-=+[]{}|\\;:'<>,/?"
+
+# FIXME: Solution breaks when `load_input()  ... rstrip()` is removed?
 
 
 def make_schematic(lines):
@@ -158,12 +165,6 @@ class TestPartNumberFinder(AdventDayTestCase):
         self.assertEqual(4361, s[0])
         self.assertEqual(467835, s[1])
 
-    def test_real_input(self):
-        s = self._create_real_solver().solve()
-
-        self.assertEqual(533784, s[0])
-        self.assertEqual(78826761, s[1])
-
 
 if __name__ == "__main__":
-    unittest.main()
+    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)
