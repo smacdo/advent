@@ -1,15 +1,10 @@
-import logging
 import re
 import unittest
 
 from enum import Enum
 from multiprocessing import Pool
-from advent.utils import (
-    AdventDaySolver,
-    AdventDayTestCase,
-    init_logging,
-    run_tests_for_solver,
-)
+
+from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
 
 
 def merge_ranges(ranges):
@@ -186,7 +181,6 @@ class Solver(AdventDaySolver, day=5, year=2023, name="", solution=(3374647, 6082
 
 class Tests(AdventDayTestCase):
     def setUp(self):
-        init_logging(logging.DEBUG)
         super().setUp(Solver)
 
     def test_sample(self):
@@ -260,4 +254,4 @@ humidity-to-location map:
 
 
 if __name__ == "__main__":
-    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)
+    solver_main(unittest.TestProgram(exit=False), Solver)

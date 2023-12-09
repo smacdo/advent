@@ -3,12 +3,8 @@ import logging
 import re
 import unittest
 
-from advent.utils import (
-    AdventDaySolver,
-    AdventDayTestCase,
-    init_logging,
-    run_tests_for_solver,
-)
+
+from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
 
 
 def parse_game_results(s):
@@ -128,10 +124,9 @@ class Solver(
 
 class Tests(AdventDayTestCase):
     def setUp(self):
-        init_logging(logging.DEBUG)
         super().setUp(Solver)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)
+    solver_main(unittest.TestProgram(exit=False), Solver)

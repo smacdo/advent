@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-import logging
 import unittest
 
-from advent.utils import (
-    AdventDaySolver,
-    AdventDayTestCase,
-    init_logging,
-    run_tests_for_solver,
-    unzip,
-)
+from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
+from advent.utils import unzip
 
 
 def parse_inputs(input_lines):
@@ -73,7 +67,6 @@ class Solver(
 
 class Tests(AdventDayTestCase):
     def setUp(self):
-        init_logging(logging.DEBUG)
         super().setUp(Solver)
 
     def test_sample_1a(self):
@@ -115,4 +108,4 @@ class Tests(AdventDayTestCase):
 
 
 if __name__ == "__main__":
-    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)
+    solver_main(unittest.TestProgram(exit=False), Solver)

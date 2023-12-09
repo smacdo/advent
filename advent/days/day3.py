@@ -2,12 +2,8 @@
 import logging
 import unittest
 
-from advent.utils import (
-    AdventDaySolver,
-    AdventDayTestCase,
-    init_logging,
-    run_tests_for_solver,
-)
+
+from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
 
 SYMBOLS = "`~!@#$%^&*()_-=+[]{}|\\;:'<>,/?"
 
@@ -144,7 +140,6 @@ class Solver(
 
 class TestPartNumberFinder(AdventDayTestCase):
     def setUp(self):
-        init_logging(logging.INFO)
         super().setUp(Solver)
 
     def test_sample(self):
@@ -167,4 +162,4 @@ class TestPartNumberFinder(AdventDayTestCase):
 
 
 if __name__ == "__main__":
-    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)
+    solver_main(unittest.TestProgram(exit=False), Solver)

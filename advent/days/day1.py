@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-import logging
 import unittest
 
-from advent.utils import (
-    AdventDaySolver,
-    AdventDayTestCase,
-    init_logging,
-    run_tests_for_solver,
-    first_and_last,
-)
+from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
+from advent.utils import first_and_last
 
 
 class Solver(
@@ -109,9 +103,8 @@ class Solver(
 
 class Tests(AdventDayTestCase):
     def setUp(self):
-        init_logging(logging.DEBUG)
         super().setUp(Solver)
 
 
 if __name__ == "__main__":
-    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)
+    solver_main(unittest.TestProgram(exit=False), Solver)

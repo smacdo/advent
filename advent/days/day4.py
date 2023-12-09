@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-import logging
 import re
 import unittest
 
-from advent.utils import (
-    AdventDaySolver,
-    AdventDayTestCase,
-    init_logging,
-    run_tests_for_solver,
-)
+from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
 
 
 # TODO: rename read_space_delim_input ?
@@ -88,7 +82,6 @@ class Solver(
 
 class Tests(AdventDayTestCase):
     def setUp(self):
-        init_logging(logging.DEBUG)
         super().setUp(Solver)
 
     def test_sample(self):
@@ -123,4 +116,4 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
 
 
 if __name__ == "__main__":
-    run_tests_for_solver(unittest.TestProgram(exit=False), Solver)
+    solver_main(unittest.TestProgram(exit=False), Solver)
