@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 
-# TODO: Is it possible to eliminate all of the imports and auto-discover?
-
-from utils import AdventDaySolver
+from advent.days import *  # noqa: F403
+from advent.utils import AdventDaySolver, load_input
 
 
 def solve(day, year):
-    solver = AdventDaySolver.new_solver(day, year)
+    solver_type = AdventDaySolver.get_solver(day, year)
+    solver = solver_type(load_input(day=day, year=year))
     solution = solver.solve()
 
     print(f"Solution for day {day} {year}")

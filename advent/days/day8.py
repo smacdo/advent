@@ -3,7 +3,7 @@ import logging
 import re
 import unittest
 
-from utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
 from math import lcm
 
 

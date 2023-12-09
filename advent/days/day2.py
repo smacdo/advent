@@ -2,7 +2,7 @@
 import logging
 import re
 
-from utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 
 def parse_game_results(s):

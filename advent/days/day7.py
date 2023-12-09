@@ -3,7 +3,7 @@ import enum
 import logging
 import unittest
 
-from utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 CARD_SCORE = {
     "2": (1, 2),

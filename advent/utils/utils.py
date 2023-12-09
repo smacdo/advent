@@ -24,15 +24,8 @@ class AdventDaySolver:
 
     day_classes: ClassVar[Dict[int, Dict[int, Any]]] = dict()
 
-    def __init__(self, input: Optional[Iterable[Iterable[str]]] = None):
-        # Load the actual input if no input was given.
-        if not input:
-            day = getattr(type(self), "advent_day")
-            year = getattr(type(self), "advent_year")
-
-            self.input = load_input(day, year)
-        else:
-            self.input = input
+    def __init__(self, input: Iterable[Iterable[str]]):
+        self.input = input
 
     # ==========================================================================#
     # Subclass registration                                                    #
@@ -86,8 +79,8 @@ class AdventDaySolver:
         return list(AdventDaySolver.day_classes[int(year)].keys())
 
     @classmethod
-    def new_solver(cls, day: Union[int, str], year: Union[int, str]) -> Self:
-        return typing.cast(Self, AdventDaySolver.day_classes[int(year)][int(day)](None))
+    def get_solver(cls, day: Union[int, str], year: Union[int, str]) -> Self:
+        return typing.cast(Self, AdventDaySolver.day_classes[int(year)][int(day)])
 
     @classmethod
     def day(cls) -> int:

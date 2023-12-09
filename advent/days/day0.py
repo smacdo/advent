@@ -2,7 +2,7 @@
 import logging
 import unittest
 
-from utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 
 class Solver(AdventDaySolver, day=0, year=0, name="", solution=(None, None)):

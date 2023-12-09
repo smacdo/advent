@@ -2,7 +2,7 @@
 import logging
 import unittest
 
-from utils import AdventDaySolver, AdventDayTestCase, init_logging
+from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 
 def get_first_last(itr):

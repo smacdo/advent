@@ -1,10 +1,10 @@
-from enum import Enum
 import logging
 import re
 import unittest
 
-from utils import AdventDaySolver, AdventDayTestCase, init_logging
+from enum import Enum
 from multiprocessing import Pool
+from advent.utils import AdventDaySolver, AdventDayTestCase, init_logging
 
 
 def merge_ranges(ranges):

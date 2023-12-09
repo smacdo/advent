@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from typing import Type
-from utils import AdventDaySolver, Point
+from advent.utils import AdventDaySolver, Point
 
 import typing
 import unittest
@@ -45,13 +45,13 @@ class AdventDaySolverTests(unittest.TestCase):
     def test_create_day(self):
         d = typing.cast(
             Type[AdventDaySolverTests.Day1],
-            AdventDaySolver.new_solver(day=1, year=2023),
+            AdventDaySolver.get_solver(day=1, year=2023)([[]]),
         )
         self.assertEqual(22, d.secret_token())
 
         d = typing.cast(
             Type[AdventDaySolverTests.Day4],
-            AdventDaySolver.new_solver(day=4, year=2023),
+            AdventDaySolver.get_solver(day=4, year=2023)([[]]),
         )
         self.assertEqual("hello", d.secret_token())
 
