@@ -7,20 +7,8 @@ from advent.utils import (
     AdventDayTestCase,
     init_logging,
     run_tests_for_solver,
+    first_and_last,
 )
-
-
-def get_first_last(itr):
-    """Gets the first and last element from an iterable sequence. Note that for
-    single element sequences the first and last element are the same."""
-    first = last = next(itr)
-    for last in itr:
-        pass
-
-    assert first is not None
-    assert last is not None
-
-    return (first, last)
 
 
 class Solver(
@@ -39,7 +27,7 @@ class Solver(
         for line in self.input:
             # filter out any values that are not digits from the line
             digits = filter(str.isdigit, line)
-            first, last = get_first_last(digits)
+            first, last = first_and_last(digits)
 
             # Combine the two digits into a number. Take care that sometimes there
             # isn't a second value which means the first and last digit are the same.
@@ -103,7 +91,7 @@ class Solver(
                             digits.append(digit_value)
 
             # Grab the first and last digits that were found on the line.
-            first, last = get_first_last(iter(digits))
+            first, last = first_and_last(iter(digits))
 
             # Combine the two digits into a number. Take care that sometimes there
             # isn't a second value which means the first and last digit are the same.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from typing import Type
-from advent.utils import AdventDaySolver, Point
+from advent.utils import AdventDaySolver, Point, load_input, first_and_last, unzip
 
 import typing
 import unittest
@@ -172,6 +172,31 @@ class Grid:
 
     def __iter__(self):
         return iter(self.cells)
+
+
+class TestFirstAndLast(unittest.TestCase):
+    def test_one_item_list(self):
+        self.assertEqual((10, 10), first_and_last([10]))
+
+    def test_multi_item_list(self):
+        self.assertEqual((13, 3), first_and_last([13, 3]))
+        self.assertEqual((81, "a"), first_and_last([81, "a"]))
+
+    def test_empty_list_throws_exception(self):
+        self.assertRaises(StopIteration, lambda: first_and_last([]))
+
+
+class TestUnzip(unittest.TestCase):
+    def test_unzip_2(self):
+        A = [5, 8, 10]
+        B = [-2, 12, "b"]
+        self.assertEqual((A, B), unzip([(5, -2), (8, 12), (10, "b")]))
+
+
+class TestUtilsModule(unittest.TestCase):
+    def test_load_input(self):
+        input = load_input(0, 0)
+        self.assertEqual(input, ["hello", "123"])
 
 
 if __name__ == "__main__":

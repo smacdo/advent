@@ -16,6 +16,7 @@ import typing
 import unittest
 
 AdventDay = TypeVar("AdventDay", bound="AdventDaySolver")
+T = TypeVar("T")
 
 
 # TODO: Move the factory functions for tracking subclasses out of AdventDaySolver
@@ -226,6 +227,33 @@ def run_tests_for_solver(
         logging.warning("unit tests did not pass, will skip actual puzzle input")
 
 
+def first_and_last(itr: Union[list[int], Iterable[T]]) -> Tuple[T, T]:
+    """Gets the first and last element from an iterable sequence. Note that for
+    single element sequences the first and last element are the same."""
+    if isinstance(itr, list):
+        itr = iter(itr)
+
+    first = last = next(itr)
+    for last in itr:
+        pass
+
+    assert first is not None
+    assert last is not None
+
+    return (first, last)
+
+
+def unzip(itr: Iterable[Tuple[T, T]]) -> (list[T], list[T]):
+    a = []
+    b = []
+
+    for x, y in itr:
+        a.append(x)
+        b.append(y)
+
+    return (a, b)
+
+
 def load_input(day: Union[int, str], year: Union[int, str]) -> Iterable[Iterable[str]]:
     # Load the actual input if no input was given.
     with open(f"inputs/{year}/day{day}.txt", "r", encoding="utf-8") as file:
@@ -233,11 +261,13 @@ def load_input(day: Union[int, str], year: Union[int, str]) -> Iterable[Iterable
         return input
 
 
+# TODO: Move to advent.logging.init_logging()
 def init_logging(default_level=logging.INFO):
     add_logging_level("TRACE", logging.DEBUG - 5)
     logging.basicConfig(level=default_level)
 
 
+# TODO: Move to advent.logging._add_logging_level()
 def add_logging_level(level_name, level_num):
     # Simplified version of https://stackoverflow.com/a/35804945
     method_name = level_name.lower()
@@ -257,9 +287,3 @@ def add_logging_level(level_name, level_num):
     setattr(logging, level_name, level_num)  # Add `logging.$level_name = $level_num`
     setattr(logging.getLoggerClass(), method_name, logForLevel)
     setattr(logging, method_name, log_to_root)
-
-
-class TestUtilsModule(unittest.TestCase):
-    def test_load_input(self):
-        input = load_input(0, 0)
-        self.assertEqual(input, ["hello", "123"])

@@ -7,6 +7,7 @@ from advent.utils import (
     AdventDayTestCase,
     init_logging,
     run_tests_for_solver,
+    unzip,
 )
 
 
@@ -66,15 +67,8 @@ class Solver(
         self.entries = parse_inputs(input)
 
     def solve(self):
-        part_1 = 0
-        part_2 = 0
-
-        for e in self.entries:
-            a, b = reduce(e)
-            part_1 += a
-            part_2 += b
-
-        return (part_1, part_2)
+        part_1, part_2 = unzip(reduce(e) for e in self.entries)
+        return (sum(part_1), sum(part_2))
 
 
 class Tests(AdventDayTestCase):
