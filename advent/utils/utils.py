@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import (
     Iterable,
     Tuple,
@@ -8,6 +9,13 @@ from typing import (
 import logging
 
 T = TypeVar("T")
+
+
+class Direction(IntEnum):
+    East = 0
+    North = 1
+    West = 2
+    South = 3
 
 
 class Point:
