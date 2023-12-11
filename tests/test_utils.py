@@ -2,7 +2,7 @@
 
 from typing import Type
 from advent.solver import AdventDaySolver
-from advent.utils import Direction, Grid, Point, load_input, first_and_last, unzip
+from advent.utils import Direction, Grid, Point, load_input, first_and_last, unzip, count_if, new_grid_from_input_lines
 
 import typing
 import unittest
@@ -69,6 +69,12 @@ class TestDirection(unittest.TestCase):
         self.assertEqual("North", str(Direction.North))
         self.assertEqual("West", str(Direction.West))
         self.assertEqual("South", str(Direction.South))
+
+    def test_to_point(self):
+        self.assertEqual(Point(1, 0), Direction.East.to_point())
+        self.assertEqual(Point(0, -1), Direction.North.to_point())
+        self.assertEqual(Point(-1, 0), Direction.West.to_point())
+        self.assertEqual(Point(0, 1), Direction.South.to_point())
 
 
 class TestPoint(unittest.TestCase):
@@ -160,6 +166,34 @@ class TestGrid(unittest.TestCase):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
         self.assertEqual("12\nab\n78", str(g))
 
+    def test_yield_row(self):
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        self.assertSequenceEqual([(Point(0, 0), "1"), (Point(1, 0), "2")], list(g.yield_row(0)))
+        self.assertSequenceEqual([(Point(0, 1), "a"), (Point(1, 1), "b")], list(g.yield_row(1)))
+        self.assertSequenceEqual([(Point(0, 2), "7"), (Point(1, 2), "8")], list(g.yield_row(2)))
+
+    def test_from_input_lines(self):
+        g = new_grid_from_input_lines("""hi3\n3$x""".split("\n"))
+        self.assertEqual(2, g.row_count())
+        self.assertEqual(3, g.col_count())
+        self.assertSequenceEqual(["h", "i", "3"], g.row(0))
+        self.assertSequenceEqual(["3", "$", "x"], g.row(1))
+
+    def test_iterate_rows(self):
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        vals = [[c for c in row] for row in g.rows()]
+        self.assertSequenceEqual(["1", "2"], vals[0])
+        self.assertSequenceEqual(["a", "b"], vals[1])
+        self.assertSequenceEqual(["7", "8"], vals[2])
+
+
+class TestCountIf(unittest.TestCase):
+    def test_empty(self):
+        self.assertEqual(0, count_if([], lambda x: False))
+        self.assertEqual(0, count_if(iter([]), lambda x: False))
+
+    def test_count(self):
+        self.assertEqual(2, count_if([1, 2, 3, 4], lambda x: x % 2 == 0))
 
 class TestFirstAndLast(unittest.TestCase):
     def test_one_item_list(self):

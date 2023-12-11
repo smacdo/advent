@@ -2,22 +2,21 @@
 import unittest
 
 from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
-from advent.utils import Direction
+from advent.utils import Direction, count_if, Grid, Point, new_grid_from_input_lines
 
 
 def parse_input(input_lines):
-    char_grid = []
+    def is_neighbor_a_pipe(grid, pt, dir):
+        neighbor_pt = pt + dir.to_point()
+        return grid.check_in_bounds(neighbor_pt) and grid[neighbor_pt] != "."
 
-    for line in input_lines:
-        char_grid.append([c for c in line])
+    char_grid = new_grid_from_input_lines(input_lines)
+    tile_rows = []
 
-    grid = []
-    start_pos = None
-
-    for y, line in enumerate(input_lines):
+    for char_row in char_grid.rows():
         row = []
 
-        for x, c in enumerate(line):
+        for c in char_row:
             if c == "|":
                 row.append(Tile(north_edge=True, south_edge=True))
             elif c == "-":
@@ -33,44 +32,25 @@ def parse_input(input_lines):
             elif c == ".":
                 row.append(Tile())
             elif c == "S":
-                # TODO: Detect edges for start.
-                east_edge = (
-                    is_valid_pos(char_grid, x + 1, y) and char_grid[y][x + 1] != "."
-                )
-                north_edge = (
-                    is_valid_pos(char_grid, x, y - 1) and char_grid[y - 1][x] != "."
-                )
-                west_edge = (
-                    is_valid_pos(char_grid, x - 1, y) and char_grid[y][x - 1] != "."
-                )
-                south_edge = (
-                    is_valid_pos(char_grid, x, y + 1) and char_grid[y + 1][x] != "."
-                )
-
+                pt = Point(char_row.x, char_row.row)
+                edges = [is_neighbor_a_pipe(char_grid, pt, dir) for dir in Direction.cardinal_dirs()]
                 row.append(
                     Tile(
-                        east_edge=east_edge,
-                        north_edge=north_edge,
-                        west_edge=west_edge,
-                        south_edge=south_edge,
+                        east_edge=edges[Direction.East],
+                        north_edge=edges[Direction.North],
+                        west_edge=edges[Direction.West],
+                        south_edge=edges[Direction.South],
                         is_start=True,
                     )
                 )
 
-                start_pos = (x, y)
+                start_pos = pt
             else:
-                raise Exception(f"Unknown tile {c} at {x}, {y}")
+                raise Exception(f"Unknown tile {c} at {char_row.x}, {char_row.row}")
 
-        grid.append(row)
+        tile_rows.append(row)
 
-    return (grid, start_pos)
-
-
-def print_grid(grid):
-    for y, row in enumerate(grid):
-        for x, tile in enumerate(row):
-            print((str(tile)), end="")
-        print("")
+    return (Grid(char_grid.x_count, char_grid.y_count, tile_rows), start_pos)
 
 
 def is_valid_pos(grid, x, y):
@@ -111,13 +91,7 @@ class Tile:
         return self.edges[int(dir)]
 
     def edge_count(self) -> int:
-        # TODO: `count_if`
-        edges = 0
-        edges += 1 if self.edge(Direction.East) else 0
-        edges += 1 if self.edge(Direction.North) else 0
-        edges += 1 if self.edge(Direction.West) else 0
-        edges += 1 if self.edge(Direction.South) else 0
-        return edges
+        return count_if(Direction.cardinal_dirs(), lambda dir: self.edge(dir))
 
     def __str__(self):
         if self.is_start:
@@ -157,7 +131,7 @@ class Solver(
     def __init__(self, input):
         super().__init__(input)
         self.grid, self.start = parse_input(input)
-        print_grid(self.grid)
+        print(self.grid)
 
     def solve(self):
         return (find_furthest_point(self.grid, self.start), None)
