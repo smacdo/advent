@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from typing import Type
-from advent.utils import AdventDaySolver, Point, load_input, first_and_last, unzip
+from advent.solver import AdventDaySolver
+from advent.utils import Direction, Grid, Point, load_input, first_and_last, unzip
 
 import typing
 import unittest
@@ -54,6 +55,20 @@ class AdventDaySolverTests(unittest.TestCase):
             AdventDaySolver.get_solver(day=4, year=2023)([[]]),
         )
         self.assertEqual("hello", d.secret_token())
+
+
+class TestDirection(unittest.TestCase):
+    def test_get_cardinal_directions(self):
+        self.assertSequenceEqual(
+            [Direction.East, Direction.North, Direction.West, Direction.South],
+            [d for d in Direction.cardinal_dirs()],
+        )
+
+    def test_get_names(self):
+        self.assertEqual("East", str(Direction.East))
+        self.assertEqual("North", str(Direction.North))
+        self.assertEqual("West", str(Direction.West))
+        self.assertEqual("South", str(Direction.South))
 
 
 class TestPoint(unittest.TestCase):
@@ -117,61 +132,33 @@ class TestPoint(unittest.TestCase):
         self.assertNotIn(Point(16, 7), points)
 
 
-class Grid:
-    __slots__ = ("cells", "x_count", "y_count")
+class TestGrid(unittest.TestCase):
+    def test_create_grid_from_default_value(self):
+        g = Grid(2, 3, "f")
+        self.assertEqual(2, g.x_count)
+        self.assertEqual(3, g.y_count)
+        self.assertSequenceEqual(["f", "f", "f", "f", "f", "f"], g.cells)
 
-    def __init__(self, tiles2d):
-        # Get the number of rows in the 2d initializer array. There must be at
-        # least one row.
-        self.y_count = len(tiles2d)
+    def test_create_grid_from_2d_array(self):
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        self.assertEqual(2, g.x_count)
+        self.assertEqual(3, g.y_count)
+        self.assertSequenceEqual(["1", "2", "a", "b", "7", "8"], g.cells)
 
-        if self.y_count < 1:
-            raise Exception("Grid `tiles2d` initializer must have at least one row")
+    def test_get_set_values(self):
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        self.assertEqual("2", g[Point(1, 0)])
+        self.assertEqual("7", g[Point(0, 2)])
 
-        # Get the nubmer of columns in the 2d initializer array. There must be
-        # at least one column, and each row must have the same number of cols.
-        self.x_count = len(tiles2d[0])
+        g[Point(1, 1)] = "$"
+        g[Point(0, 2)] = "&"
 
-        if self.x_count < 1:
-            raise Exception("Grid `tiles2d` initializer must have at least one col")
+        self.assertEqual("$", g[Point(1, 1)])
+        self.assertEqual("&", g[Point(0, 2)])
 
-        # Preallocate the grid's internal 2d array and set all cell values to
-        # `None`.
-        self.cells = [None for i in self.y_count * self.x_count]
-
-        # Copy all the values from the initializer into the grid, and verify
-        # that each row has the same number of columns.
-        for y, tile_row in enumerate(tiles2d):
-            if len(tile_row) != self.x_count:
-                raise Exception(
-                    f"Grid row {y} col size {len(tile_row)} != {self.y_count}"
-                )
-
-            for x, tile_cell in enumerate(tile_row):
-                self.cells[y][x] = tile_cell
-
-    def check_in_bounds(self, pt):
-        return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
-
-    def validate_in_bounds(self, pt):
-        if not self.check_in_bounds(pt):
-            raise Exception(
-                f"Point out of bounds; x: 0<={pt.x}<{self.x_count}, y: 0<={pt.y}<{self.y_count}"
-            )
-
-    def __getitem__(self, pt):
-        self.validate_in_bounds(pt)
-        return self.cells[pt.y * self.x_count + pt.x]
-
-    def __setitem__(self, pt, value):
-        self.validate_in_bounds(pt)
-        self.cells[pt.y * self.x_count + pt.x] = value
-
-    def __len__(self):
-        return len(self.cells)
-
-    def __iter__(self):
-        return iter(self.cells)
+    def test_to_string(self):
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        self.assertEqual("12\nab\n78", str(g))
 
 
 class TestFirstAndLast(unittest.TestCase):
