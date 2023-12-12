@@ -2,7 +2,17 @@
 
 from typing import Type
 from advent.solver import AdventDaySolver
-from advent.utils import Direction, Grid, Point, load_input, first_and_last, unzip, count_if, new_grid_from_input_lines
+from advent.utils import (
+    Direction,
+    Grid,
+    Point,
+    load_input,
+    first_and_last,
+    unzip,
+    count_if,
+    new_grid_from_input_lines,
+    BFS,
+)
 
 import typing
 import unittest
@@ -75,6 +85,24 @@ class TestDirection(unittest.TestCase):
         self.assertEqual(Point(0, -1), Direction.North.to_point())
         self.assertEqual(Point(-1, 0), Direction.West.to_point())
         self.assertEqual(Point(0, 1), Direction.South.to_point())
+
+    def test_reverse(self):
+        self.assertEqual(Direction.West, Direction.East.reverse())
+        self.assertEqual(Direction.South, Direction.North.reverse())
+        self.assertEqual(Direction.East, Direction.West.reverse())
+        self.assertEqual(Direction.North, Direction.South.reverse())
+
+    def test_from_point(self):
+        self.assertEqual(Direction.East, Direction.from_point(Point(1, 0)))
+        self.assertEqual(Direction.North, Direction.from_point(Point(0, -1)))
+        self.assertEqual(Direction.West, Direction.from_point(Point(-1, 0)))
+        self.assertEqual(Direction.South, Direction.from_point(Point(0, 1)))
+
+        with self.assertRaises(Exception):
+            Direction.from_point(Point(1, 1))
+
+        with self.assertRaises(NotImplementedError):
+            Direction.from_point((1, 1))
 
 
 class TestPoint(unittest.TestCase):
@@ -168,9 +196,15 @@ class TestGrid(unittest.TestCase):
 
     def test_yield_row(self):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
-        self.assertSequenceEqual([(Point(0, 0), "1"), (Point(1, 0), "2")], list(g.yield_row(0)))
-        self.assertSequenceEqual([(Point(0, 1), "a"), (Point(1, 1), "b")], list(g.yield_row(1)))
-        self.assertSequenceEqual([(Point(0, 2), "7"), (Point(1, 2), "8")], list(g.yield_row(2)))
+        self.assertSequenceEqual(
+            [(Point(0, 0), "1"), (Point(1, 0), "2")], list(g.yield_row(0))
+        )
+        self.assertSequenceEqual(
+            [(Point(0, 1), "a"), (Point(1, 1), "b")], list(g.yield_row(1))
+        )
+        self.assertSequenceEqual(
+            [(Point(0, 2), "7"), (Point(1, 2), "8")], list(g.yield_row(2))
+        )
 
     def test_from_input_lines(self):
         g = new_grid_from_input_lines("""hi3\n3$x""".split("\n"))
@@ -187,6 +221,45 @@ class TestGrid(unittest.TestCase):
         self.assertSequenceEqual(["7", "8"], vals[2])
 
 
+class TestBFS(unittest.TestCase):
+    def test_find_shortest_dist(self):
+        class FindReachable(BFS[int]):
+            def __init__(self, grid: Grid[int], start_pos: Point, target_pos: Point):
+                super().__init__(grid, start_pos)
+                self.target_reached = False
+                self.target_pos = target_pos
+
+            def on_visit(
+                self, from_cell: int, to_cell: int, to_pos: Point, to_dir: Direction
+            ) -> None:
+                if to_pos == self.target_pos:
+                    self.target_reached = True
+                else:
+                    if to_cell == 0:
+                        self.add_frontier(to_pos)
+
+        grid = Grid(
+            5,
+            4,
+            [
+                [0, 1, 0, 0, 0],
+                [0, 1, 0, 1, 0],
+                [1, 0, 1, 1, 0],
+                [0, 0, 1, 0, 0],
+            ],
+        )
+
+        visitor = FindReachable(grid, Point(0, 1), Point(3, 3))
+        visitor.run()
+
+        self.assertFalse(visitor.target_reached)
+
+        visitor = FindReachable(grid, Point(2, 1), Point(3, 3))
+        visitor.run()
+
+        self.assertTrue(visitor.target_reached)
+
+
 class TestCountIf(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(0, count_if([], lambda x: False))
@@ -194,6 +267,7 @@ class TestCountIf(unittest.TestCase):
 
     def test_count(self):
         self.assertEqual(2, count_if([1, 2, 3, 4], lambda x: x % 2 == 0))
+
 
 class TestFirstAndLast(unittest.TestCase):
     def test_one_item_list(self):

@@ -1,3 +1,4 @@
+from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Iterator
 from enum import IntEnum
 from typing import (
@@ -124,6 +125,25 @@ class Direction(IntEnum):
         yield Direction.West
         yield Direction.South
 
+    @classmethod
+    def from_point(cls, pt: Point) -> "Direction":
+        """Convert from a unit point to a direction or throw an exception."""
+        if not isinstance(pt, Point):
+            raise NotImplementedError
+
+        if pt.x == 1 and pt.y == 0:
+            return Direction.East
+        elif pt.x == 0 and pt.y == -1:
+            return Direction.North
+        elif pt.x == -1 and pt.y == 0:
+            return Direction.West
+        elif pt.x == 0 and pt.y == 1:
+            return Direction.South
+        else:
+            raise Exception(
+                f"Expected a unit point but got {pt} when converting to Direction"
+            )
+
 
 class Grid(Generic[T]):
     """Holds a collection of values in a 2d grid."""
@@ -164,12 +184,18 @@ class Grid(Generic[T]):
 
     def check_in_bounds(self, pt: Point) -> bool:
         """Test if a point is a valid cell position."""
+        if not isinstance(pt, Point):
+            raise TypeError("argument `pt` must be type `Point`")
+
         return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
 
     def validate_in_bounds(self, pt: Point) -> None:
         """Throw an exception if the point is not a valid cell position."""
+        if not isinstance(pt, Point):
+            raise TypeError("argument `pt` must be type `Point`")
+
         if not self.check_in_bounds(pt):
-            raise Exception(
+            raise ValueError(
                 f"Point out of bounds; x: 0<={pt.x}<{self.x_count}, y: 0<={pt.y}<{self.y_count}"
             )
 
@@ -199,10 +225,16 @@ class Grid(Generic[T]):
         return self.x_count
 
     def __getitem__(self, pt: Point) -> T:
+        if not isinstance(pt, Point):
+            raise TypeError("argument `pt` must be type `Point`")
+
         self.validate_in_bounds(pt)
         return self.cells[pt.y * self.x_count + pt.x]
 
     def __setitem__(self, pt: Point, v: T) -> None:
+        if not isinstance(pt, Point):
+            raise TypeError("argument `pt` must be type `Point`")
+
         self.validate_in_bounds(pt)
         self.cells[pt.y * self.x_count + pt.x] = v
 
@@ -277,6 +309,63 @@ class GridMultiRowIterator(Generic[T]):
 
     def __iter__(self):
         return self
+
+
+class BFS(ABC, Generic[T]):
+    __slots__ = ("grid", "start_pos", "frontier", "visited")
+    grid: Grid[T]
+    start_pos: Point
+    frontier: list[Point]
+    visited: set[Point]
+
+    def __init__(self, grid: Grid[T], start_pos: Point):
+        if not isinstance(grid, Grid):
+            raise TypeError("`grid` must be of type `Grid[T]`")
+        if not isinstance(start_pos, Point):
+            raise TypeError("`start_pos` must be of type `Point`")
+        if not grid.check_in_bounds(start_pos):
+            raise ValueError("`start_pos` must be a valid position in `grid`")
+
+        self.grid = grid
+        self.start_pos = start_pos
+        self.frontier = []
+        self.visited = set()
+
+    def run(self) -> None:
+        self.visited.clear()
+        self.frontier.clear()
+
+        self.frontier.append(self.start_pos)
+
+        while len(self.frontier) > 0:
+            cell_pos = self.frontier.pop(0)
+            self.visited.add(cell_pos)
+
+            for dir in Direction.cardinal_dirs():
+                neighbor_pos = cell_pos + dir.to_point()
+
+                if (
+                    self.grid.check_in_bounds(neighbor_pos)
+                    and neighbor_pos not in self.visited
+                ):
+                    self.on_visit(
+                        self.grid[cell_pos], self.grid[neighbor_pos], neighbor_pos, dir
+                    )
+
+    def add_frontier(self, cell_pos: Point) -> None:
+        if not isinstance(cell_pos, Point):
+            raise TypeError("`cell_pos` must be of type `Point`")
+
+        if cell_pos in self.visited:
+            raise ValueError(f"Cell already visited at {cell_pos}")
+        else:
+            self.frontier.append(cell_pos)
+
+    @abstractmethod
+    def on_visit(
+        self, from_cell: T, to_cell: T, to_pos: Point, to_dir: Direction
+    ) -> None:
+        raise NotImplementedError
 
 
 def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> "Grid[str]":

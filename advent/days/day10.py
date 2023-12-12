@@ -3,7 +3,14 @@ from typing import Iterable, Optional, Tuple
 import unittest
 
 from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
-from advent.utils import Direction, count_if, Grid, Point, new_grid_from_input_lines
+from advent.utils import (
+    Direction,
+    count_if,
+    Grid,
+    Point,
+    new_grid_from_input_lines,
+    BFS,
+)
 
 
 class ConnectionSet:
@@ -52,7 +59,6 @@ class Tile:
     ):
         self.is_start = is_start
         self.part_of_main_loop = False
-        self.visited = False
         self.distance = 0
         self.filled = False
         self.connections = connections if connections is not None else ConnectionSet()
@@ -64,9 +70,6 @@ class Tile:
     def __str__(self):
         if self.filled:
             return "X"
-
-        if self.is_start:
-            return "S"
         elif self.connections.has(Direction.North) and self.connections.has(
             Direction.South
         ):
@@ -137,162 +140,103 @@ def parse_input(input_lines: Iterable[Iterable[str]]) -> Tuple[Grid[Tile], Point
     return (Grid(char_grid.x_count, char_grid.y_count, tile_rows), start_pos)
 
 
-def find_furthest_distance(grid: Grid[Tile], start: Point) -> int:
-    assert grid.check_in_bounds(start)
-    assert grid[start].connections.count() > 0
+class FindFurthestDistance(BFS[Tile]):
+    __slots__ = "max_distance"
+    max_distance: int
 
-    # Because this is fully connected cycle, use BFS to keep visiting nodes
-    # until we find an already visited node. The iteration count is the maximum
-    # distance.
-    neighbors = [start]
-    max_distance = 0
+    def __init__(self, grid: Grid[Tile], start_pos: Point):
+        super().__init__(grid, start_pos)
+        self.max_distance = 0
 
-    while len(neighbors) > 0:
-        node_pos = neighbors.pop(0)
-        node = grid[node_pos]
-        node.visited = True
+    def on_visit(
+        self, from_cell: Tile, to_cell: Tile, to_pos: Point, to_dir: Direction
+    ) -> None:
+        if from_cell.connections.has(to_dir):
+            assert self.grid[to_pos].connections.has(to_dir.reverse())
+            to_cell.distance = from_cell.distance + 1
+            self.max_distance = max(self.max_distance, to_cell.distance)
 
-        for dir in Direction.cardinal_dirs():
-            if node.connections.has(dir):
-                to_pos = node_pos + dir.to_point()
-
-                assert grid.check_in_bounds(to_pos)
-                ##print(
-                ##    f"{node_pos} -> {to_pos} connected {dir} -> {dir.reverse()}?  {grid[to_pos].connections.has(dir.reverse())}"
-                ##)
-                assert grid[to_pos].connections.has(dir.reverse())
-
-                to_node = grid[to_pos]
-
-                if not to_node.visited:
-                    to_node.visited = True
-                    to_node.distance = node.distance + 1
-
-                    neighbors.append(to_pos)
-
-                    max_distance = max(max_distance, to_node.distance)
-
-    return max_distance
+            self.add_frontier(to_pos)
 
 
-def mark_main_loop(grid: Grid[Tile], start: Point) -> None:
-    # Clear visited state.
-    for tile in grid:
-        tile.visited = False
+class MarkMainLoop(BFS[Tile]):
+    def on_visit(
+        self, from_cell: Tile, to_cell: Tile, to_pos: Point, to_dir: Direction
+    ) -> None:
+        from_cell.part_of_main_loop = True
 
-    # TODO: Can we make a BFS helper for grid?
-    frontier = [start]
-
-    while len(frontier) > 0:
-        node_pos = frontier.pop(0)
-        node = grid[node_pos]
-        node.visited = True
-        node.part_of_main_loop = True
-
-        for dir in Direction.cardinal_dirs():
-            neighbor_pos = node_pos + dir.to_point()
-
-            if not grid.check_in_bounds(neighbor_pos) or grid[neighbor_pos].visited:
-                continue
-
-            # neighbor = grid[neighbor_pos]
-
-            if node.connections.has(dir):
-                frontier.append(neighbor_pos)
-
-
-def flood_fill(grid: Grid[Tile], start: Point):
-    print(f"START: {start}")
-    # Clear visited state.
-    for tile in grid:
-        tile.visited = False
-
-    # TODO: Can we make a BFS helper for grid?
-    frontier = [start]
-
-    while len(frontier) > 0:
-        node_pos = frontier.pop(0)
-        node = grid[node_pos]
-        node.visited = True
-        node.filled = True
-
-        for dir in Direction.cardinal_dirs():
-            neighbor_pos = node_pos + dir.to_point()
-
-            if not grid.check_in_bounds(neighbor_pos) or grid[neighbor_pos].visited:
-                continue
-
-            neighbor = grid[neighbor_pos]
-
-            if not neighbor.part_of_main_loop:
-                frontier.append(neighbor_pos)
+        if from_cell.connections.has(to_dir):
+            self.add_frontier(to_pos)
 
 
 def find_area_enclosed(grid: Grid[Tile], start: Point) -> int:
     # Mark all pipes belonging to the main loop.
-    mark_main_loop(grid, start)
+    MarkMainLoop(grid, start).run()
 
-    # Clear visited state.
-    for tile in grid:
-        tile.visited = False
-
-    # Scan top down, left to right. Anytime a vertical way is encountered start
-    # flood filling until another vertical wall from the main loop is found.
-    tile_count = 0
-
+    # Count the number of points that are enclosed by scanning each line left to
+    # right. Any point that crosses an odd number of lines to the left is inside
+    # the enclosure, and even times is outside.
+    #
+    # This is made trickier with the straight lines, but only "|", "FJ" and "L7"
+    # form vertical lines that separate the interior region from exterior. The
+    # other segments like "F7" or "LJ" do not segment the interior from exterior.
+    #
+    # More info on the algorithm:
+    # https://en.wikipedia.org/wiki/Point_in_polygon#Ray_casting_algorithm
     for y in range(grid.y_count):
-        is_inside = False
+        wall_count = 0
+        prev_corner = None
 
         for x in range(grid.x_count):
-            pt = Point(x, y)
-            t = grid[pt]
+            pos = Point(x, y)
+            tile = grid[pos]
+            tile_str = str(tile)
 
-            # if not t.part_of_main_loop:
-            #    continue
-            if t.filled:
-                continue
+            if tile.part_of_main_loop:
+                # Tile forms the walls of the main loop.
+                if tile_str == "|":
+                    wall_count += 1
+                    prev_corner = None
+                elif tile_str == "F" or tile_str == "L":
+                    prev_corner = tile_str
+                elif tile_str == "J":
+                    if prev_corner == "F":
+                        wall_count += 1
+                    else:
+                        prev_corner = None
+                elif tile_str == "7":
+                    if prev_corner == "L":
+                        wall_count += 1
+                    else:
+                        prev_corner = None
+                elif tile_str == "-":
+                    # ignore a horizontal wall.
+                    pass
+                else:
+                    raise Exception(f"unexpected tile {tile_str} at {x}, {y}:\n{grid}")
+            else:
+                # A tile that lies inside or outside the main loop but is not
+                # part of the main loop.
+                if wall_count > 0 and wall_count % 2 == 1:
+                    tile.filled = True
 
-            s = str(t)
-
-            if is_inside:
-                is_inside = False
-            elif t.part_of_main_loop and (s == "-" or "F"):
-                is_inside = True
-            elif t.part_of_main_loop and (s == "|" or s == "7" or s == "J"):
-                fill_start = pt + Point(1, 0)
-
-                if grid.check_in_bounds(fill_start):
-                    fill_tile = grid[fill_start]
-
-                    if (
-                        not fill_tile.part_of_main_loop
-                        and fill_tile.connections.count() == 0
-                    ):
-                        flood_fill(grid, fill_start)
-                # print(f"VISIT {x}, {y} count {tile_count}")
-
-    # Count number of flood filled tiles
-    # TODO: count_if
-    count = 0
-    for tile in grid:
-        if tile.filled:
-            count += 1
-
-    print(f"\n\n{grid}")
-    return tile_count
+    # Return the number of counted interior tiles.
+    return count_if(grid, lambda x: x.filled)
 
 
 class Solver(
-    AdventDaySolver, day=10, year=2023, name="Pipe Maze", solution=(None, None)
+    AdventDaySolver, day=10, year=2023, name="Pipe Maze", solution=(6870, 287)
 ):
     def __init__(self, input):
         super().__init__(input)
         self.grid, self.start = parse_input(input)
-        # print(self.grid)
 
     def solve(self):
+        distance_finder = FindFurthestDistance(self.grid, self.start)
+        distance_finder.run()
+
         return (
-            find_furthest_distance(self.grid, self.start),
+            distance_finder.max_distance,
             find_area_enclosed(self.grid, self.start),
         )
 
