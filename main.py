@@ -2,7 +2,8 @@
 import argparse
 
 from advent.days import *  # noqa: F403
-from advent.utils import AdventDaySolver, load_input
+from advent.utils import load_input
+from advent.solver import AdventDaySolver
 
 
 def solve(day, year):

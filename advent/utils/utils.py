@@ -14,46 +14,9 @@ import logging
 T = TypeVar("T")
 
 
-class Direction(IntEnum):
-    """Represents a north/south/east/west direction heading."""
-    East = 0
-    North = 1
-    West = 2
-    South = 3
-
-    def to_point(self) -> "Direction":
-        """Convert the direction to a unit point with the same heading."""
-        if self == Direction.East:
-            return Point(1, 0)
-        elif self == Direction.North:
-            return Point(0, -1)
-        elif self == Direction.West:
-            return Point(-1, 0)
-        elif self == Direction.South:
-            return Point(0, 1)
-
-    def __str__(self) -> str:
-        """Convert the direction to a human readable string"""
-        if self == Direction.East:
-            return "East"
-        elif self == Direction.North:
-            return "North"
-        elif self == Direction.West:
-            return "West"
-        elif self == Direction.South:
-            return "South"
-
-    @classmethod
-    def cardinal_dirs(cls) -> Iterator["Direction"]:
-        """Generate all four cardination directions."""
-        yield Direction.East
-        yield Direction.North
-        yield Direction.West
-        yield Direction.South
-
-
 class Point:
     """Represents a 2d cartesian x, y point value."""
+
     __slots__ = ("x", "y")
     x: int
     y: int
@@ -84,8 +47,11 @@ class Point:
         else:
             raise Exception(f"cannot set subscript [{key}] for Point object")
 
-    def __eq__(self, other: "Point") -> bool:
-        return self.x == other.x and self.y == other.y
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Point):
+            return NotImplemented
+        else:
+            return self.x == other.x and self.y == other.y
 
     def __add__(self, other: "Point") -> "Point":
         return Point(self.x + other.x, self.y + other.y)
@@ -97,7 +63,7 @@ class Point:
         return Point(self.x * other, self.y * other)
 
     def __truediv__(self, other: int) -> "Point":
-        return Point(self.x / other, self.y / other)
+        return Point(self.x // other, self.y // other)
 
     def __neg__(self) -> "Point":
         return Point(-self.x, -self.y)
@@ -108,8 +74,60 @@ class Point:
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
+
+class Direction(IntEnum):
+    """Represents a north/south/east/west direction heading."""
+
+    East = 0
+    North = 1
+    West = 2
+    South = 3
+
+    def to_point(self) -> Point:
+        """Convert the direction to a unit point with the same heading."""
+        if self == Direction.East:
+            return Point(1, 0)
+        elif self == Direction.North:
+            return Point(0, -1)
+        elif self == Direction.West:
+            return Point(-1, 0)
+        elif self == Direction.South:
+            return Point(0, 1)
+
+    def reverse(self) -> "Direction":
+        """Get the direction in the opposite direction."""
+        if self == Direction.East:
+            return Direction.West
+        elif self == Direction.North:
+            return Direction.South
+        elif self == Direction.West:
+            return Direction.East
+        elif self == Direction.South:
+            return Direction.North
+
+    def __str__(self) -> str:
+        """Convert the direction to a human readable string"""
+        if self == Direction.East:
+            return "East"
+        elif self == Direction.North:
+            return "North"
+        elif self == Direction.West:
+            return "West"
+        elif self == Direction.South:
+            return "South"
+
+    @classmethod
+    def cardinal_dirs(cls) -> Iterator["Direction"]:
+        """Generate all four cardination directions."""
+        yield Direction.East
+        yield Direction.North
+        yield Direction.West
+        yield Direction.South
+
+
 class Grid(Generic[T]):
     """Holds a collection of values in a 2d grid."""
+
     __slots__ = ("cells", "x_count", "y_count")
     cells: list[T]
     x_count: int
@@ -154,26 +172,29 @@ class Grid(Generic[T]):
             raise Exception(
                 f"Point out of bounds; x: 0<={pt.x}<{self.x_count}, y: 0<={pt.y}<{self.y_count}"
             )
-        
+
     def yield_row(self, y_row: int) -> Iterable[Tuple[Point, T]]:
         if y_row < 0 or y_row >= self.y_count:
             raise Exception(f"yield_row {y_row} is out of bounds")
-        
+
         x = 0
 
         for i in range(y_row * self.x_count, (y_row + 1) * self.x_count):
             yield (Point(x, y_row), self.cells[i])
             x += 1
 
-    def row(self, y_row: int) -> list[int]:
+    def row(self, y_row: int) -> list[T]:
         if y_row < 0 or y_row >= self.y_count:
             raise Exception(f"yield_row {y_row} is out of bounds")
-        
-        return [self.cells[i] for i in range(y_row * self.x_count, (y_row + 1) * self.x_count)]
+
+        return [
+            self.cells[i]
+            for i in range(y_row * self.x_count, (y_row + 1) * self.x_count)
+        ]
 
     def row_count(self):
         return self.y_count
-    
+
     def col_count(self):
         return self.x_count
 
@@ -191,7 +212,7 @@ class Grid(Generic[T]):
     def __len__(self) -> int:
         return len(self.cells)
 
-    def __iter__(self) -> Iterable[T]:
+    def __iter__(self) -> Iterator[T]:
         return iter(self.cells)
 
     def __str__(self) -> str:
@@ -199,10 +220,11 @@ class Grid(Generic[T]):
             "".join(str(self.cells[y * self.x_count + x]) for x in range(self.x_count))
             for y in range(self.y_count)
         )
-    
+
     def rows(self) -> "GridMultiRowIterator[T]":
         """Returns an interator that yields each row in the grid."""
         return GridMultiRowIterator(self, 0, self.row_count())
+
 
 class GridRowIterator(Generic[T]):
     __slots__ = ("grid", "row", "x", "end_x")
@@ -224,8 +246,7 @@ class GridRowIterator(Generic[T]):
             return self.grid[Point(self.x - 1, self.row)]
         else:
             raise StopIteration
-        
-    
+
     def __iter__(self):
         return self
 
@@ -239,10 +260,10 @@ class GridMultiRowIterator(Generic[T]):
     def __init__(self, grid: Grid[T], start_row: int, end_row: int):
         if start_row < 0 or start_row >= end_row:
             raise Exception(f"start_row={start_row} out of range")
-        
+
         if end_row > grid.row_count():
             raise Exception(f"end_row={end_row} larger than row count")
-        
+
         self.grid = grid
         self.row = start_row
         self.end_row = end_row
@@ -253,16 +274,15 @@ class GridMultiRowIterator(Generic[T]):
             return GridRowIterator(self.grid, self.row - 1, 0, self.grid.col_count())
         else:
             raise StopIteration
-        
-    
+
     def __iter__(self):
         return self
-    
 
 
 def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> "Grid[str]":
     chars = [[c for c in line] for line in lines]
     return Grid(len(chars[0]), len(chars), chars)
+
 
 def count_if(itr: Union[list[T], Iterable[T]], pred: Callable[[T], bool]) -> int:
     """Count the number of times `pred` returns true for each item in the collection."""
@@ -274,13 +294,14 @@ def count_if(itr: Union[list[T], Iterable[T]], pred: Callable[[T], bool]) -> int
     for x in itr:
         if pred(x):
             count += 1
-    
+
     return count
 
-def first_and_last(itr: Union[list[int], Iterable[T]]) -> Tuple[T, T]:
+
+def first_and_last(itr: Union[Iterable[T], Iterator[T]]) -> Tuple[T, T]:
     """Gets the first and last element from an iterable sequence. Note that for
     single element sequences the first and last element are the same."""
-    if isinstance(itr, list):
+    if isinstance(itr, Iterable):
         itr = iter(itr)
 
     first = last = next(itr)
@@ -293,7 +314,7 @@ def first_and_last(itr: Union[list[int], Iterable[T]]) -> Tuple[T, T]:
     return (first, last)
 
 
-def unzip(itr: Iterable[Tuple[T, T]]) -> (list[T], list[T]):
+def unzip(itr: Iterable[Tuple[T, T]]) -> Tuple[list[T], list[T]]:
     a = []
     b = []
 
