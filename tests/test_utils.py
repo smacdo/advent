@@ -12,6 +12,7 @@ from advent.utils import (
     count_if,
     new_grid_from_input_lines,
     BFS,
+    all_pairs,
 )
 
 import typing
@@ -292,6 +293,27 @@ class TestUtilsModule(unittest.TestCase):
     def test_load_input(self):
         input = load_input(0, 0)
         self.assertEqual(input, ["hello", "123"])
+
+
+class TestAllPairs(unittest.TestCase):
+    def test_empty_list(self):
+        self.assertSequenceEqual([], list(all_pairs([])))
+
+    def test_single_element_list(self):
+        self.assertSequenceEqual([], list(all_pairs([1])))
+
+    def test_double_element_list(self):
+        self.assertSequenceEqual([(1, 2)], list(all_pairs([1, 2])))
+
+    def test_multi_element_list(self):
+        self.assertSequenceEqual(
+            [("a", "b"), ("a", "c"), ("a", "d"), ("b", "c"), ("b", "d"), ("c", "d")],
+            list(all_pairs(["a", "b", "c", "d"])),
+        )
+
+    def test_not_list(self):
+        with self.assertRaises(TypeError):
+            list(all_pairs(5))
 
 
 if __name__ == "__main__":

@@ -414,6 +414,17 @@ def unzip(itr: Iterable[Tuple[T, T]]) -> Tuple[list[T], list[T]]:
     return (a, b)
 
 
+def all_pairs(items: list[T]) -> Iterator[Tuple[T, T]]:
+    """Generate all pair combinations from `items` without counting each pair more
+    than once (eg `(2 1)` would be a copy of `(1 2)`)."""
+    if not isinstance(items, list):
+        raise TypeError("argument `items` must be type `list`")
+
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            yield (items[i], items[j])
+
+
 def load_input(day: Union[int, str], year: Union[int, str]) -> Iterable[Iterable[str]]:
     # Load the actual input if no input was given.
     with open(f"inputs/{year}/day{day}.txt", "r", encoding="utf-8") as file:
