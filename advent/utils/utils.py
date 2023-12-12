@@ -1,16 +1,18 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from enum import IntEnum
 from typing import (
     Callable,
     Generic,
     Iterable,
+    Optional,
     Tuple,
     TypeVar,
     Union,
 )
 
 import logging
+import heapq
 
 T = TypeVar("T")
 
@@ -23,8 +25,16 @@ class Point:
     y: int
 
     def __init__(self, x: int, y: int):
+        if not isinstance(x, int):
+            raise TypeError("argument `x` must be type `int`")
+        if not isinstance(x, int):
+            raise TypeError("argument `t` must be type `int`")
+
         self.x = x
         self.y = y
+
+    def clone(self) -> "Point":
+        return Point(self.x, self.y)
 
     def __repr__(self) -> str:
         return f"Point(x={self.x}, y={self.y})"
@@ -33,20 +43,29 @@ class Point:
         return f"{self.x}, {self.y}"
 
     def __getitem__(self, key: int) -> int:
+        if not isinstance(key, int):
+            raise TypeError("argument `key` must be type `int`")
+
         if key == 0:
             return self.x
         elif key == 1:
             return self.y
         else:
-            raise Exception(f"cannot get subscript [{key}] for Point object")
+            raise IndexError(f"cannot get subscript [{key}] for Point object")
 
     def __setitem__(self, key: int, value: int) -> None:
+        if not isinstance(key, int):
+            raise TypeError("argument `key` must be type `int`")
+
         if key == 0:
             self.x = value
         elif key == 1:
             self.y = value
         else:
-            raise Exception(f"cannot set subscript [{key}] for Point object")
+            raise ValueError(f"cannot set subscript [{key}] for Point object")
+
+    def __delitem__(self, key: int) -> None:
+        raise NotImplementedError
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Point):
@@ -55,15 +74,27 @@ class Point:
             return self.x == other.x and self.y == other.y
 
     def __add__(self, other: "Point") -> "Point":
+        if not isinstance(other, Point):
+            raise TypeError("argument `other` must be type `Point`")
+
         return Point(self.x + other.x, self.y + other.y)
 
     def __sub__(self, other: "Point") -> "Point":
+        if not isinstance(other, Point):
+            raise TypeError("argument `other` must be type `Point`")
+
         return Point(self.x - other.x, self.y - other.y)
 
     def __mul__(self, other: int) -> "Point":
+        if not isinstance(other, int):
+            raise TypeError("argument `other` must be type `int`")
+
         return Point(self.x * other, self.y * other)
 
     def __truediv__(self, other: int) -> "Point":
+        if not isinstance(other, int):
+            raise TypeError("argument `other` must be type `int`")
+
         return Point(self.x // other, self.y // other)
 
     def __neg__(self) -> "Point":
@@ -153,13 +184,11 @@ class Grid(Generic[T]):
     x_count: int
     y_count: int
 
-    def __init__(
-        self, x_count: int, y_count: int, initial: Union[T, list[list[T]]]
-    ) -> None:
+    def __init__(self, x_count: int, y_count: int, initial: Union[T, list[list[T]]]):
         if x_count < 1:
-            raise Exception("Grid column count `x_count` must be larger than zero")
+            raise ValueError("Column count `x_count` must be larger than zero")
         if y_count < 1:
-            raise Exception("Grid row count `y_count` must be larger than zero")
+            raise ValueError("Row count `y_count` must be larger than zero")
 
         self.x_count = x_count
         self.y_count = y_count
@@ -189,53 +218,59 @@ class Grid(Generic[T]):
 
         return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
 
-    def validate_in_bounds(self, pt: Point) -> None:
+    def _validate_in_bounds(self, pt: Point) -> None:
         """Throw an exception if the point is not a valid cell position."""
-        if not isinstance(pt, Point):
-            raise TypeError("argument `pt` must be type `Point`")
-
         if not self.check_in_bounds(pt):
-            raise ValueError(
+            raise IndexError(
                 f"Point out of bounds; x: 0<={pt.x}<{self.x_count}, y: 0<={pt.y}<{self.y_count}"
             )
 
-    def yield_row(self, y_row: int) -> Iterable[Tuple[Point, T]]:
-        if y_row < 0 or y_row >= self.y_count:
-            raise Exception(f"yield_row {y_row} is out of bounds")
+    def col(self, x_col: int) -> Iterable[T]:
+        """Returns an iterator across all the cells in column `x_col`"""
+        if not isinstance(x_col, int):
+            raise TypeError("argument `x_col` must be type `int`")
 
-        x = 0
+        if x_col < 0 or x_col >= self.x_count:
+            raise ValueError(f"col {x_col} is out of bounds")
+
+        for i in range(x_col, self.y_count * self.x_count + x_col, self.x_count):
+            yield self.cells[i]
+
+    def row(self, y_row: int) -> Iterable[T]:
+        """Returns an iterator across all the cells in row `y_row`"""
+        if not isinstance(y_row, int):
+            raise TypeError("argument `y_col` must be type `int`")
+
+        if y_row < 0 or y_row >= self.y_count:
+            raise ValueError(f"row {y_row} is out of bounds")
 
         for i in range(y_row * self.x_count, (y_row + 1) * self.x_count):
-            yield (Point(x, y_row), self.cells[i])
-            x += 1
+            yield self.cells[i]
 
-    def row(self, y_row: int) -> list[T]:
-        if y_row < 0 or y_row >= self.y_count:
-            raise Exception(f"yield_row {y_row} is out of bounds")
-
-        return [
-            self.cells[i]
-            for i in range(y_row * self.x_count, (y_row + 1) * self.x_count)
-        ]
+    def rows(self) -> "GridMultiRowIterator[T]":
+        """Returns an interator that yields each row in the grid."""
+        return GridMultiRowIterator(self, 0, self.row_count())
 
     def row_count(self):
+        """Returns the number of rows in the grid."""
         return self.y_count
 
     def col_count(self):
+        """Returns the number of cols in the grid."""
         return self.x_count
 
     def __getitem__(self, pt: Point) -> T:
         if not isinstance(pt, Point):
             raise TypeError("argument `pt` must be type `Point`")
 
-        self.validate_in_bounds(pt)
+        self._validate_in_bounds(pt)
         return self.cells[pt.y * self.x_count + pt.x]
 
     def __setitem__(self, pt: Point, v: T) -> None:
         if not isinstance(pt, Point):
             raise TypeError("argument `pt` must be type `Point`")
 
-        self.validate_in_bounds(pt)
+        self._validate_in_bounds(pt)
         self.cells[pt.y * self.x_count + pt.x] = v
 
     def __delitem__(Self, pt: Point) -> None:
@@ -253,9 +288,10 @@ class Grid(Generic[T]):
             for y in range(self.y_count)
         )
 
-    def rows(self) -> "GridMultiRowIterator[T]":
-        """Returns an interator that yields each row in the grid."""
-        return GridMultiRowIterator(self, 0, self.row_count())
+    def __contains__(self, pt: Point) -> bool:
+        if not isinstance(pt, Point):
+            raise TypeError("argument `pt` must be type `Point`")
+        return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
 
 
 class GridRowIterator(Generic[T]):
@@ -311,6 +347,180 @@ class GridMultiRowIterator(Generic[T]):
         return self
 
 
+ItemWithCost = Tuple[T, Union[float, int]]
+
+
+class PriorityQueue(Generic[T]):
+    """An ergonomic min heap prority queue class built on Python's `heapq`."""
+
+    __slots__ = ("items", "item_counter")
+    items: list[Tuple[float, int, T]]
+    item_counter: int
+
+    def __init__(self, initial_items: Optional[Iterable[ItemWithCost]] = None):
+        self.items = []
+        self.item_counter = 0
+
+        if initial_items is not None:
+            for item in initial_items:
+                if not isinstance(item, tuple):
+                    raise TypeError(
+                        "argument `initial_items` contains non-tuple values"
+                    )
+
+                self.add(item[0], item[1])
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+    def add(self, item: T, cost: Union[float, int]) -> None:
+        """Add an `item` to the priority with priority `cost`."""
+        if not isinstance(cost, float) and not isinstance(cost, int):
+            raise TypeError("argument `cost` must be of type `float` or `int`")
+
+        heapq.heappush(self.items, (float(cost), self.item_counter, item))
+
+        # Increment the item counter each time an item is added to the priority
+        # queue. This value is used to break ties with items that have the same
+        # priority otherwise Python tries to compare the item itself.
+        self.item_counter += 1
+
+    def pop(self) -> T:
+        """Removes the lowest priority item from the queue and returns it."""
+        if len(self.items) < 1:
+            raise Exception("cannot pop empty priority queue")
+
+        return heapq.heappop(self.items)[2]
+
+
+def manhattan_distance(a: Point, b: Point) -> float:
+    """Calculate the straight line distance between two points"""
+    dx = abs(a.x - b.x)
+    dy = abs(a.y - b.y)
+    return dx + dy
+
+
+# (grid, from_point, to_point) -> cost
+CellCostFunc = Callable[[Grid, Point, Point], Optional[float]]
+CellHeuristicFunc = Callable[[Point, Point], float]
+
+
+def astar_search(
+    grid: Grid[Point],
+    start_pos: Point,
+    goal_pos: Point,
+    cell_cost: CellCostFunc,
+    heuristic: Optional[CellHeuristicFunc],
+) -> Optional[list[Point]]:
+    """Returns a potential shortest path from `start_pos` to `goal_pos` using
+    the A* search algorithm."""
+
+    # Check input arguments for errors.
+    if not isinstance(grid, Grid):
+        raise TypeError("argument `grid` must be of type `Grid[T]`")
+    if not isinstance(start_pos, Point):
+        raise TypeError("argument `start_pos` must be of type `Point")
+    if start_pos not in grid:
+        raise ValueError("argument `start_pos` is out of bounds")
+    if not isinstance(goal_pos, Point):
+        raise TypeError("argument `goal_pos` must be of type `Point")
+    if goal_pos not in grid:
+        raise ValueError("argument `goal_pos` is out of bounds")
+
+    # Use A* to find the shortest path to the goal.
+    frontier: PriorityQueue[Point] = PriorityQueue([(start_pos, 0)])
+
+    cost_so_far: dict[Point, float] = {start_pos: 0}
+    came_from: dict[Point, Point] = {}
+    reached_goal = False
+
+    while not frontier.is_empty():
+        current_pos = frontier.pop()
+
+        # Stop searching when we reach the goal.
+        if current_pos == goal_pos:
+            reached_goal = True
+            break
+
+        # Examine all of the cells that are adjacent to this cell.
+        for dir in Direction.cardinal_dirs():
+            # Ignore any invalid cell positions.
+            neighbor_pos = current_pos + dir.to_point()
+
+            if neighbor_pos not in grid:
+                continue
+
+            # Calculate of moving to this tile by adding the current cost of
+            # moving from the start to the current tile and then adding the cost
+            # of moving from current to this adjacent neighbor.
+            #
+            # A movement cost of `None` implies the movement from current_pos to
+            # neighbor_pos is not allowed.
+            move_cost = cell_cost(grid, current_pos, neighbor_pos)
+
+            if move_cost is None:
+                continue
+            elif not isinstance(move_cost, float) and not isinstance(move_cost, int):
+                raise TypeError("`cell_cost` return value must be of type float or int")
+            elif move_cost <= 0:
+                raise ValueError("`cell_cost` return value must be larger than zero")
+
+            new_cost = cost_so_far[current_pos] + move_cost
+
+            # Add this tile to the frontier queue if its the first time the cell
+            # was visited, or if the cost to reach it is lower than the previous
+            # cost.
+            if neighbor_pos not in cost_so_far or new_cost < cost_so_far[neighbor_pos]:
+                # Remember the cost it took to reach this cell.
+                cost_so_far[neighbor_pos] = new_cost
+
+                # Estimate the total cost of traversing from the start to the
+                # goal via this cell.
+                estimated_cost = new_cost
+
+                if heuristic:
+                    h = heuristic(current_pos, neighbor_pos)
+
+                    if not isinstance(h, float) and not isinstance(h, int):
+                        raise TypeError(
+                            "`heuristic` return value must be of type float or int"
+                        )
+                    elif h <= 0:
+                        raise ValueError(
+                            "`heuristic` return value must be larger than zero"
+                        )
+
+                    estimated_cost += h
+
+                # Add the cell to the frontier with the new estimated cost.
+                frontier.add(neighbor_pos, estimated_cost)
+
+                # Remember the previous cell in the path leading to this cell.
+                # This is used for backgtracking to find the shortest path.
+                came_from[neighbor_pos] = current_pos
+
+    # Reconstruct path if the goal was reached, otherwise return an empty path.
+    if reached_goal:
+        # Start at the goal.
+        current_pos = goal_pos
+        path: list[Point] = []
+
+        # Walk backwards from the goal to the start and append each node into a
+        # path list.
+        while current_pos != start_pos:
+            path.append(current_pos)
+            current_pos = came_from[current_pos]
+
+        path.append(start_pos)
+        path.reverse()
+
+        # Return the path from the start to the goal.
+        return path
+    else:
+        # No path was found.
+        return None
+
+
 class BFS(ABC, Generic[T]):
     __slots__ = ("grid", "start_pos", "frontier", "visited")
     grid: Grid[T]
@@ -323,7 +533,7 @@ class BFS(ABC, Generic[T]):
             raise TypeError("`grid` must be of type `Grid[T]`")
         if not isinstance(start_pos, Point):
             raise TypeError("`start_pos` must be of type `Point`")
-        if not grid.check_in_bounds(start_pos):
+        if start_pos not in grid:
             raise ValueError("`start_pos` must be a valid position in `grid`")
 
         self.grid = grid
@@ -331,11 +541,16 @@ class BFS(ABC, Generic[T]):
         self.frontier = []
         self.visited = set()
 
-    def run(self) -> None:
+    def reset(self) -> None:
+        """Reset the BFS solver to its initial state."""
         self.visited.clear()
         self.frontier.clear()
 
         self.frontier.append(self.start_pos)
+
+    def run(self) -> None:
+        """Run a breadth first search operation."""
+        self.reset()
 
         while len(self.frontier) > 0:
             cell_pos = self.frontier.pop(0)
@@ -353,11 +568,14 @@ class BFS(ABC, Generic[T]):
                     )
 
     def add_frontier(self, cell_pos: Point) -> None:
+        """Add a new cell position to the unexplored frontier."""
         if not isinstance(cell_pos, Point):
             raise TypeError("`cell_pos` must be of type `Point`")
 
         if cell_pos in self.visited:
-            raise ValueError(f"Cell already visited at {cell_pos}")
+            raise ValueError(f"Cell position {cell_pos} already visited")
+        elif cell_pos not in self.grid:
+            raise ValueError(f"Cell position {cell_pos} out of bounds")
         else:
             self.frontier.append(cell_pos)
 
@@ -377,6 +595,8 @@ def count_if(itr: Union[list[T], Iterable[T]], pred: Callable[[T], bool]) -> int
     """Count the number of times `pred` returns true for each item in the collection."""
     if isinstance(itr, list):
         itr = iter(itr)
+    elif not isinstance(itr, Iterator):
+        raise TypeError("argument `itr` must be of type `Iterable` or `Iterable`")
 
     count = 0
 
@@ -392,6 +612,8 @@ def first_and_last(itr: Union[Iterable[T], Iterator[T]]) -> Tuple[T, T]:
     single element sequences the first and last element are the same."""
     if isinstance(itr, Iterable):
         itr = iter(itr)
+    elif not isinstance(itr, Iterator):
+        raise TypeError("argument `itr` must be of type `Iterable` or `Iterable`")
 
     first = last = next(itr)
     for last in itr:
@@ -404,6 +626,9 @@ def first_and_last(itr: Union[Iterable[T], Iterator[T]]) -> Tuple[T, T]:
 
 
 def unzip(itr: Iterable[Tuple[T, T]]) -> Tuple[list[T], list[T]]:
+    if not isinstance(itr, Iterable):
+        raise TypeError("argument `itr` must be of type `Iterable`")
+
     a = []
     b = []
 
@@ -425,8 +650,41 @@ def all_pairs(items: list[T]) -> Iterator[Tuple[T, T]]:
             yield (items[i], items[j])
 
 
-def load_input(day: Union[int, str], year: Union[int, str]) -> Iterable[Iterable[str]]:
-    # Load the actual input if no input was given.
+def combinations(k: int, items: list[T]) -> Iterator[list[T]]:
+    """Generates all possible combinations of `k` size from `items` without
+    repeats."""
+    if not isinstance(k, int):
+        raise TypeError("argument `k` must be type `int`")
+    if not isinstance(items, list):
+        raise TypeError("argument `items` must be type `list`")
+    if k < 1:
+        raise ValueError("`k` must be larger than zero")
+    if k > len(items):
+        raise ValueError("`k` must be smaller than the length of the items list")
+
+    def step(
+        depth: int, k: int, start_i: int, items: list[T], scratch: list[Optional[T]]
+    ):
+        for i in range(start_i, len(items)):
+            scratch[depth] = items[i]
+
+            if depth + 1 == k:
+                yield scratch.copy()
+            else:
+                yield from step(depth + 1, k, i + 1, items, scratch)
+
+    scratch: list[Optional[T]] = [None for _ in range(0, k)]
+    yield from step(0, k, 0, items, scratch)
+
+
+def load_input(day: int, year: int) -> Iterable[Iterable[str]]:
+    """Loads input for a solver from a given day and year, and returns it as a
+    list of strings."""
+    if not isinstance(day, int):
+        raise TypeError("argument `day` must be type `int`")
+    if not isinstance(year, int):
+        raise TypeError("argument `year` must be type `int`")
+
     with open(f"inputs/{year}/day{day}.txt", "r", encoding="utf-8") as file:
         input: Iterable[Iterable[str]] = [line.rstrip() for line in file]
         return input
