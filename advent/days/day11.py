@@ -24,13 +24,16 @@ class Tile:
         self.cost = 1
 
     def __str__(self):
-        return f"{self.cost}"
+        if self.galaxy_id:
+            return str(self.galaxy_id)
+        else:
+            return "."
 
 
 def parse_input(lines: Iterable[Iterable[str]]) -> Grid[Tile]:
     char_grid = new_grid_from_input_lines(lines)
-    tile_grid: Grid[Tile] = Grid(char_grid.x_count, char_grid.y_count, Tile())
-    next_galaxy_id = 0
+    tile_grid: Grid[Tile] = Grid(char_grid.x_count, char_grid.y_count, Tile)
+    next_galaxy_id = 1
 
     for y in range(char_grid.y_count):
         for x, c in enumerate(char_grid.row(y)):
@@ -46,21 +49,22 @@ def parse_input(lines: Iterable[Iterable[str]]) -> Grid[Tile]:
 def apply_space_expansion(grid: Grid[Tile]) -> None:
     # Check all columns to see if they are totally empty, and if so apply an
     # expansion cost.
-    for i in range(grid.col_count()):
-        has_galaxies = count_if(grid.col(i), lambda x: x.galaxy_id is not None) > 0
+    num_cols_expanded = 0
+    num_rows_expanded = 0
 
-        if not has_galaxies:
-            for c in grid.col(i):
-                c.cost *= 2
+    for i in range(grid.col_count()):
+        xi = i + num_cols_expanded
+
+        if count_if(grid.col(xi), lambda x: x.galaxy_id is not None) == 0:
+            grid.insert_col(xi, Tile)
+            num_cols_expanded += 1
 
     for i in range(grid.row_count()):
-        has_galaxies = count_if(grid.row(i), lambda x: x.galaxy_id is not None) > 0
+        xi = i + num_rows_expanded
 
-        if not has_galaxies:
-            for c in grid.row(i):
-                c.cost *= 2
-
-    print(grid)
+        if count_if(grid.row(xi), lambda x: x.galaxy_id is not None) == 0:
+            grid.insert_row(xi, Tile)
+            num_rows_expanded += 1
 
 
 class Solver(AdventDaySolver, day=11, year=2023, name="", solution=(None, None)):
@@ -99,9 +103,9 @@ class Solver(AdventDaySolver, day=11, year=2023, name="", solution=(None, None))
             if path is None:
                 raise Exception("path should be valid")
 
-            cost = sum(self.tile_grid[pos].cost for pos in path)
+            cost = len(path) - 1
             total_cost += cost
-            print(f"{a} -> {b}: {cost}")
+            print(f"{a} -> {b} is {cost}")
 
         return total_cost
 
@@ -112,18 +116,16 @@ class Tests(AdventDayTestCase):
 
     def test_sample(self):
         d = self._create_sample_solver(
-            """....#........
-.........#...
-#............
-.............
-.............
-........#....
-.#...........
-............#
-.............
-.............
-.........#...
-#....#......."""
+            """...#......
+.......#..
+#.........
+..........
+......#...
+.#........
+.........#
+..........
+.......#..
+#...#....."""
         )
         s = d.solve()
 
