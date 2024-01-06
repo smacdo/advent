@@ -13,6 +13,7 @@ from typing import (
 
 import logging
 import heapq
+import copy
 
 T = TypeVar("T")
 
@@ -184,7 +185,12 @@ class Grid(Generic[T]):
     x_count: int
     y_count: int
 
-    def __init__(self, x_count: int, y_count: int, initial: Union[T, list[list[T]]]):
+    def __init__(
+        self,
+        x_count: int,
+        y_count: int,
+        initial: Union[T, Callable[[], T], list[list[T]]],
+    ):
         if x_count < 1:
             raise ValueError("Column count `x_count` must be larger than zero")
         if y_count < 1:
@@ -208,8 +214,10 @@ class Grid(Generic[T]):
 
             # Copy rows.
             self.cells = [c for row in initial for c in row]
+        elif callable(initial):
+            self.cells = [initial() for _ in range(x_count * y_count)]
         else:
-            self.cells = [initial for _ in range(x_count * y_count)]
+            self.cells = [copy.deepcopy(initial) for _ in range(x_count * y_count)]
 
     def check_in_bounds(self, pt: Point) -> bool:
         """Test if a point is a valid cell position."""
@@ -251,13 +259,103 @@ class Grid(Generic[T]):
         """Returns an interator that yields each row in the grid."""
         return GridMultiRowIterator(self, 0, self.row_count())
 
-    def row_count(self):
+    def row_count(self) -> int:
         """Returns the number of rows in the grid."""
         return self.y_count
 
-    def col_count(self):
+    def col_count(self) -> int:
         """Returns the number of cols in the grid."""
         return self.x_count
+
+    def insert_row(
+        self, at_index: int, row: Union[T, Callable[[], T], list[list[T]]]
+    ) -> None:
+        """Inserts `row` before the grid row `at_index`"""
+
+        # Helper function to generate new cells from either original or new
+        # row.
+        def expand_cells(
+            cells: list[T],
+            x_count: int,
+            y_count: int,
+            at_index: int,
+            row: Union[T, Callable[[], T], list[list[T]]],
+        ):
+            for y in range(y_count + 1):
+                for x in range(x_count):
+                    if y < at_index:
+                        yield cells[y * x_count + x]
+                    elif y == at_index:
+                        if isinstance(row, list):
+                            yield row[x]
+                        elif callable(row):
+                            yield row()
+                        else:
+                            yield copy.deepcopy(row)
+                    else:
+                        yield cells[(y - 1) * x_count + x]
+
+        # New row must be same size as rows in this grid and the index to be
+        # inserted at must be within range.
+        if isinstance(row, list) and len(row) != self.x_count:
+            raise ValueError(
+                "`row` to be inserted must be same length as grid col count"
+            )
+
+        if at_index < 0 or at_index > self.y_count:
+            raise ValueError("`at_index` must be within the row range of existing grid")
+
+        # Copy values into new array and insert the row at the correct location
+        # with the helper function.
+        self.cells = [
+            x
+            for x in expand_cells(self.cells, self.x_count, self.y_count, at_index, row)
+        ]
+        self.y_count += 1
+
+    def insert_col(
+        self, at_index: int, col: Union[T, Callable[[], T], list[list[T]]]
+    ) -> None:
+        # Helper function to generate new cells from either original or new
+        # col.
+        """Inserts `col` before the grid col `at_index`"""
+
+        def expand_cells(
+            cells: list[T],
+            x_count: int,
+            y_count: int,
+            at_index: int,
+            col: Union[T, Callable[[], T], list[list[T]]],
+        ):
+            for y in range(y_count):
+                for x in range(x_count + 1):
+                    if x < at_index:
+                        yield cells[y * x_count + x]
+                    elif x == at_index:
+                        if isinstance(col, list):
+                            yield col[y]
+                        elif callable(col):
+                            yield col()
+                        else:
+                            yield copy.deepcopy(col)
+                    else:
+                        yield cells[y * x_count + (x - 1)]
+
+        # New col must be same size as cols in this grid, and the index to be
+        # inserted at must be within range.
+        if isinstance(col, list) and len(col) != self.y_count:
+            raise ValueError("`col` to be inserted must be same size as grid row count")
+
+        if at_index < 0 or at_index > self.x_count:
+            raise ValueError("`at_index` must be within the col range of existing grid")
+
+        # Copy values into new array and insert the row at the correct location
+        # with the helper function.
+        self.cells = [
+            x
+            for x in expand_cells(self.cells, self.x_count, self.y_count, at_index, col)
+        ]
+        self.x_count += 1
 
     def __getitem__(self, pt: Point) -> T:
         if not isinstance(pt, Point):
@@ -406,7 +504,7 @@ CellHeuristicFunc = Callable[[Point, Point], float]
 
 
 def astar_search(
-    grid: Grid[Point],
+    grid: Grid[T],
     start_pos: Point,
     goal_pos: Point,
     cell_cost: CellCostFunc,
@@ -586,7 +684,7 @@ class BFS(ABC, Generic[T]):
         raise NotImplementedError
 
 
-def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> "Grid[str]":
+def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> Grid[str]:
     chars = [[c for c in line] for line in lines]
     return Grid(len(chars[0]), len(chars), chars)
 

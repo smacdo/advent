@@ -203,6 +203,16 @@ class TestGrid(unittest.TestCase):
         self.assertEqual(3, g.y_count)
         self.assertSequenceEqual(["f", "f", "f", "f", "f", "f"], g.cells)
 
+    def test_create_grid_from_callable(self):
+        counter = 0
+
+        def foo():
+            nonlocal counter
+            counter += 1  # noqa: F823
+            return counter
+
+        self.assertSequenceEqual([1, 2, 3, 4, 5, 6], Grid(3, 2, foo).cells)
+
     def test_create_grid_from_2d_array(self):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
         self.assertEqual(2, g.x_count)
@@ -288,6 +298,64 @@ class TestGrid(unittest.TestCase):
         self.assertTrue(Point(0, 2) in g)
         self.assertFalse(Point(2, 0) in g)
         self.assertFalse(Point(1, 3) in g)
+
+    def test_insert_rows(self):
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        g.insert_row(0, ["X", "Y"])
+        self.assertSequenceEqual(
+            ["X", "Y", "1", "2", "a", "b", "7", "8"], list(iter(g))
+        )
+        self.assertEqual(4, g.row_count())
+        self.assertEqual(2, g.col_count())
+
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        g.insert_row(1, ["X", "Y"])
+        self.assertSequenceEqual(
+            ["1", "2", "X", "Y", "a", "b", "7", "8"], list(iter(g))
+        )
+        self.assertEqual(4, g.row_count())
+        self.assertEqual(2, g.col_count())
+
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        g.insert_row(2, ["X", "Y"])
+        self.assertSequenceEqual(
+            ["1", "2", "a", "b", "X", "Y", "7", "8"], list(iter(g))
+        )
+        self.assertEqual(4, g.row_count())
+        self.assertEqual(2, g.col_count())
+
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        g.insert_row(3, ["X", "Y"])
+        self.assertSequenceEqual(
+            ["1", "2", "a", "b", "7", "8", "X", "Y"], list(iter(g))
+        )
+        self.assertEqual(4, g.row_count())
+        self.assertEqual(2, g.col_count())
+
+    def test_insert_cols(self):
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        g.insert_col(0, ["H", "i", "!"])
+        self.assertSequenceEqual(
+            ["H", "1", "2", "i", "a", "b", "!", "7", "8"], list(iter(g))
+        )
+        self.assertEqual(3, g.row_count())
+        self.assertEqual(3, g.col_count())
+
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        g.insert_col(1, ["H", "i", "!"])
+        self.assertSequenceEqual(
+            ["1", "H", "2", "a", "i", "b", "7", "!", "8"], list(iter(g))
+        )
+        self.assertEqual(3, g.row_count())
+        self.assertEqual(3, g.col_count())
+
+        g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
+        g.insert_col(2, ["H", "i", "!"])
+        self.assertSequenceEqual(
+            ["1", "2", "H", "a", "b", "i", "7", "8", "!"], list(iter(g))
+        )
+        self.assertEqual(3, g.row_count())
+        self.assertEqual(3, g.col_count())
 
 
 class TestPriorityQueue(unittest.TestCase):
