@@ -19,6 +19,7 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include=".clang-format" />
     <Content Include="inputs\0\day0.txt" />
     <Content Include="inputs\2023\day1.txt" />
     <Content Include="inputs\2023\day10.txt" />
@@ -76,6 +77,13 @@
       <Architecture>X64</Architecture>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
     </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="oatmeal\oatmeal.vcxproj">
+      <Name>oatmeal</Name>
+      <Project>{db95b8f9-2988-4566-b4dc-e757f8cf4ec7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

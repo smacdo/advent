@@ -4,7 +4,7 @@ import argparse
 from advent.days import *  # noqa: F403
 from advent.utils import load_input
 from advent.solver import AdventDaySolver
-
+from oatmeal import inc
 
 def solve(day, year):
     solver_type = AdventDaySolver.get_solver(day, year)
@@ -48,6 +48,7 @@ def pretty_print_year(year):
 def main():
     # TODO: Set year default to most recent year for which a solver is available.
     default_year = 2023
+    print(f"one more than 2 is {inc(2)}")
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
