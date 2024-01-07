@@ -32,6 +32,7 @@
     <Content Include="inputs\2023\day7.txt" />
     <Content Include="inputs\2023\day8.txt" />
     <Content Include="inputs\2023\day9.txt" />
+    <Content Include="pyproject.toml" />
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +54,7 @@
     <Compile Include="advent\utils\__init__.py" />
     <Compile Include="advent\__init__.py" />
     <Compile Include="main.py" />
+    <Compile Include="setup.py" />
     <Compile Include="tests\test_utils.py" />
   </ItemGroup>
   <ItemGroup>

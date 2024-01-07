@@ -18,9 +18,13 @@
     <ClCompile Include="module.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="oatmeal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="setup.py" />
-    <None Include="pyproject.toml" />
+    <ClInclude Include="oatmeal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -138,10 +138,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="module.cpp" />
+    <ClCompile Include="oatmeal.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="pyproject.toml" />
-    <None Include="setup.py" />
+    <ClInclude Include="oatmeal.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
