@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{e0ab99cc-f2e4-45eb-9e73-d4b45348f46f}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>main.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>Global|PythonCore|3.12</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="inputs\0\day0.txt" />
+    <Content Include="inputs\2023\day1.txt" />
+    <Content Include="inputs\2023\day10.txt" />
+    <Content Include="inputs\2023\day11.txt" />
+    <Content Include="inputs\2023\day2.txt" />
+    <Content Include="inputs\2023\day3.txt" />
+    <Content Include="inputs\2023\day4.txt" />
+    <Content Include="inputs\2023\day5.txt" />
+    <Content Include="inputs\2023\day6.txt" />
+    <Content Include="inputs\2023\day7.txt" />
+    <Content Include="inputs\2023\day8.txt" />
+    <Content Include="inputs\2023\day9.txt" />
+    <Content Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="advent\days\day0.py" />
+    <Compile Include="advent\days\day1.py" />
+    <Compile Include="advent\days\day10.py" />
+    <Compile Include="advent\days\day11.py" />
+    <Compile Include="advent\days\day2.py" />
+    <Compile Include="advent\days\day3.py" />
+    <Compile Include="advent\days\day4.py" />
+    <Compile Include="advent\days\day5.py" />
+    <Compile Include="advent\days\day6.py" />
+    <Compile Include="advent\days\day7.py" />
+    <Compile Include="advent\days\day8.py" />
+    <Compile Include="advent\days\day9.py" />
+    <Compile Include="advent\days\__init__.py" />
+    <Compile Include="advent\solver.py" />
+    <Compile Include="advent\utils\utils.py" />
+    <Compile Include="advent\utils\__init__.py" />
+    <Compile Include="advent\__init__.py" />
+    <Compile Include="main.py" />
+    <Compile Include="tests\test_utils.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="advent" />
+    <Folder Include="advent\days" />
+    <Folder Include="advent\utils" />
+    <Folder Include="inputs\" />
+    <Folder Include="inputs\0" />
+    <Folder Include="inputs\2023" />
+    <Folder Include="tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.12" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="env\">
+      <Id>env</Id>
+      <Description>env (Python 3.9 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <Version>3.9</Version>
+      <Architecture>X64</Architecture>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

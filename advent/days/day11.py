@@ -91,7 +91,14 @@ class Solver(AdventDaySolver, day=11, year=2023, name="", solution=(None, None))
         ]
         total_cost = 0
 
+        counter = 50
+
         for a, b in all_pairs(galaxies):
+            if counter > 0:
+                counter -= 1
+            else:
+                return total_cost
+
             path = astar_search(
                 self.tile_grid,
                 galaxy_tiles[a],
@@ -127,7 +134,6 @@ class Tests(AdventDayTestCase):
 .......#..
 #...#....."""
         )
-        s = d.solve()
 
         self.assertEqual(374, s[0])
         self.assertEqual(None, s[1])

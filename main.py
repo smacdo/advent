@@ -19,13 +19,14 @@ def solve(day, year):
 def solve_all():
     for year in AdventDaySolver.years():
         for day in AdventDaySolver.days(year):
-            s = AdventDaySolver.new_solver(day, year)
-            answer = s.solve()
+            solver_type = AdventDaySolver.get_solver(day, year)
+            solver = solver_type(load_input(day=day, year=year))
+            solution = solver.solve()
 
-            part_1 = format_answer(answer[0], type(s).solution()[0])
-            part_2 = format_answer(answer[0], type(s).solution()[0])
+            part_1 = format_answer(solution[0], solver_type.solution()[0])
+            part_2 = format_answer(solution[0], solver_type.solution()[0])
 
-            print(f"Day {s.day()} - {s.name()}: {part_1}, {part_2}")
+            print(f"Day {solver_type.day()} - {solver_type.name()}: {part_1}, {part_2}")
 
 
 def format_answer(actual, expected):

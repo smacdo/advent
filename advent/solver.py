@@ -82,7 +82,9 @@ class AdventDaySolver:
 
     @classmethod
     def days(cls, year: Union[int, str]) -> list[int]:
-        return list(AdventDaySolver.day_classes[int(year)].keys())
+        day_list = list(AdventDaySolver.day_classes[int(year)].keys())
+        day_list.sort()
+        return day_list
 
     @classmethod
     def get_solver(cls, day: Union[int, str], year: Union[int, str]) -> Self:
