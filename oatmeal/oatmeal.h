@@ -1,5 +1,7 @@
 #pragma once
 
+#define PY_SSIZE_T_CLEAN
+
 // Visual Studio does not provide the ability to run against `python_d` forcing
 // us to remove the _DEBUG macro define. Failure to do this results in a
 // "Exception - GIL not held" error when the oatmeal module is imported.

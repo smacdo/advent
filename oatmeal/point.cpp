@@ -1,35 +1,26 @@
-#include "oatmeal.h"
-
-#include <structmember.h>
+#include "point.h"
 
 #include <cmath>
 #include <functional>
 
-// --- experimental point class --- //
-typedef struct {
-  PyObject_HEAD double x;
-  double y;
-} Point;
+#include <structmember.h>
 
 // TODO: Rewrite other methods to follow compare example.
 
-int Point_init(Point* self, PyObject* args, PyObject* kwds);
-PyObject* Point_clone(Point* self, PyObject*);
-PyObject* Point_repr(PyObject* self);
-PyObject* Point_str(PyObject* self);
-Py_ssize_t Point_len(PyObject* self);
-PyObject* Point_get(PyObject* self, PyObject* index);
-int Point_set(PyObject* self, PyObject* index, PyObject* value);
-PyObject* Point_add(PyObject* left, PyObject* right);
-PyObject* Point_sub(PyObject* left, PyObject* right);
-PyObject* Point_mul(PyObject* left, PyObject* right);
-PyObject* Point_true_div(PyObject* left, PyObject* right);
-PyObject* Point_floor_div(PyObject* left, PyObject* right);
-PyObject* Point_negate(PyObject* left);
-PyObject* Point_abs(PyObject* left);
-PyObject* Point_compare(PyObject* self, PyObject* other, int op);
-Py_hash_t Point_hash(PyObject* self);
+namespace {
+  /** Create a new Point PyObject and initialize to the given x and y. */
+  PyObject* create_point(double x, double y) {
+    PyObject* init_args = Py_BuildValue("dd", x, y);
+    PyObject* point_obj = PyObject_CallObject((PyObject*)&PointType, init_args);
+    Py_DECREF(init_args);
 
+    return point_obj;
+  }
+} // namespace
+
+//--------------------------------------------------------------------------------------------------
+// Point python type definition.
+//--------------------------------------------------------------------------------------------------
 PyMemberDef Point_Members[] = {
     {"x", T_DOUBLE, offsetof(Point, x), 0, "x component"},
     {"y", T_DOUBLE, offsetof(Point, y), 0, "y component"},
@@ -76,14 +67,9 @@ PyTypeObject PointType = {
     .tp_hash = &Point_hash,
 };
 
-PyObject* create_point(double x, double y) {
-  PyObject* init_args = Py_BuildValue("dd", x, y);
-  PyObject* point_obj = PyObject_CallObject((PyObject*)&PointType, init_args);
-  Py_DECREF(init_args);
-
-  return point_obj;
-}
-
+//--------------------------------------------------------------------------------------------------
+// Point method definitions.
+//--------------------------------------------------------------------------------------------------
 int Point_init(Point* self, PyObject* args, PyObject* kwds) {
   self->x = 0.0;
   self->y = 0.0;
@@ -97,17 +83,19 @@ int Point_init(Point* self, PyObject* args, PyObject* kwds) {
   return 0;
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_clone(Point* self, PyObject*) {
   return create_point(self->x, self->y);
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_repr(PyObject* obj_self) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
 
   char* x_str = PyOS_double_to_string(self->x, 'r', 0, 0, nullptr);
   char* y_str = PyOS_double_to_string(self->y, 'r', 0, 0, nullptr);
 
-  auto repr_str_obj = PyUnicode_FromFormat("Point(x=%s y=%s)", x_str, y_str);
+  auto repr_str_obj = PyUnicode_FromFormat("Point(x=%s, y=%s)", x_str, y_str);
 
   PyMem_Free(x_str);
   PyMem_Free(y_str);
@@ -115,6 +103,7 @@ PyObject* Point_repr(PyObject* obj_self) {
   return repr_str_obj;
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_str(PyObject* obj_self) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
 
@@ -129,8 +118,10 @@ PyObject* Point_str(PyObject* obj_self) {
   return str_obj;
 }
 
+//--------------------------------------------------------------------------------------------------
 Py_ssize_t Point_len(PyObject* self) { return 2; }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_get(PyObject* obj_self, PyObject* obj_index) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
   const auto index = PyLong_AsLong(obj_index);
@@ -146,6 +137,7 @@ PyObject* Point_get(PyObject* obj_self, PyObject* obj_index) {
   }
 }
 
+//--------------------------------------------------------------------------------------------------
 int Point_set(PyObject* obj_self, PyObject* obj_index, PyObject* obj_value) {
   auto* self = reinterpret_cast<Point*>(obj_self);
   const auto index = PyLong_AsLong(obj_index);
@@ -168,6 +160,7 @@ int Point_set(PyObject* obj_self, PyObject* obj_index, PyObject* obj_value) {
   }
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_add(PyObject* obj_left, PyObject* obj_right) {
   if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
       PyObject_TypeCheck(obj_right, &PointType) == 0) {
@@ -180,6 +173,7 @@ PyObject* Point_add(PyObject* obj_left, PyObject* obj_right) {
   return create_point(left->x + right->x, left->y + right->y);
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_sub(PyObject* obj_left, PyObject* obj_right) {
   if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
       PyObject_TypeCheck(obj_right, &PointType) == 0) {
@@ -192,6 +186,7 @@ PyObject* Point_sub(PyObject* obj_left, PyObject* obj_right) {
   return create_point(left->x - right->x, left->y - right->y);
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_mul(PyObject* obj_left, PyObject* obj_right) {
   if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
       PyFloat_Check(obj_right)) {
@@ -204,6 +199,7 @@ PyObject* Point_mul(PyObject* obj_left, PyObject* obj_right) {
   return create_point(left->x * right, left->y * right);
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_true_div(PyObject* obj_left, PyObject* obj_right) {
   if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
       PyFloat_Check(obj_right)) {
@@ -216,6 +212,7 @@ PyObject* Point_true_div(PyObject* obj_left, PyObject* obj_right) {
   return create_point(left->x / right, left->y / right);
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_floor_div(PyObject* obj_left, PyObject* obj_right) {
   if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
       PyFloat_Check(obj_right)) {
@@ -230,6 +227,7 @@ PyObject* Point_floor_div(PyObject* obj_left, PyObject* obj_right) {
       static_cast<double>(std::floor(left->y / right)));
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_negate(PyObject* obj_left) {
   if (PyObject_TypeCheck(obj_left, &PointType) == 0) {
     return Py_NotImplemented;
@@ -240,6 +238,7 @@ PyObject* Point_negate(PyObject* obj_left) {
   return create_point(-left->x, -left->y);
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_abs(PyObject* obj_left) {
   if (PyObject_TypeCheck(obj_left, &PointType) == 0) {
     return Py_NotImplemented;
@@ -250,6 +249,7 @@ PyObject* Point_abs(PyObject* obj_left) {
   return create_point(std::abs(left->x), std::abs(left->y));
 }
 
+//--------------------------------------------------------------------------------------------------
 PyObject* Point_compare(PyObject* obj_self, PyObject* obj_other, int op) {
   auto result = Py_NotImplemented;
 
@@ -276,44 +276,10 @@ PyObject* Point_compare(PyObject* obj_self, PyObject* obj_other, int op) {
   return result;
 }
 
+//--------------------------------------------------------------------------------------------------
 Py_hash_t Point_hash(PyObject* obj_self) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
   const auto h1 = std::hash<double>{}(self->x);
   const auto h2 = std::hash<double>{}(self->y);
   return h1 ^ (h2 << 1);
-}
-
-// --- module registration ---
-static PyMethodDef oatmeal_methods[] = {
-    {"inc", (PyCFunction)inc, METH_O, nullptr},
-    {nullptr, nullptr, 0, nullptr}};
-
-static PyModuleDef oatmeal_module = {
-    PyModuleDef_HEAD_INIT,
-    "oatmeal",
-    "An assortment of boring but essential tools written in C++ for speed",
-    0,
-    oatmeal_methods};
-
-PyMODINIT_FUNC PyInit_oatmeal() {
-  PyObject* mod = PyModule_Create(&oatmeal_module);
-
-  if (mod == nullptr) {
-    return nullptr;
-  }
-
-  // Register the Point type.
-  if (PyType_Ready(&PointType) < 0) {
-    return nullptr;
-  }
-
-  Py_INCREF(&PointType);
-
-  if (PyModule_AddObject(mod, "Point", (PyObject*)&PointType) < 0) {
-    Py_DECREF(&PointType);
-    Py_DECREF(mod);
-    return nullptr;
-  }
-
-  return mod;
 }
