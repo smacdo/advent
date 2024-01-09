@@ -12,6 +12,3 @@
 #else
 #include <Python.h>
 #endif
-
-/// A simple test function to explore exporting a C++ function to Python.
-PyObject* inc(PyObject*, PyObject* value);

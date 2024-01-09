@@ -5,7 +5,6 @@ from advent.solver import AdventDaySolver
 from advent.utils import (
     Direction,
     Grid,
-    Point,
     load_input,
     first_and_last,
     unzip,
@@ -18,6 +17,7 @@ from advent.utils import (
     astar_search,
     manhattan_distance,
 )
+from oatmeal import Point
 
 import copy
 import typing
@@ -180,6 +180,8 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(Point(17, 1), Point(20, -5) - Point(3, -6))
         self.assertEqual(Point(-24, -8), Point(6, 2) * -4)
         self.assertEqual(Point(6, 2), Point(-24, -8) / -4)
+        self.assertEqual(Point(-3, 2), Point(-7, 5) // 2)
+        self.assertEqual(Point(1, 2), Point(7, 5) % 3)
         self.assertEqual(Point(4, -123), -Point(-4, 123))
         self.assertEqual(Point(4, 123), abs(Point(-4, 123)))
 

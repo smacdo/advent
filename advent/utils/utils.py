@@ -15,97 +15,9 @@ import logging
 import heapq
 import copy
 
+from oatmeal import Point
+
 T = TypeVar("T")
-
-
-class Point:
-    """Represents a 2d cartesian x, y point value."""
-
-    __slots__ = ("x", "y")
-    x: int
-    y: int
-
-    def __init__(self, x: int, y: int):
-        if not isinstance(x, int):
-            raise TypeError("argument `x` must be type `int`")
-        if not isinstance(x, int):
-            raise TypeError("argument `t` must be type `int`")
-
-        self.x = x
-        self.y = y
-
-    def clone(self) -> "Point":
-        return Point(self.x, self.y)
-
-    def __repr__(self) -> str:
-        return f"Point(x={self.x}, y={self.y})"
-
-    def __str__(self) -> str:
-        return f"{self.x}, {self.y}"
-
-    def __getitem__(self, key: int) -> int:
-        if not isinstance(key, int):
-            raise TypeError("argument `key` must be type `int`")
-
-        if key == 0:
-            return self.x
-        elif key == 1:
-            return self.y
-        else:
-            raise IndexError(f"cannot get subscript [{key}] for Point object")
-
-    def __setitem__(self, key: int, value: int) -> None:
-        if not isinstance(key, int):
-            raise TypeError("argument `key` must be type `int`")
-
-        if key == 0:
-            self.x = value
-        elif key == 1:
-            self.y = value
-        else:
-            raise ValueError(f"cannot set subscript [{key}] for Point object")
-
-    def __delitem__(self, key: int) -> None:
-        raise NotImplementedError
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Point):
-            return NotImplemented
-        else:
-            return self.x == other.x and self.y == other.y
-
-    def __add__(self, other: "Point") -> "Point":
-        if not isinstance(other, Point):
-            raise TypeError("argument `other` must be type `Point`")
-
-        return Point(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other: "Point") -> "Point":
-        if not isinstance(other, Point):
-            raise TypeError("argument `other` must be type `Point`")
-
-        return Point(self.x - other.x, self.y - other.y)
-
-    def __mul__(self, other: int) -> "Point":
-        if not isinstance(other, int):
-            raise TypeError("argument `other` must be type `int`")
-
-        return Point(self.x * other, self.y * other)
-
-    def __truediv__(self, other: int) -> "Point":
-        if not isinstance(other, int):
-            raise TypeError("argument `other` must be type `int`")
-
-        return Point(self.x // other, self.y // other)
-
-    def __neg__(self) -> "Point":
-        return Point(-self.x, -self.y)
-
-    def __abs__(self) -> "Point":
-        return Point(abs(self.x), abs(self.y))
-
-    def __hash__(self) -> int:
-        return hash((self.x, self.y))
 
 
 class Direction(IntEnum):

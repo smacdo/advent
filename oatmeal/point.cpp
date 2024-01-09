@@ -5,16 +5,29 @@
 
 #include <structmember.h>
 
-// TODO: Rewrite other methods to follow compare example.
-
 namespace {
   /** Create a new Point PyObject and initialize to the given x and y. */
-  PyObject* create_point(double x, double y) {
-    PyObject* init_args = Py_BuildValue("dd", x, y);
+  PyObject* create_point(long x, long y) {
+    PyObject* init_args = Py_BuildValue("ll", x, y);
     PyObject* point_obj = PyObject_CallObject((PyObject*)&PointType, init_args);
     Py_DECREF(init_args);
 
     return point_obj;
+  }
+
+  /**
+   * Cast a Python object to a long, and return true if the cast succeeded.
+   */
+  bool from_pyobj(PyObject* long_obj, long* out) {
+    if (!PyLong_Check(long_obj)) {
+      return false;
+    } else {
+      if (out != nullptr) {
+        *out = PyLong_AsLong(long_obj);
+      }
+
+      return true;
+    }
   }
 } // namespace
 
@@ -22,8 +35,8 @@ namespace {
 // Point python type definition.
 //--------------------------------------------------------------------------------------------------
 PyMemberDef Point_Members[] = {
-    {"x", T_DOUBLE, offsetof(Point, x), 0, "x component"},
-    {"y", T_DOUBLE, offsetof(Point, y), 0, "y component"},
+    {"x", T_LONG, offsetof(Point, x), 0, "x component"},
+    {"y", T_LONG, offsetof(Point, y), 0, "y component"},
     {nullptr}};
 
 PyMappingMethods Point_MappingMethods = {
@@ -38,6 +51,7 @@ PyNumberMethods Point_NumberMethods = {
     .nb_multiply = Point_mul,
     .nb_true_divide = Point_true_div,
     .nb_floor_divide = Point_floor_div,
+    .nb_remainder = Point_mod,
     .nb_negative = Point_negate,
     .nb_absolute = Point_abs,
 };
@@ -47,6 +61,14 @@ PyMethodDef Point_Methods[] = {
      (PyCFunction)Point_clone,
      METH_NOARGS,
      "Return a copy of the point"},
+    {"__getstate__",
+     (PyCFunction)Point_getstate,
+     METH_NOARGS,
+     "pickle the point object"},
+    {"__setstate__",
+     (PyCFunction)Point_setstate,
+     METH_O,
+     "un-pickle the point object"},
     {nullptr}};
 
 PyTypeObject PointType = {
@@ -74,10 +96,10 @@ int Point_init(Point* self, PyObject* args, PyObject* kwds) {
   self->x = 0.0;
   self->y = 0.0;
 
-  static char* kwlist[] = {"x", "y", nullptr};
+  char* kwlist[] = {"x", "y", nullptr};
 
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|dd", kwlist, &self->x, &self->y)) {
+          args, kwds, "|ll", kwlist, &self->x, &self->y)) {
     return -1;
   }
   return 0;
@@ -91,31 +113,13 @@ PyObject* Point_clone(Point* self, PyObject*) {
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_repr(PyObject* obj_self) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
-
-  char* x_str = PyOS_double_to_string(self->x, 'r', 0, 0, nullptr);
-  char* y_str = PyOS_double_to_string(self->y, 'r', 0, 0, nullptr);
-
-  auto repr_str_obj = PyUnicode_FromFormat("Point(x=%s, y=%s)", x_str, y_str);
-
-  PyMem_Free(x_str);
-  PyMem_Free(y_str);
-
-  return repr_str_obj;
+  return PyUnicode_FromFormat("Point(x=%d, y=%d)", self->x, self->y);
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_str(PyObject* obj_self) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
-
-  char* x_str = PyOS_double_to_string(self->x, 'r', 0, 0, nullptr);
-  char* y_str = PyOS_double_to_string(self->y, 'r', 0, 0, nullptr);
-
-  auto str_obj = PyUnicode_FromFormat("%s, %s", x_str, y_str);
-
-  PyMem_Free(x_str);
-  PyMem_Free(y_str);
-
-  return str_obj;
+  return PyUnicode_FromFormat("%d, %d", self->x, self->y);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -124,15 +128,21 @@ Py_ssize_t Point_len(PyObject* self) { return 2; }
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_get(PyObject* obj_self, PyObject* obj_index) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
-  const auto index = PyLong_AsLong(obj_index);
+  auto index = PyLong_AsLong(obj_index);
+
+  if (!from_pyobj(obj_index, &index)) {
+    PyErr_Format(
+        PyExc_ValueError, "point component index must be an int", index);
+    return nullptr;
+  }
 
   switch (index) {
     case 0:
-      return PyFloat_FromDouble(self->x);
+      return PyLong_FromLong(self->x);
     case 1:
-      return PyFloat_FromDouble(self->y);
+      return PyLong_FromLong(self->y);
     default:
-      PyErr_Format(PyExc_RuntimeError, "bad point index: %d", index);
+      PyErr_Format(PyExc_ValueError, "point index out of range: %d", index);
       return nullptr;
   }
 }
@@ -140,113 +150,142 @@ PyObject* Point_get(PyObject* obj_self, PyObject* obj_index) {
 //--------------------------------------------------------------------------------------------------
 int Point_set(PyObject* obj_self, PyObject* obj_index, PyObject* obj_value) {
   auto* self = reinterpret_cast<Point*>(obj_self);
-  const auto index = PyLong_AsLong(obj_index);
-  const auto value = PyFloat_AsDouble(obj_value);
+  auto index = 0L;
 
-  if (value == -1.0 && PyErr_Occurred() != nullptr) {
+  if (!from_pyobj(obj_index, &index)) {
+    PyErr_Format(
+        PyExc_ValueError, "point component index must be an int", index);
+    return -1;
+  }
+
+  auto new_value = 0L;
+
+  if (!from_pyobj(obj_value, &new_value)) {
+    PyErr_Format(
+        PyExc_ValueError, "point component value must be an int", index);
     return -1;
   }
 
   switch (index) {
     case 0:
-      self->x = value;
+      self->x = new_value;
       return 0;
     case 1:
-      self->y = value;
+      self->y = new_value;
       return 0;
     default:
-      PyErr_Format(PyExc_RuntimeError, "bad point index: %d", index);
+      PyErr_Format(PyExc_ValueError, "point index out of range: %d", index);
       return -1;
   }
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_add(PyObject* obj_left, PyObject* obj_right) {
-  if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
-      PyObject_TypeCheck(obj_right, &PointType) == 0) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0 &&
+      PyObject_TypeCheck(obj_right, &PointType) != 0) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    const auto* right = reinterpret_cast<Point*>(obj_right);
+
+    return create_point(left->x + right->x, left->y + right->y);
+  } else {
+    Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-
-  const auto* left = reinterpret_cast<Point*>(obj_left);
-  const auto* right = reinterpret_cast<Point*>(obj_right);
-
-  return create_point(left->x + right->x, left->y + right->y);
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_sub(PyObject* obj_left, PyObject* obj_right) {
-  if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
-      PyObject_TypeCheck(obj_right, &PointType) == 0) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0 &&
+      PyObject_TypeCheck(obj_right, &PointType) != 0) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    const auto* right = reinterpret_cast<Point*>(obj_right);
+
+    return create_point(left->x - right->x, left->y - right->y);
+  } else {
+    Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-
-  const auto* left = reinterpret_cast<Point*>(obj_left);
-  const auto* right = reinterpret_cast<Point*>(obj_right);
-
-  return create_point(left->x - right->x, left->y - right->y);
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_mul(PyObject* obj_left, PyObject* obj_right) {
-  if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
-      PyFloat_Check(obj_right)) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0 &&
+      PyLong_Check(obj_right)) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    const auto right = PyLong_AsLong(obj_right);
+
+    return create_point(left->x * right, left->y * right);
+  } else {
+    Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-
-  const auto* left = reinterpret_cast<Point*>(obj_left);
-  const auto right = PyFloat_AsDouble(obj_right);
-
-  return create_point(left->x * right, left->y * right);
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_true_div(PyObject* obj_left, PyObject* obj_right) {
-  if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
-      PyFloat_Check(obj_right)) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0 &&
+      PyLong_Check(obj_right)) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    const auto right = PyLong_AsLong(obj_right);
+
+    return create_point(left->x / right, left->y / right);
+  } else {
+    Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-
-  const auto* left = reinterpret_cast<Point*>(obj_left);
-  const auto right = PyFloat_AsDouble(obj_right);
-
-  return create_point(left->x / right, left->y / right);
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_floor_div(PyObject* obj_left, PyObject* obj_right) {
-  if (PyObject_TypeCheck(obj_left, &PointType) == 0 ||
-      PyFloat_Check(obj_right)) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0 &&
+      PyLong_Check(obj_right)) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    const auto right = PyLong_AsLong(obj_right);
+
+    return create_point(
+        static_cast<long>(std::floor(left->x / right)),
+        static_cast<long>(std::floor(left->y / right)));
+  } else {
+    Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
+}
 
-  const auto* left = reinterpret_cast<Point*>(obj_left);
-  const auto right = PyFloat_AsDouble(obj_right);
+//--------------------------------------------------------------------------------------------------
+PyObject* Point_mod(PyObject* obj_left, PyObject* obj_right) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0 &&
+      PyLong_Check(obj_right)) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    const auto right = PyLong_AsLong(obj_right);
 
-  return create_point(
-      static_cast<double>(std::floor(left->x / right)),
-      static_cast<double>(std::floor(left->y / right)));
+    return create_point(
+        static_cast<long>(left->x % right), static_cast<long>(left->y % right));
+  } else {
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_negate(PyObject* obj_left) {
-  if (PyObject_TypeCheck(obj_left, &PointType) == 0) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    return create_point(-left->x, -left->y);
+  } else {
+    Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-
-  const auto* left = reinterpret_cast<Point*>(obj_left);
-
-  return create_point(-left->x, -left->y);
 }
 
 //--------------------------------------------------------------------------------------------------
 PyObject* Point_abs(PyObject* obj_left) {
-  if (PyObject_TypeCheck(obj_left, &PointType) == 0) {
+  if (PyObject_TypeCheck(obj_left, &PointType) != 0) {
+    const auto* left = reinterpret_cast<Point*>(obj_left);
+    return create_point(std::abs(left->x), std::abs(left->y));
+  } else {
+    Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-
-  const auto* left = reinterpret_cast<Point*>(obj_left);
-
-  return create_point(std::abs(left->x), std::abs(left->y));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -268,6 +307,21 @@ PyObject* Point_compare(PyObject* obj_self, PyObject* obj_other, int op) {
             (self->x != other->x || self->y != other->y ? Py_True : Py_False);
         break;
       default:
+        // Other comparisons are not supported.
+        break;
+    }
+  } else {
+    // Comparing == or != to wrong type is legal and should be returned as a
+    // false result.
+    switch (op) {
+      case Py_EQ:
+        result = Py_False;
+        break;
+      case Py_NE:
+        result = Py_True;
+        break;
+      default:
+        // Other comparisons are not supported.
         break;
     }
   }
@@ -279,7 +333,37 @@ PyObject* Point_compare(PyObject* obj_self, PyObject* obj_other, int op) {
 //--------------------------------------------------------------------------------------------------
 Py_hash_t Point_hash(PyObject* obj_self) {
   const auto* self = reinterpret_cast<Point*>(obj_self);
-  const auto h1 = std::hash<double>{}(self->x);
-  const auto h2 = std::hash<double>{}(self->y);
+  const auto h1 = std::hash<long>{}(self->x);
+  const auto h2 = std::hash<long>{}(self->y);
   return h1 ^ (h2 << 1);
+}
+
+//--------------------------------------------------------------------------------------------------
+PyObject* Point_getstate(Point* self, PyObject*) {
+  return Py_BuildValue("{slsl}", "x", self->x, "y", self->y);
+}
+
+//--------------------------------------------------------------------------------------------------
+PyObject* Point_setstate(Point* self, PyObject* state) {
+  // https://pythonextensionpatterns.readthedocs.io/en/latest/pickle.html
+  // State object must be a dictionary.
+  if (!PyDict_CheckExact(state)) {
+    PyErr_SetString(PyExc_ValueError, "pickled object must be a dict");
+    return nullptr;
+  }
+
+  // Load the x and y fields from the pickle state.
+  if (!from_pyobj(PyDict_GetItemString(state, "x"), &self->x)) {
+    PyErr_SetString(
+        PyExc_ValueError, "pickled field `x` must exist and be an int");
+    return nullptr;
+  }
+
+  if (!from_pyobj(PyDict_GetItemString(state, "y"), &self->y)) {
+    PyErr_SetString(
+        PyExc_ValueError, "pickled field `y` must exist and be an int");
+    return nullptr;
+  }
+
+  Py_RETURN_NONE;
 }
