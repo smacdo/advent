@@ -24,6 +24,9 @@ class AbstractSolver(ABC):
 
 
 class Solution:
+    """Stores the solver class type for this solution and additional information
+    about the solution."""
+
     def __init__(
         self,
         solver: type[AbstractSolver],
@@ -65,12 +68,11 @@ class AdventYearRegistry:
         self,
         solver: type[AbstractSolver],
         day: int,
-        year: int,
         name: str | None = None,
         variant: str | None = None,
         slow: bool = False,
     ):
-        """Register an advent day solution"""
+        """Adds a solver for an advent of code puzzle"""
         if day not in self.solutions:
             self.solutions[day] = []
             self.days.append(day)
@@ -78,16 +80,25 @@ class AdventYearRegistry:
 
         self.solutions[day].append(
             Solution(
-                solver=solver, day=day, year=year, name=name, variant=variant, slow=slow
+                solver=solver,
+                day=day,
+                year=self.year,
+                name=name,
+                variant=variant,
+                slow=slow,
             )
         )
+
+    def has_solution_for_day(self, day: int) -> bool:
+        """Check if there is at least one solution"""
+        return day in self.solutions
 
     def solutions_for(self, day: int) -> list[Solution]:
         """Get all of the solution variants for an advent day"""
         if day in self.solutions:
             return self.solutions[day]
         else:
-            return None
+            return []
 
     def all_days(self) -> Generator[int, None, None]:
         """Returns a generator that yields all the advent days with at least one solution"""
@@ -116,5 +127,29 @@ class AdventYearRegistry:
             raise SolverVariantNotFound(year=self.year, day=day, variant=variant_name)
 
 
-def solution(solution_klass: type[AbstractSolver]) -> type[AbstractSolver]:
-    return solution_klass
+ADVENT_YEARS_REGISTRY: dict[int, AdventYearRegistry] = dict()
+
+
+def get_global_advent_year_registry(year: int) -> AdventYearRegistry:
+    if year not in ADVENT_YEARS_REGISTRY:
+        ADVENT_YEARS_REGISTRY[year] = AdventYearRegistry(year)
+
+    return ADVENT_YEARS_REGISTRY[year]
+
+
+def advent_solution(
+    day: int,
+    year: int,
+    name: str | None = None,
+    variant: str | None = None,
+):
+    """Automatically registers a solver class instance with a globally available registry."""
+
+    def wrapper(solver_class: type[AbstractSolver]):
+        get_global_advent_year_registry(year).add(
+            solver_class, day=day, name=name, variant=variant, slow=False
+        )
+
+        return solver_class
+
+    return wrapper

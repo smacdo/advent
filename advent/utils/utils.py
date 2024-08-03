@@ -4,6 +4,7 @@ from enum import IntEnum
 from typing import (
     Callable,
     Generic,
+    Generator,
     Iterable,
     Optional,
     Tuple,
@@ -687,6 +688,7 @@ def combinations(k: int, items: list[T]) -> Iterator[list[T]]:
     yield from step(0, k, 0, items, scratch)
 
 
+# TODO: Delete below, not needed anymore.
 def load_input(day: int, year: int) -> Iterable[Iterable[str]]:
     """Loads input for a solver from a given day and year, and returns it as a
     list of strings."""

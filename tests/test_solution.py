@@ -58,7 +58,7 @@ class SolutionMetadataTests(unittest.TestCase):
 class AdventYearRegistryTests(unittest.TestCase):
     def test_add_single_solution(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="Solution_1A")
+        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
 
         self.assertSequenceEqual(
             [s.solver for s in registry.solutions_for(1)], [Solution_1A]
@@ -66,8 +66,8 @@ class AdventYearRegistryTests(unittest.TestCase):
 
     def test_add_multiple_days(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="Solution_1A")
-        registry.add(solver=Solution_2A, day=2, year=2000, name="Solution_2A")
+        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
+        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
 
         self.assertSequenceEqual(
             [s.solver for s in registry.solutions_for(1)], [Solution_1A]
@@ -81,18 +81,16 @@ class AdventYearRegistryTests(unittest.TestCase):
         registry.add(
             solver=Solution_1A,
             day=1,
-            year=2000,
             name="Solution_1A",
             variant="A",
         )
         registry.add(
             solver=Solution_1B,
             day=1,
-            year=2000,
             name="Solution_1B",
             variant="B",
         )
-        registry.add(solver=Solution_2A, day=2, year=2000, name="Solution_2A")
+        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
 
         self.assertSequenceEqual(
             [(s.solver, s.variant) for s in registry.solutions_for(1)],
@@ -105,18 +103,18 @@ class AdventYearRegistryTests(unittest.TestCase):
 
     def test_get_variants_for_missing_day(self):
         registry = AdventYearRegistry(year=2000)
-        self.assertIsNone(registry.solutions_for(1))
+        self.assertSequenceEqual(registry.solutions_for(1), [])
 
     def test_get_days_in_order(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_2A, day=2, year=2000, name="Solution_2A")
-        registry.add(solver=Solution_1A, day=1, year=2000, name="Solution_1A")
+        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
+        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
         self.assertSequenceEqual(list(registry.all_days()), [1, 2])
 
     def test_create_solvers(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="Solution_1A")
-        registry.add(solver=Solution_2A, day=2, year=2000, name="Solution_2A")
+        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
+        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
 
         s1a = registry.create_solver(1)
         self.assertEqual(s1a.part_one(""), "1A_part_one")
@@ -128,9 +126,9 @@ class AdventYearRegistryTests(unittest.TestCase):
 
     def test_create_solver_with_variant_name(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, year=2000, name="B", variant="two")
-        registry.add(solver=Solution_1C, day=1, year=2000, name="C")
+        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
+        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
+        registry.add(solver=Solution_1C, day=1, name="C")
 
         s = registry.create_solver(1, variant="two")
         self.assertIsInstance(s, Solution_1B)
@@ -143,18 +141,18 @@ class AdventYearRegistryTests(unittest.TestCase):
 
     def test_create_default_solver(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, year=2000, name="B", variant="two")
-        registry.add(solver=Solution_1C, day=1, year=2000, name="C")
+        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
+        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
+        registry.add(solver=Solution_1C, day=1, name="C")
 
         s = registry.create_solver(1)
         self.assertIsInstance(s, Solution_1C)
 
     def test_create_any_if_no_default_solver(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, year=2000, name="B", variant="two")
-        registry.add(solver=Solution_1C, day=1, year=2000, name="C", variant="three")
+        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
+        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
+        registry.add(solver=Solution_1C, day=1, name="C", variant="three")
 
         s = registry.create_solver(1)
         self.assertTrue(
@@ -163,14 +161,14 @@ class AdventYearRegistryTests(unittest.TestCase):
 
     def test_no_solvers_for_day(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="Solution_1A")
+        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
 
         self.assertRaises(NoSolversForDay, lambda: registry.create_solver(day=2))
 
     def test_no_solver_with_variant_name(self):
         registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, year=2000, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, year=2000, name="B", variant="two")
+        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
+        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
 
         self.assertRaises(
             SolverVariantNotFound, lambda: registry.create_solver(1, variant="C")
