@@ -135,8 +135,8 @@ class Tests(AdventDayTestCase):
 #...#....."""
         )
 
-        self.assertEqual(374, s[0])
-        self.assertEqual(None, s[1])
+        self.assertEqual(374, d[0])
+        self.assertEqual(None, d[1])
 
 
 if __name__ == "__main__":

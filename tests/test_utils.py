@@ -5,7 +5,6 @@ from advent.solver import AdventDaySolver
 from advent.utils import (
     Direction,
     Grid,
-    load_input,
     first_and_last,
     unzip,
     count_if,

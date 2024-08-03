@@ -6,6 +6,7 @@ from advent.utils import load_input
 from advent.solver import AdventDaySolver
 from oatmeal import inc
 
+
 def solve(day, year):
     solver_type = AdventDaySolver.get_solver(day, year)
     solver = solver_type(load_input(day=day, year=year))
