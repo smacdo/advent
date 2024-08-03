@@ -4,7 +4,6 @@ from enum import IntEnum
 from typing import (
     Callable,
     Generic,
-    Generator,
     Iterable,
     Optional,
     Tuple,
@@ -284,7 +283,7 @@ class Grid(Generic[T]):
         self._validate_in_bounds(pt)
         self.cells[pt.y * self.x_count + pt.x] = v
 
-    def __delitem__(Self, pt: Point) -> None:
+    def __delitem__(self, pt: Point) -> None:
         raise NotImplementedError
 
     def __len__(self) -> int:

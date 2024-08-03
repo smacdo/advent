@@ -11,4 +11,6 @@ oatmeal_module = Extension(
 setup(
     name="advent",
     ext_modules=[oatmeal_module],
+    packages=["advent", "oatmeal"],
+    package_data={"oatmeal": ["py.typed"]},
 )

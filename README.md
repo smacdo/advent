@@ -20,5 +20,6 @@ python3 -m advent.cli
  - Run tests: `python3 -m unittest discover tests`
 
 # Tasks
+- Switch to encryption rather than obscuration. Use a ENV VAR to allow testing
+  in CI.
 - Ensure strictest typing checks
-- Ensure types are being checked in IDE or prior to check in
