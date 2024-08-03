@@ -1,8 +1,6 @@
 from advent.solution import AbstractSolver, advent_solution
 from advent.utils.utils import first_and_last
 
-# TODO: Refactor to have separated part_one and part_two solvers.
-
 
 @advent_solution(day=1, year=2023, name="Trebuchet?!")
 class Day1Solver(AbstractSolver):
@@ -27,8 +25,9 @@ class Day1Solver(AbstractSolver):
             number = int(first) * 10 + int(last)
             sum += number
 
-        self.part_1 = sum
+        return str(sum)
 
+    def part_two(self, input: str) -> str | None:
         ### Day 1 - Star 2 #############################################################
         # This is annoying - some of the two digit combinations share the last/first
         # character, eg `oneight` -> `18` rather than `oneeight`.
@@ -91,9 +90,4 @@ class Day1Solver(AbstractSolver):
             number = int(first) * 10 + int(last)
             sum += number
 
-        # TODO: don't cache
-        self.part_2 = sum
-        return str(self.part_1)
-
-    def part_two(self, input: str) -> str | None:
-        return str(self.part_2)
+        return str(sum)
