@@ -4,11 +4,13 @@ from enum import IntEnum
 from typing import (
     Callable,
     Generic,
+    Generator,
     Iterable,
     Optional,
     Tuple,
     TypeVar,
     Union,
+    cast,
 )
 
 import logging
@@ -18,6 +20,11 @@ import copy
 from oatmeal import Point
 
 T = TypeVar("T")
+
+
+class DirectionCaseNotImplemented(Exception):
+    def __init__(self, dir: "Direction"):
+        super().__init__(f"Support for direction type {dir} is not implemented")
 
 
 class Direction(IntEnum):
@@ -38,6 +45,8 @@ class Direction(IntEnum):
             return Point(-1, 0)
         elif self == Direction.South:
             return Point(0, 1)
+        else:
+            raise DirectionCaseNotImplemented(self)
 
     def reverse(self) -> "Direction":
         """Get the direction in the opposite direction."""
@@ -49,6 +58,8 @@ class Direction(IntEnum):
             return Direction.East
         elif self == Direction.South:
             return Direction.North
+        else:
+            raise DirectionCaseNotImplemented(self)
 
     def __str__(self) -> str:
         """Convert the direction to a human readable string"""
@@ -60,6 +71,8 @@ class Direction(IntEnum):
             return "West"
         elif self == Direction.South:
             return "South"
+        else:
+            raise DirectionCaseNotImplemented(self)
 
     @classmethod
     def cardinal_dirs(cls) -> Iterator["Direction"]:
@@ -180,7 +193,7 @@ class Grid(Generic[T]):
         return self.x_count
 
     def insert_row(
-        self, at_index: int, row: Union[T, Callable[[], T], list[list[T]]]
+        self, at_index: int, row: Union[T, Callable[[], T], list[T]]
     ) -> None:
         """Inserts `row` before the grid row `at_index`"""
 
@@ -191,8 +204,8 @@ class Grid(Generic[T]):
             x_count: int,
             y_count: int,
             at_index: int,
-            row: Union[T, Callable[[], T], list[list[T]]],
-        ):
+            row: Union[T, Callable[[], T], list[T]],
+        ) -> Generator[T, None, None]:
             for y in range(y_count + 1):
                 for x in range(x_count):
                     if y < at_index:
@@ -226,7 +239,7 @@ class Grid(Generic[T]):
         self.y_count += 1
 
     def insert_col(
-        self, at_index: int, col: Union[T, Callable[[], T], list[list[T]]]
+        self, at_index: int, col: Union[T, Callable[[], T], list[T]]
     ) -> None:
         # Helper function to generate new cells from either original or new
         # col.
@@ -237,8 +250,8 @@ class Grid(Generic[T]):
             x_count: int,
             y_count: int,
             at_index: int,
-            col: Union[T, Callable[[], T], list[list[T]]],
-        ):
+            col: Union[T, Callable[[], T], list[T]],
+        ) -> Generator[T, None, None]:
             for y in range(y_count):
                 for x in range(x_count + 1):
                     if x < at_index:
@@ -660,7 +673,7 @@ def all_pairs(items: list[T]) -> Iterator[Tuple[T, T]]:
             yield (items[i], items[j])
 
 
-def combinations(k: int, items: list[T]) -> Iterator[list[T]]:
+def combinations(k: int, items: list[T]) -> Generator[list[T], None, None]:
     """Generates all possible combinations of `k` size from `items` without
     repeats."""
     if not isinstance(k, int):
@@ -674,12 +687,19 @@ def combinations(k: int, items: list[T]) -> Iterator[list[T]]:
 
     def step(
         depth: int, k: int, start_i: int, items: list[T], scratch: list[Optional[T]]
-    ):
+    ) -> Generator[list[T], None, None]:
         for i in range(start_i, len(items)):
             scratch[depth] = items[i]
 
             if depth + 1 == k:
-                yield scratch.copy()
+                x = scratch.copy()
+
+                if x is None:
+                    raise Exception(
+                        "None is not supported in `combinations` util function"
+                    )
+                else:
+                    yield cast(list[T], x)
             else:
                 yield from step(depth + 1, k, i + 1, items, scratch)
 
