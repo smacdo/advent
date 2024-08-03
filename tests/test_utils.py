@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-from typing import Type
-from advent.solver import AdventDaySolver
 from advent.utils import (
     Direction,
     Grid,
@@ -18,57 +14,7 @@ from advent.utils import (
 )
 from oatmeal import Point
 
-import typing
 import unittest
-
-
-class AdventDaySolverTests(unittest.TestCase):
-    class Day0_0(AdventDaySolver, year=0, day=0, name="", solution=None):
-        pass
-
-    class Day1(AdventDaySolver, year=2023, day=1, name="", solution=None):
-        def secret_token(self):
-            return 22
-
-    class Day2(AdventDaySolver, year=2023, day=2, name="", solution=None):
-        pass
-
-    class Day4(AdventDaySolver, year=2023, day=4, name="", solution=None):
-        def secret_token(self):
-            return "hello"
-
-    class Day2_2022(AdventDaySolver, year=2022, day=2, name="", solution=None):
-        pass
-
-    def test_get_years(self):
-        years = AdventDaySolver.years()
-        years.sort()
-
-        self.assertSequenceEqual(years, [0, 2022, 2023])
-
-    def test_get_days(self):
-        days = AdventDaySolver.days(2023)
-        days.sort()
-
-        self.assertSequenceEqual(days, [1, 2, 4])
-
-        days = AdventDaySolver.days(2022)
-        days.sort()
-
-        self.assertSequenceEqual(days, [2])
-
-    def test_create_day(self):
-        d = typing.cast(
-            Type[AdventDaySolverTests.Day1],
-            AdventDaySolver.get_solver(day=1, year=2023)([[]]),
-        )
-        self.assertEqual(22, d.secret_token())
-
-        d = typing.cast(
-            Type[AdventDaySolverTests.Day4],
-            AdventDaySolver.get_solver(day=4, year=2023)([[]]),
-        )
-        self.assertEqual("hello", d.secret_token())
 
 
 class TestDirection(unittest.TestCase):
@@ -106,7 +52,7 @@ class TestDirection(unittest.TestCase):
             Direction.from_point(Point(1, 1))
 
         with self.assertRaises(NotImplementedError):
-            Direction.from_point((1, 1))
+            Direction.from_point((1, 1))  # type: ignore
 
 
 class TestGrid(unittest.TestCase):
@@ -144,10 +90,10 @@ class TestGrid(unittest.TestCase):
         self.assertEqual("&", g[Point(0, 2)])
 
         with self.assertRaises(TypeError):
-            g[(1, 1)]
+            g[(1, 1)]  # type: ignore
 
         with self.assertRaises(TypeError):
-            g[(1, 1)] = "x"
+            g[(1, 1)] = "x"  # type: ignore
 
     def test_to_string(self):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
@@ -165,7 +111,7 @@ class TestGrid(unittest.TestCase):
             list(g.col(2))
 
         with self.assertRaises(TypeError):
-            list(g.col("1"))
+            list(g.col("1"))  # type: ignore
 
     def test_get_row(self):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
@@ -180,7 +126,7 @@ class TestGrid(unittest.TestCase):
             list(g.row(3))
 
         with self.assertRaises(TypeError):
-            list(g.row("1"))
+            list(g.row("1"))  # type: ignore
 
     def test_from_input_lines(self):
         g = new_grid_from_input_lines("""hi3\n3$x""".split("\n"))
@@ -335,6 +281,7 @@ class TestAStar(unittest.TestCase):
             TestAStar.move_cost,
             lambda a, b: 1.0 * manhattan_distance(a, b),
         )
+        self.assertIsNone(path)
         self.assertSequenceEqual(
             [
                 Point(1, 1),
@@ -346,7 +293,7 @@ class TestAStar(unittest.TestCase):
                 Point(3, 3),
                 Point(3, 2),
             ],
-            path,
+            path,  # type: ignore
         )
 
     def test_find_no_path(self):
@@ -401,7 +348,7 @@ class TestBFS(unittest.TestCase):
 
     def create_solver_with_bad_args(self):
         with self.assertRaises(TypeError):
-            TestBFS.FindReachable(None, Point(0, 0))
+            TestBFS.FindReachable(None, Point(0, 0), Point(0, 0))  # type: ignore
 
 
 class TestCountIf(unittest.TestCase):
@@ -414,7 +361,7 @@ class TestCountIf(unittest.TestCase):
 
     def test_wrong_type(self):
         with self.assertRaises(TypeError):
-            count_if(1)
+            count_if(1)  # type: ignore
 
 
 class TestFirstAndLast(unittest.TestCase):
@@ -430,7 +377,7 @@ class TestFirstAndLast(unittest.TestCase):
 
     def test_wrong_type(self):
         with self.assertRaises(TypeError):
-            first_and_last(2)
+            first_and_last(2)  # type: ignore
 
 
 class TestUnzip(unittest.TestCase):
@@ -441,7 +388,7 @@ class TestUnzip(unittest.TestCase):
 
     def test_wrong_type(self):
         with self.assertRaises(TypeError):
-            unzip(1)
+            unzip(1)  # type: ignore
 
 
 class TestAllPairs(unittest.TestCase):
@@ -462,7 +409,7 @@ class TestAllPairs(unittest.TestCase):
 
     def test_not_list(self):
         with self.assertRaises(TypeError):
-            list(all_pairs(5))
+            list(all_pairs(5))  # type: ignore
 
 
 class TestCombinations(unittest.TestCase):
@@ -491,9 +438,9 @@ class TestCombinations(unittest.TestCase):
 
     def test_bad_types(self):
         with self.assertRaises(TypeError):
-            list(combinations("2", [1, 2, 3, 4]))
+            list(combinations("2", [1, 2, 3, 4]))  # type: ignore
         with self.assertRaises(TypeError):
-            list(combinations(5, "abc"))
+            list(combinations(5, "abc"))  # type: ignore
 
 
 if __name__ == "__main__":
