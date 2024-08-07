@@ -42,15 +42,20 @@ class AdventUserException(Exception):
 class AdventSolutionMissing(AdventUserException):
     def __init__(self, year: int, day: int, expected_module: str) -> None:
         super().__init__(
-            f"There is no solution implemented for year {year} day {day} (expected module at: {expected_module})"
+            f"‼️ There is no code implementing a solution for year {year} day {day} (expected module at: {expected_module})",
         )
 
 
 class ExampleFailed(AdventUserException):
     def __init__(self, actual_output: str | None, example: Example):
         super().__init__(
-            f"Example for {example.part} expected `{example.output}` but solver returned `{actual_output}` with input:\n```\n{example.input}\n```"
+            f"👎 The example output for {example.part} is `{example.output}` but the solver returned `{actual_output}` using input:\n```\n{example.input}\n```",
         )
+
+
+def output(args):
+    # TODO: Print output for the listed day.
+    pass
 
 
 def check_examples(solver_class: type[AbstractSolver]):
@@ -138,7 +143,7 @@ def solve(args):
 
     # Validate any examples first to check the state of the solver.
     check_examples(type(solver))
-    print("✅ examples are good")
+    print("👍 examples are good")
 
     # Compute the part one and part two answers using the puzzle's input.
     #
@@ -184,19 +189,24 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="subparser_name")
 
-    sync_parser = subparsers.add_parser("sync")
-    sync_parser.set_defaults(func=sync)
+    output_parser = subparsers.add_parser("output")
+    output_parser.set_defaults(func=output)
 
     solve_parser = subparsers.add_parser("solve")
     solve_parser.set_defaults(func=solve)
 
+    sync_parser = subparsers.add_parser("sync")
+    sync_parser.set_defaults(func=sync)
+
     args = parser.parse_args()
 
     # Dispatch subcommand.
-    if args.subparser_name == "sync":
-        return sync(args)
+    if args.subparser_name == "output":
+        pass
     elif args.subparser_name == "solve":
         return solve(args)
+    elif args.subparser_name == "sync":
+        return sync(args)
 
 
 main()
