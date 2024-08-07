@@ -1,11 +1,42 @@
 from typing import List, Optional
 from bs4 import BeautifulSoup
+from enum import Enum
 import logging
 import re
 import requests
 
+from advent.solution import Part
+
 
 logger = logging.getLogger(__name__)
+
+
+class SubmitResponse(Enum):
+    """
+    Response from the Advent of Code service when submitting an answer.
+
+    Ok: The answer was accepted because it was correct.
+    TooSoon: An answer was submitted recently. Please wait before trying again.
+    AlreadyAnswered: A correct answer has already been accepted.
+    Wrong: The answer is wrong. No hint is provided.
+    TooLow: The answer is wrong because it is too low.
+    TooHigh: The answer is wrong because it is too high.
+    """
+
+    Ok = 1
+    TooSoon = 2
+    AlreadyAnswered = 3
+    Wrong = 4
+    TooLow = 5
+    TooHigh = 6
+
+    def is_wrong(self):
+        """Returns true if the response indicates the answer was incorrect."""
+        return (
+            self == SubmitResponse.Wrong
+            or self == SubmitResponse.TooLow
+            or self == SubmitResponse.TooHigh
+        )
 
 
 class HttpError(Exception):
@@ -108,9 +139,9 @@ class AocClient:
         soup = BeautifulSoup(page, "html.parser")
         days = []
 
-        for element in soup.find(class_="calendar").find_all("a"):
+        for element in soup.find(class_="calendar").find_all("a"):  # type: ignore
             result = re.search("(\\d+)$", element["href"])
-            day = int(result[1])
+            day = int(result[1])  # type: ignore
 
             part_one_solved = (
                 True if element["aria-label"].find("one star") != -1 else False
@@ -124,3 +155,39 @@ class AocClient:
 
         days.sort(key=lambda x: x.day)
         return days
+
+    def submit_answer(
+        self, year: int, day: int, part: Part, answer: str
+    ) -> SubmitResponse:
+        logger.info("submitting answer `{answer}` for year {year} day {day}")
+
+        page = parse_http_response(
+            requests.post(
+                f"https://adventofcode.com/{year}/day/{day}/answer",
+                data={"level": "1" if part == Part.One else "2", "answer": answer},
+                headers=self.headers,
+            )
+        )
+
+        soup = BeautifulSoup(page, "html.parser")
+        article_elem = soup.find("article")
+
+        if article_elem is not None:
+            for message in article_elem.stripped_strings:
+                message = message.lower()
+
+                if "the right answer" in message:
+                    return SubmitResponse.Ok
+                elif "answer is too low" in message:
+                    return SubmitResponse.TooLow
+                elif "answer is too high" in message:
+                    return SubmitResponse.TooHigh
+                elif "not the right answer" in message:
+                    return SubmitResponse.Wrong
+                elif "gave an answer too recently" in message:
+                    return SubmitResponse.TooSoon
+                elif "already complete it" in message:
+                    return SubmitResponse.AlreadyAnswered
+
+        # TODO: report the HTML as well so it can be analyzed
+        raise Exception("answer submission endpoint returned unexpected response")
