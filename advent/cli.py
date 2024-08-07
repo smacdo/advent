@@ -97,6 +97,7 @@ def solve(args):
 
         # The puzzle data for this day is missing. Try to load it from the AOC
         # website.
+        # TODO: Raise an exception with helpful text if data cannot be fetched.
         input = aoc_client.fetch_input_for(year, day)
         puzzle_store.set(
             day, PuzzleData(input=input, part_one_answer=None, part_two_answer=None)

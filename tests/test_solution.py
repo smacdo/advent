@@ -1,5 +1,6 @@
 from advent.solution import AbstractSolver, AdventYearRegistry, Solution
 from advent.solution import NoSolversForDay, SolverVariantNotFound
+from advent.solution import Part, Example
 
 import unittest
 
@@ -172,4 +173,22 @@ class AdventYearRegistryTests(unittest.TestCase):
 
         self.assertRaises(
             SolverVariantNotFound, lambda: registry.create_solver(1, variant="C")
+        )
+
+
+class PartTests(unittest.TestCase):
+    def test_equal(self):
+        self.assertEqual(Part.One, Part.One)
+        self.assertEqual(Part.Two, Part.Two)
+        self.assertNotEqual(Part.One, Part.Two)
+        self.assertNotEqual(Part.Two, Part.One)
+
+
+class ExampleTests(unittest.TestCase):
+    def test_equal(self):
+        self.assertEqual(
+            Example("hello", "world", Part.One), Example("hello", "world", Part.One)
+        )
+        self.assertNotEqual(
+            Example("hello", "world", Part.Two), Example("hello", "world", Part.One)
         )

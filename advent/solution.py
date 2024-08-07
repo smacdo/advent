@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Generator
 
 DEFAULT_VARIANT_NAME = "default"
@@ -14,6 +15,8 @@ DEFAULT_VARIANT_NAME = "default"
 
 
 class AbstractSolver(ABC):
+    """Base class for solutions."""
+
     @abstractmethod
     def part_one(self, input: str) -> str | None:
         pass
@@ -23,9 +26,42 @@ class AbstractSolver(ABC):
         pass
 
 
+class Part(Enum):
+    One = 0
+    Two = 1
+
+
+class Example:
+    """
+    Provides an input example and the expected output for either part one or
+    part two for a solution. Examples tend to be small, contrived examples
+    similiar in scope to a unit or integration test.
+    """
+
+    def __init__(self, input: str, output: str, part: Part):
+        self.input: str = input
+        self.output: str = output
+        self.part: Part = part
+
+    def __eq__(self, value: object) -> bool:
+        if type(value) is Example:
+            return (
+                self.input == value.input
+                and self.output == value.output
+                and self.part == value.part
+            )
+        else:
+            return False
+
+    def __repr__(self) -> str:
+        return f"Example(input={self.input}, output={self.output}, part={self.part})"
+
+
 class Solution:
-    """Stores the solver class type for this solution and additional information
-    about the solution."""
+    """
+    Stores an abstract solver type and other metadata associated with a solution
+    to a puzzle.
+    """
 
     def __init__(
         self,
@@ -127,14 +163,44 @@ class AdventYearRegistry:
             raise SolverVariantNotFound(year=self.year, day=day, variant=variant_name)
 
 
-ADVENT_YEARS_REGISTRY: dict[int, AdventYearRegistry] = dict()
+_ADVENT_YEARS_REGISTRY: dict[int, AdventYearRegistry] = dict()
 
 
 def get_global_advent_year_registry(year: int) -> AdventYearRegistry:
-    if year not in ADVENT_YEARS_REGISTRY:
-        ADVENT_YEARS_REGISTRY[year] = AdventYearRegistry(year)
+    """Returns a registry containing all of the solutions registered for the given advent year."""
+    if year not in _ADVENT_YEARS_REGISTRY:
+        _ADVENT_YEARS_REGISTRY[year] = AdventYearRegistry(year)
 
-    return ADVENT_YEARS_REGISTRY[year]
+    return _ADVENT_YEARS_REGISTRY[year]
+
+
+_SOLUTION_EXAMPLES: dict[type[AbstractSolver], list[Example]] = dict()
+
+
+def add_example_for_solver_at_head(cls: type[AbstractSolver], example: Example):
+    """Appends `example` to the start of the list of examples for solver type `cls`."""
+    if cls not in _SOLUTION_EXAMPLES:
+        _SOLUTION_EXAMPLES[cls] = []
+
+    _SOLUTION_EXAMPLES[cls].insert(0, example)
+
+
+def get_examples_for_solver(
+    cls: type[AbstractSolver],
+) -> Generator[Example, None, None]:
+    """Get an ordered list of examples for the given solver type `cls`."""
+    if cls in _SOLUTION_EXAMPLES:
+        for example in _SOLUTION_EXAMPLES[cls]:
+            yield example
+
+
+def get_part_examples_for_solver(
+    cls: type[AbstractSolver],
+    part: Part,
+) -> Generator[Example, None, None]:
+    for example in get_examples_for_solver(cls):
+        if example.part == part:
+            yield example
 
 
 def advent_solution(
@@ -148,6 +214,32 @@ def advent_solution(
     def wrapper(solver_class: type[AbstractSolver]):
         get_global_advent_year_registry(year).add(
             solver_class, day=day, name=name, variant=variant, slow=False
+        )
+
+        return solver_class
+
+    return wrapper
+
+
+def part_one_example(input: str, output: str):
+    """Set an example for part one of this solver"""
+
+    def wrapper(solver_class: type[AbstractSolver]):
+        add_example_for_solver_at_head(
+            solver_class, Example(input=input, output=output, part=Part.One)
+        )
+
+        return solver_class
+
+    return wrapper
+
+
+def part_two_example(input: str, output: str):
+    """Set an example for part two of this solver"""
+
+    def wrapper(solver_class: type[AbstractSolver]):
+        add_example_for_solver_at_head(
+            solver_class, Example(input=input, output=output, part=Part.Two)
         )
 
         return solver_class

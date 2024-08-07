@@ -281,7 +281,6 @@ class TestAStar(unittest.TestCase):
             TestAStar.move_cost,
             lambda a, b: 1.0 * manhattan_distance(a, b),
         )
-        self.assertIsNone(path)
         self.assertSequenceEqual(
             [
                 Point(1, 1),
