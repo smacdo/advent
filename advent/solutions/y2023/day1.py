@@ -1,8 +1,28 @@
-from advent.solution import AbstractSolver, advent_solution
+from advent.solution import (
+    AbstractSolver,
+    advent_solution,
+    part_one_example,
+    part_two_example,
+)
 from advent.utils.utils import first_and_last
 
 
 @advent_solution(day=1, year=2023, name="Trebuchet?!")
+@part_one_example(
+    input=["1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet"], output="142"
+)
+@part_two_example(
+    input=[
+        "two1nine",
+        "eightwothree",
+        "abcone2threexyz",
+        "xtwone3four",
+        "4nineeightseven2",
+        "zoneight234",
+        "7pqrstsixteen",
+    ],
+    output="281",
+)
 class Day1Solver(AbstractSolver):
     def part_one(self, input: str) -> str | None:
         ### Day 1 - Star 1 #############################################################

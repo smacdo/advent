@@ -1,6 +1,12 @@
 from advent.aoc.client import AocClient, AocLoginConfig
 from advent.data import FileBackedPuzzleStore, PuzzleData
-from advent.solution import get_global_advent_year_registry
+from advent.solution import (
+    AbstractSolver,
+    Example,
+    Part,
+    get_global_advent_year_registry,
+    get_part_examples_for_solver,
+)
 from pathlib import Path
 
 import argparse
@@ -38,6 +44,29 @@ class AdventSolutionMissing(AdventUserException):
         super().__init__(
             f"There is no solution implemented for year {year} day {day} (expected module at: {expected_module})"
         )
+
+
+class ExampleFailed(AdventUserException):
+    def __init__(self, actual_output: str | None, example: Example):
+        super().__init__(
+            f"Example for {example.part} expected `{example.output}` but solver returned `{actual_output}` with input:\n```\n{example.input}\n```"
+        )
+
+
+def check_examples(solver_class: type[AbstractSolver]):
+    for example in get_part_examples_for_solver(solver_class, Part.One):
+        solver = solver_class()
+        result = solver.part_one(example.input)
+
+        if not example.output == result:
+            raise ExampleFailed(result, example)
+
+    for example in get_part_examples_for_solver(solver_class, Part.Two):
+        solver = solver_class()
+        result = solver.part_two(example.input)
+
+        if not example.output == result:
+            raise ExampleFailed(result, example)
 
 
 def check_result(part_name: str, expected: str | None, actual: str | None) -> bool:
@@ -108,7 +137,8 @@ def solve(args):
     puzzle = puzzle_store.get(day)
 
     # Validate any examples first to check the state of the solver.
-    # TODO: Validate examples.
+    check_examples(type(solver))
+    print("✅ examples are good")
 
     # Compute the part one and part two answers using the puzzle's input.
     #

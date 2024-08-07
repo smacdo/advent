@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Generator
+import os
 
 DEFAULT_VARIANT_NAME = "default"
 
@@ -38,8 +39,12 @@ class Example:
     similiar in scope to a unit or integration test.
     """
 
-    def __init__(self, input: str, output: str, part: Part):
-        self.input: str = input
+    def __init__(self, input: str | list[str], output: str, part: Part):
+        if isinstance(input, str):
+            self.input: str = input
+        else:
+            self.input: str = os.linesep.join(input)
+
         self.output: str = output
         self.part: Part = part
 
@@ -141,26 +146,31 @@ class AdventYearRegistry:
         for day in self.days:
             yield day
 
-    def create_solver(
-        self, day: int, variant: str | None = None, **kwargs
-    ) -> AbstractSolver:
+    def get_solver_class(
+        self, day: int, variant: str | None = None
+    ) -> type[AbstractSolver]:
         variant_name = variant if variant is not None else DEFAULT_VARIANT_NAME
-        solvers = self.solutions_for(day)
+        solutions = self.solutions_for(day)
 
-        if solvers is None or len(solvers) == 0:
+        if solutions is None or len(solutions) == 0:
             raise NoSolversForDay(year=self.year, day=day)
         else:
             # Find a solver with the same variant name.
-            for s in solvers:
+            for s in solutions:
                 if s.variant == variant_name:
-                    return s.solver(**kwargs)
+                    return s.solver
 
             # If no variant name was provided and there was no default variant
             # then use any available solver before throwing an exception.
-            if variant is None and len(solvers) > 0:
-                return solvers[0].solver(**kwargs)
+            if variant is None and len(solutions) > 0:
+                return solutions[0].solver
 
             raise SolverVariantNotFound(year=self.year, day=day, variant=variant_name)
+
+    def create_solver(
+        self, day: int, variant: str | None = None, **kwargs
+    ) -> AbstractSolver:
+        return self.get_solver_class(day, variant)(**kwargs)
 
 
 _ADVENT_YEARS_REGISTRY: dict[int, AdventYearRegistry] = dict()
@@ -221,7 +231,7 @@ def advent_solution(
     return wrapper
 
 
-def part_one_example(input: str, output: str):
+def part_one_example(input: str | list[str], output: str):
     """Set an example for part one of this solver"""
 
     def wrapper(solver_class: type[AbstractSolver]):
@@ -234,7 +244,7 @@ def part_one_example(input: str, output: str):
     return wrapper
 
 
-def part_two_example(input: str, output: str):
+def part_two_example(input: str | list[str], output: str):
     """Set an example for part two of this solver"""
 
     def wrapper(solver_class: type[AbstractSolver]):

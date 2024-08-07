@@ -185,6 +185,12 @@ class PartTests(unittest.TestCase):
 
 
 class ExampleTests(unittest.TestCase):
+    def test_multi_line_input_is_converted_to_single_str_with_newlines(self):
+        self.assertEqual(
+            Example(["hello world", "test", "  123"], "xyz", Part.Two),
+            Example("hello world\ntest\n  123", "xyz", Part.Two),
+        )
+
     def test_equal(self):
         self.assertEqual(
             Example("hello", "world", Part.One), Example("hello", "world", Part.One)
