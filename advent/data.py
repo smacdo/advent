@@ -37,13 +37,13 @@ class PuzzleStore(ABC):
     """Stores puzzle data required by advent solutions"""
 
     @abstractmethod
-    def set(self, day: int, input: str):
-        """Stores puzzle data for the given day."""
+    def get(self, day: int) -> PuzzleData:
+        """Retrieve puzzle data for the given day or throws an exception."""
         pass
 
     @abstractmethod
-    def get(self, day: int) -> str:
-        """Retrieve puzzle data for the given day or throws an exception."""
+    def set(self, day: int, input: PuzzleData):
+        """Stores puzzle data for the given day."""
         pass
 
     @abstractmethod
@@ -69,31 +69,6 @@ class FileBackedPuzzleStore:
     def __init__(self, data_dir: Path, year: int) -> None:
         self.year: int = year
         self.repo_dir: Path = data_dir / f"y{year}"
-
-    def set(self, day: int, data: PuzzleData):
-        day_dir = self.repo_dir / str(day)
-
-        # Create the directory for the day if it does not already exist.
-        if not day_dir.exists():
-            day_dir.mkdir(parents=True)
-
-        # Write the puzzle data to disk.
-        self._save_field(day, INPUT_FILE_NAME, data.input, obscure=True)
-
-        if data.part_one_answer is not None:
-            self._save_field(day, PART_ONE_ANSWER_FILE_NAME, data.part_one_answer)
-
-        if data.part_two_answer is not None:
-            self._save_field(day, PART_TWO_ANSWER_FILE_NAME, data.part_two_answer)
-
-    def _save_field(
-        self, day: int, field_file_name: str, value: str, obscure: bool = False
-    ):
-        with (self.repo_dir / str(day) / field_file_name).open("wb") as f:
-            if obscure:
-                f.write(b64e(zlib.compress(value.encode("utf-8"), 9)))
-            else:
-                f.write(value.encode("utf-8"))
 
     def get(self, day: int) -> PuzzleData:
         input = self._load_field(day, INPUT_FILE_NAME, unobscure=True)
@@ -122,6 +97,31 @@ class FileBackedPuzzleStore:
                     return zlib.decompress(b64d(file_bytes)).decode("utf-8")
                 else:
                     return file_bytes.decode("utf-8")
+
+    def set(self, day: int, data: PuzzleData):
+        day_dir = self.repo_dir / str(day)
+
+        # Create the directory for the day if it does not already exist.
+        if not day_dir.exists():
+            day_dir.mkdir(parents=True)
+
+        # Write the puzzle data to disk.
+        self._save_field(day, INPUT_FILE_NAME, data.input, obscure=True)
+
+        if data.part_one_answer is not None:
+            self._save_field(day, PART_ONE_ANSWER_FILE_NAME, data.part_one_answer)
+
+        if data.part_two_answer is not None:
+            self._save_field(day, PART_TWO_ANSWER_FILE_NAME, data.part_two_answer)
+
+    def _save_field(
+        self, day: int, field_file_name: str, value: str, obscure: bool = False
+    ):
+        with (self.repo_dir / str(day) / field_file_name).open("wb") as f:
+            if obscure:
+                f.write(b64e(zlib.compress(value.encode("utf-8"), 9)))
+            else:
+                f.write(value.encode("utf-8"))
 
     def has_day(self, day: int) -> bool:
         input_file = self.repo_dir / str(day) / INPUT_FILE_NAME
