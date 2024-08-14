@@ -1,5 +1,5 @@
 from advent.aoc.client import AocClient, AocLoginConfig
-from advent.data import FileBackedPuzzleStore, PuzzleData
+from advent.data import FileBackedPuzzleStore
 from advent.solution import (
     AbstractSolver,
     Example,
@@ -133,9 +133,7 @@ def solve(args):
         # website.
         # TODO: Raise an exception with helpful text if data cannot be fetched.
         input = aoc_client.fetch_input_for(year, day)
-        puzzle_store.set(
-            day, PuzzleData(input=input, part_one_answer=None, part_two_answer=None)
-        )
+        puzzle_store.add_day(day, input)
 
         logger.info("puzzle input for year {year} day {day} has been loaded and cached")
 
@@ -155,10 +153,10 @@ def solve(args):
     # TODO: Store correct answers when answer data is missing.
     # TODO: Store incorrect answer along with hints.
     part_one = solver.part_one(puzzle.input)
-    check_result("part one", part_one, puzzle.part_one_answer)
+    check_result("part one", part_one, puzzle.part_one_answer.correct_answer)
 
     part_two = solver.part_two(puzzle.input)
-    check_result("part two", part_two, puzzle.part_two_answer)
+    check_result("part two", part_two, puzzle.part_two_answer.correct_answer)
 
     # Print out run time statistics before exiting.
 
