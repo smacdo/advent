@@ -72,11 +72,13 @@ class SolverMetadata:
     """
 
     klass: type[AbstractSolver]
-    day: int
-    year: int
-    puzzle_name: str
-    variant_name: str | None
-    is_slow: bool
+    _part_one_examples: list[Example]
+    _part_two_examples: list[Example]
+    _day: int
+    _year: int
+    _puzzle_name: str
+    _variant_name: str | None
+    _is_slow: bool
 
     def __init__(
         self,
@@ -88,18 +90,48 @@ class SolverMetadata:
         is_slow: bool = False,
     ):
         self.klass = klass
-        self.day = day
-        self.year = year
-        self.puzzle_name = (
+        self._day = day
+        self._year = year
+        self._puzzle_name = (
             puzzle_name if puzzle_name is not None else f"{year} day {day}"
         )
-        self.variant_name = (
+        self._variant_name = (
             variant_name if variant_name is not None else DEFAULT_VARIANT_NAME
         )
-        self.is_slow: bool = is_slow
+        self._is_slow: bool = is_slow
+        self._part_one_examples = list()
+        self._part_two_examples = list()
 
     def create_solver_instance(self, **kwargs) -> AbstractSolver:
         return self.klass(**kwargs)
+
+    def day(self):
+        return self._day
+
+    def year(self):
+        return self._year
+
+    def puzzle_name(self):
+        return self._puzzle_name
+
+    def variant_name(self):
+        return self._variant_name
+
+    def is_slow(self):
+        return self._is_slow
+
+    def add_example(self, example: Example):
+        """Appends `example` to the start of this solver's examples list."""
+        if example.part == Part.One:
+            self._part_one_examples.insert(0, example)
+        else:
+            self._part_two_examples.insert(0, example)
+
+    def examples(self, part: Part) -> Generator[Example, None, None]:
+        if part == Part.One:
+            yield from self._part_one_examples
+        else:
+            yield from self._part_two_examples
 
 
 class NoSolversFound(Exception):
@@ -114,25 +146,80 @@ class SolverVariantNotFound(Exception):
         )
 
 
+class DuplicateSolverType(Exception):
+    def __init__(self, solver_type: type[AbstractSolver]):
+        super().__init__(f"Cannot register {solver_type} more than once")
+
+
 class SolverRegistry:
     """
     Stores a list of solvers for a given year and day.
     """
 
-    solvers: dict[tuple[int, int], list[SolverMetadata]]
+    solvers: dict[tuple[int, int], list[type[AbstractSolver]]]
+    metadata: dict[type[AbstractSolver], SolverMetadata]
+    examples_scratch: dict[type[AbstractSolver], tuple[list[Example], list[Example]]]
 
     def __init__(self):
         self.solvers = dict()
-        self.days = []
+        self.metadata = dict()
+        self.examples_scratch = dict()
 
-    def add(self, solver: SolverMetadata):
-        """Adds a solver for an advent of code puzzle"""
-        entry_key = (solver.year, solver.day)
+    def add_metadata(self, solver: SolverMetadata):
+        """Adds metadata for a new solver class."""
+        # Associate the metadata to the solver class.
+        if solver.klass in self.metadata:
+            raise DuplicateSolverType(solver.klass)
+        else:
+            self.metadata[solver.klass] = solver
 
-        if (solver.year, solver.day) not in self.solvers:
+        # Move any examples that have been registered for this type from scratch
+        # into this metadata value.
+        if solver.klass in self.examples_scratch:
+            for e in reversed(self.examples_scratch[solver.klass][0]):
+                solver.add_example(e)
+            for e in reversed(self.examples_scratch[solver.klass][1]):
+                solver.add_example(e)
+
+            del self.examples_scratch[solver.klass]
+
+        # Add a solver entry for this day + year.
+        entry_key = (solver.year(), solver.day())
+
+        if (solver.year(), solver.day()) not in self.solvers:
             self.solvers[entry_key] = []
 
-        self.solvers[entry_key].append(solver)
+        self.solvers[entry_key].append(solver.klass)
+
+    def add_example(self, solver_class: type[AbstractSolver], example: Example):
+        """Appends `example` to the start of the list of examples for solver `solver_class`."""
+
+        # Add the example directly to the solver's metadata if it exists.
+        if solver_class in self.metadata:
+            self.metadata[solver_class].add_example(example)
+        else:
+            # Otherwise add the exapmles to scratch so it can be added once the
+            # metadata info is added.
+            if solver_class not in self.examples_scratch:
+                self.examples_scratch[solver_class] = (list(), list())
+
+            if example.part == Part.One:
+                self.examples_scratch[solver_class][0].insert(0, example)
+            else:
+                self.examples_scratch[solver_class][1].insert(0, example)
+
+    def get_examples(
+        self, solver_class: type[AbstractSolver], part: Part
+    ) -> Generator[Example, None, None]:
+        # Use the examples from the solver's metadata if available.
+        if solver_class in self.metadata:
+            yield from self.metadata[solver_class].examples(part)
+        else:
+            # Otherwise use the temporary scratch exmaples.
+            if part == Part.One:
+                yield from self.examples_scratch[solver_class][0]
+            else:
+                yield from self.examples_scratch[solver_class][1]
 
     def has_solver_for(self, year: int, day: int) -> bool:
         """Check if there is at least one solver for the given year and day"""
@@ -141,7 +228,7 @@ class SolverRegistry:
     def all_solvers_for(self, year: int, day: int) -> list[SolverMetadata]:
         """Get all of the solver variants for the given year and day"""
         if (year, day) in self.solvers:
-            return self.solvers[(year, day)]
+            return [self.metadata[x] for x in self.solvers[(year, day)]]
         else:
             return []
 
@@ -156,7 +243,7 @@ class SolverRegistry:
         else:
             # Find a solver with the same variant name.
             for s in all_solvers:
-                if s.variant_name == variant_name:
+                if s.variant_name() == variant_name:
                     return s
 
             # If no variant name was provided and there was no default variant
@@ -180,35 +267,6 @@ def get_global_solver_registry() -> SolverRegistry:
     return _GLOBAL_SOLVER_REGISTRY
 
 
-_SOLVER_EXAMPLES: dict[type[AbstractSolver], list[Example]] = dict()
-
-
-def add_example_for_solver_at_head(cls: type[AbstractSolver], example: Example):
-    """Appends `example` to the start of the list of examples for solver type `cls`."""
-    if cls not in _SOLVER_EXAMPLES:
-        _SOLVER_EXAMPLES[cls] = []
-
-    _SOLVER_EXAMPLES[cls].insert(0, example)
-
-
-def get_examples_for_solver(
-    cls: type[AbstractSolver],
-) -> Generator[Example, None, None]:
-    """Get an ordered list of examples for the given solver type `cls`."""
-    if cls in _SOLVER_EXAMPLES:
-        for example in _SOLVER_EXAMPLES[cls]:
-            yield example
-
-
-def get_part_examples_for_solver(
-    cls: type[AbstractSolver],
-    part: Part,
-) -> Generator[Example, None, None]:
-    for example in get_examples_for_solver(cls):
-        if example.part == part:
-            yield example
-
-
 # TODO: Move to module 'annotations'
 # TODO: Rename to 'solver'
 def advent_solution(
@@ -220,7 +278,7 @@ def advent_solution(
     """Automatically registers a solver class instance with a globally available registry."""
 
     def wrapper(solver_class: type[AbstractSolver]):
-        get_global_solver_registry().add(
+        get_global_solver_registry().add_metadata(
             SolverMetadata(
                 klass=solver_class,
                 year=year,
@@ -239,7 +297,7 @@ def part_one_example(input: str | list[str], output: str):
     """Set an example for part one of this solver"""
 
     def wrapper(solver_class: type[AbstractSolver]):
-        add_example_for_solver_at_head(
+        get_global_solver_registry().add_example(
             solver_class, Example(input=input, output=output, part=Part.One)
         )
 
@@ -252,7 +310,7 @@ def part_two_example(input: str | list[str], output: str):
     """Set an example for part two of this solver"""
 
     def wrapper(solver_class: type[AbstractSolver]):
-        add_example_for_solver_at_head(
+        get_global_solver_registry().add_example(
             solver_class, Example(input=input, output=output, part=Part.Two)
         )
 

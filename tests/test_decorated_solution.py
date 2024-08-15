@@ -1,7 +1,6 @@
 from advent.solution import AbstractSolver, Example, Part, advent_solution
 from advent.solution import part_one_example, part_two_example
 from advent.solution import get_global_solver_registry
-from advent.solution import get_examples_for_solver
 
 import unittest
 
@@ -26,18 +25,30 @@ class SolutionDecoratorTests(unittest.TestCase):
         self.assertEqual(len(solvers), 1)
 
         self.assertEqual(solvers[0].klass, DecoratedTestSolution)
-        self.assertEqual(solvers[0].day, 12)
-        self.assertEqual(solvers[0].year, 2012)
-        self.assertEqual(solvers[0].puzzle_name, "Puzzles R Awesome")
-        self.assertEqual(solvers[0].variant_name, "superawesome")
+        self.assertEqual(solvers[0].day(), 12)
+        self.assertEqual(solvers[0].year(), 2012)
+        self.assertEqual(solvers[0].puzzle_name(), "Puzzles R Awesome")
+        self.assertEqual(solvers[0].variant_name(), "superawesome")
 
     def test_is_registered_with_expected_examples_in_expected_order(self):
-        examples = list(get_examples_for_solver(DecoratedTestSolution))
         self.assertSequenceEqual(
-            examples,
+            list(
+                get_global_solver_registry().get_examples(
+                    DecoratedTestSolution, Part.One
+                )
+            ),
             [
                 Example(input="abc", output="A1B2C2", part=Part.One),
                 Example(input="x", output="22", part=Part.One),
+            ],
+        )
+        self.assertSequenceEqual(
+            list(
+                get_global_solver_registry().get_examples(
+                    DecoratedTestSolution, Part.Two
+                )
+            ),
+            [
                 Example(input="89", output="yes", part=Part.Two),
             ],
         )

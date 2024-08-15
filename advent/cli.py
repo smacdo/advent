@@ -5,7 +5,6 @@ from advent.solution import (
     Example,
     Part,
     get_global_solver_registry,
-    get_part_examples_for_solver,
 )
 from pathlib import Path
 
@@ -59,14 +58,14 @@ def output(args):
 
 
 def check_examples(solver_class: type[AbstractSolver]):
-    for example in get_part_examples_for_solver(solver_class, Part.One):
+    for example in get_global_solver_registry().get_examples(solver_class, Part.One):
         solver = solver_class()
         result = solver.part_one(example.input)
 
         if not example.output == result:
             raise ExampleFailed(result, example)
 
-    for example in get_part_examples_for_solver(solver_class, Part.Two):
+    for example in get_global_solver_registry().get_examples(solver_class, Part.Two):
         solver = solver_class()
         result = solver.part_two(example.input)
 
