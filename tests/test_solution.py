@@ -1,5 +1,5 @@
-from advent.solution import AbstractSolver, AdventYearRegistry, Solution
-from advent.solution import NoSolversForDay, SolverVariantNotFound
+from advent.solution import AbstractSolver, SolverRegistry, SolverMetadata
+from advent.solution import NoSolversFound, SolverVariantNotFound
 from advent.solution import Part, Example
 
 import unittest
@@ -41,138 +41,251 @@ class Solution_2A(AbstractSolver):
         return f"2A{self.y}_part_two"
 
 
-class SolutionMetadataTests(unittest.TestCase):
+class SolverMetadataTests(unittest.TestCase):
     def test_default_name(self):
-        m = Solution(solver=Solution_1A, day=15, year=2010)
-        self.assertEqual(m.name, "2010 day 15")
+        m = SolverMetadata(klass=Solution_1A, day=15, year=2010)
+        self.assertEqual(m.puzzle_name, "2010 day 15")
 
     def test_variant_name(self):
-        m_named_variant = Solution(
-            solver=Solution_1A, day=20, year=1999, variant="foobar"
+        m_named_variant = SolverMetadata(
+            klass=Solution_1A, day=20, year=1999, variant_name="foobar"
         )
-        m_missing_variant = Solution(solver=Solution_1A, day=20, year=1999)
+        m_missing_variant = SolverMetadata(klass=Solution_1A, day=20, year=1999)
 
-        self.assertEqual(m_named_variant.variant, "foobar")
-        self.assertEqual(m_missing_variant.variant, "default")
+        self.assertEqual(m_named_variant.variant_name, "foobar")
+        self.assertEqual(m_missing_variant.variant_name, "default")
 
 
-class AdventYearRegistryTests(unittest.TestCase):
+class SolverRegistryTests(unittest.TestCase):
     def test_add_single_solution(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="Solution_1A"
+            )
+        )
 
         self.assertSequenceEqual(
-            [s.solver for s in registry.solutions_for(1)], [Solution_1A]
+            [s.klass for s in registry.all_solvers_for(2000, 1)], [Solution_1A]
         )
 
     def test_add_multiple_days(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
-        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="Solution_1A"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_2A, year=2000, day=2, puzzle_name="Solution_2A"
+            )
+        )
 
         self.assertSequenceEqual(
-            [s.solver for s in registry.solutions_for(1)], [Solution_1A]
+            [s.klass for s in registry.all_solvers_for(2000, 1)], [Solution_1A]
         )
         self.assertSequenceEqual(
-            [s.solver for s in registry.solutions_for(2)], [Solution_2A]
+            [s.klass for s in registry.all_solvers_for(2000, 2)], [Solution_2A]
+        )
+
+    def test_add_multiple_years(self):
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="Solution_1A"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_2A, year=1999, day=1, puzzle_name="Solution_2A"
+            )
+        )
+
+        self.assertSequenceEqual(
+            [s.klass for s in registry.all_solvers_for(2000, 1)], [Solution_1A]
+        )
+        self.assertSequenceEqual(
+            [s.klass for s in registry.all_solvers_for(1999, 1)], [Solution_2A]
         )
 
     def test_register_multiple_variants(self):
-        registry = AdventYearRegistry(year=2000)
+        registry = SolverRegistry()
         registry.add(
-            solver=Solution_1A,
-            day=1,
-            name="Solution_1A",
-            variant="A",
+            SolverMetadata(
+                klass=Solution_1A,
+                year=2000,
+                day=1,
+                puzzle_name="Solution_1A",
+                variant_name="A",
+            )
         )
         registry.add(
-            solver=Solution_1B,
-            day=1,
-            name="Solution_1B",
-            variant="B",
+            SolverMetadata(
+                klass=Solution_1B,
+                year=2000,
+                day=1,
+                puzzle_name="Solution_1B",
+                variant_name="B",
+            )
         )
-        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
+        registry.add(
+            SolverMetadata(
+                klass=Solution_2A, year=2000, day=2, puzzle_name="Solution_2A"
+            )
+        )
 
         self.assertSequenceEqual(
-            [(s.solver, s.variant) for s in registry.solutions_for(1)],
+            [(s.klass, s.variant_name) for s in registry.all_solvers_for(2000, 1)],
             [(Solution_1A, "A"), (Solution_1B, "B")],
         )
         self.assertSequenceEqual(
-            [(s.solver, s.variant) for s in registry.solutions_for(2)],
+            [(s.klass, s.variant_name) for s in registry.all_solvers_for(2000, 2)],
             [(Solution_2A, "default")],
         )
 
-    def test_get_variants_for_missing_day(self):
-        registry = AdventYearRegistry(year=2000)
-        self.assertSequenceEqual(registry.solutions_for(1), [])
+    def test_get_variants_for_missing_day_or_year(self):
+        registry = SolverRegistry()
+        self.assertSequenceEqual(registry.all_solvers_for(year=2000, day=1), [])
 
     def test_get_days_in_order(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
-        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
-        self.assertSequenceEqual(list(registry.all_days()), [1, 2])
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_2A, year=2000, day=2, puzzle_name="Solution_2A"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="Solution_1A"
+            )
+        )
+        self.assertSequenceEqual(list(registry.all_days(year=2000)), [1, 2])
 
     def test_create_solvers(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
-        registry.add(solver=Solution_2A, day=2, name="Solution_2A")
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="Solution_1A"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_2A, year=2000, day=2, puzzle_name="Solution_2A"
+            )
+        )
 
-        s1a = registry.create_solver(1)
+        s1a = registry.find_solver_for(year=2000, day=1).create_solver_instance()
         self.assertEqual(s1a.part_one(""), "1A_part_one")
         self.assertEqual(s1a.part_two(""), "1A_part_two")
 
-        s2a = registry.create_solver(2, x="%", y="$")
+        s2a = registry.find_solver_for(year=2000, day=2).create_solver_instance(
+            x="%", y="$"
+        )
         self.assertEqual(s2a.part_one(""), "2A%_part_one")
         self.assertEqual(s2a.part_two(""), "2A$_part_two")
 
     def test_create_solver_with_variant_name(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
-        registry.add(solver=Solution_1C, day=1, name="C")
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="A", variant_name="one"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1B, year=2000, day=1, puzzle_name="B", variant_name="two"
+            )
+        )
+        registry.add(
+            SolverMetadata(klass=Solution_1C, year=2000, day=1, puzzle_name="C")
+        )
 
-        s = registry.create_solver(1, variant="two")
+        s = registry.find_solver_for(2000, 1, variant="two").create_solver_instance()
         self.assertIsInstance(s, Solution_1B)
 
-        s = registry.create_solver(1, variant="one")
+        s = registry.find_solver_for(2000, 1, variant="one").create_solver_instance()
         self.assertIsInstance(s, Solution_1A)
 
-        s = registry.create_solver(1, variant="default")
+        s = registry.find_solver_for(
+            2000, 1, variant="default"
+        ).create_solver_instance()
         self.assertIsInstance(s, Solution_1C)
 
     def test_create_default_solver(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
-        registry.add(solver=Solution_1C, day=1, name="C")
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="A", variant_name="one"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1B, year=2000, day=1, puzzle_name="B", variant_name="two"
+            )
+        )
+        registry.add(
+            SolverMetadata(klass=Solution_1C, year=2000, day=1, puzzle_name="C")
+        )
 
-        s = registry.create_solver(1)
+        s = registry.find_solver_for(2000, 1).create_solver_instance()
         self.assertIsInstance(s, Solution_1C)
 
     def test_create_any_if_no_default_solver(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
-        registry.add(solver=Solution_1C, day=1, name="C", variant="three")
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="A", variant_name="one"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1B, year=2000, day=1, puzzle_name="B", variant_name="two"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1C,
+                year=2000,
+                day=1,
+                puzzle_name="C",
+                variant_name="three",
+            )
+        )
 
-        s = registry.create_solver(1)
+        s = registry.find_solver_for(2000, 1).create_solver_instance()
         self.assertTrue(
             type(s) is Solution_1A or type(s) is Solution_1B or type(s) is Solution_1C
         )
 
     def test_no_solvers_for_day(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="Solution_1A")
-
-        self.assertRaises(NoSolversForDay, lambda: registry.create_solver(day=2))
-
-    def test_no_solver_with_variant_name(self):
-        registry = AdventYearRegistry(year=2000)
-        registry.add(solver=Solution_1A, day=1, name="A", variant="one")
-        registry.add(solver=Solution_1B, day=1, name="B", variant="two")
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="Solution_1A"
+            )
+        )
 
         self.assertRaises(
-            SolverVariantNotFound, lambda: registry.create_solver(1, variant="C")
+            NoSolversFound, lambda: registry.find_solver_for(year=2000, day=2)
+        )
+
+    def test_no_solver_with_variant_name(self):
+        registry = SolverRegistry()
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="A", variant_name="one"
+            )
+        )
+        registry.add(
+            SolverMetadata(
+                klass=Solution_1B, year=2000, day=1, puzzle_name="B", variant_name="two"
+            )
+        )
+
+        self.assertRaises(
+            SolverVariantNotFound,
+            lambda: registry.find_solver_for(year=2000, day=1, variant="C"),
         )
 
 

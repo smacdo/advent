@@ -4,7 +4,7 @@ from advent.solution import (
     AbstractSolver,
     Example,
     Part,
-    get_global_advent_year_registry,
+    get_global_solver_registry,
     get_part_examples_for_solver,
 )
 from pathlib import Path
@@ -114,12 +114,12 @@ def solve(args):
     module_name = f"advent.solutions.y2023.day{day}"
     importlib.import_module(module_name)
 
-    registry = get_global_advent_year_registry(year)
+    registry = get_global_solver_registry()
 
-    if not registry.has_solution_for_day(day):
+    if not registry.has_solver_for(year, day):
         raise AdventSolutionMissing(year, day, module_name)
 
-    solver = registry.create_solver(day)
+    solver = registry.find_solver_for(year, day).create_solver_instance()
 
     # Load puzzle data (inputs and answers) from disk. If there is no puzzle
     # data for the selected day then try to load it from the AOC website.
