@@ -1,11 +1,11 @@
-from advent.solution import AbstractSolver, Example, Part, advent_solution
-from advent.solution import part_one_example, part_two_example
+from advent.annotations import solver, part_one_example, part_two_example
+from advent.solution import AbstractSolver, Example, Part
 from advent.solution import get_global_solver_registry
 
 import unittest
 
 
-@advent_solution(day=12, year=2012, name="Puzzles R Awesome", variant="superawesome")
+@solver(day=12, year=2012, name="Puzzles R Awesome", variant="superawesome")
 @part_one_example(input="abc", output="A1B2C2")
 @part_one_example(input="x", output="22")
 @part_two_example(input="89", output="yes")
@@ -52,5 +52,3 @@ class SolutionDecoratorTests(unittest.TestCase):
                 Example(input="89", output="yes", part=Part.Two),
             ],
         )
-
-    # TODO: test for part one and part two examples

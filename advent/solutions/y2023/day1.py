@@ -1,13 +1,9 @@
-from advent.solution import (
-    AbstractSolver,
-    advent_solution,
-    part_one_example,
-    part_two_example,
-)
+from advent.annotations import solver, part_one_example, part_two_example
+from advent.solution import AbstractSolver
 from advent.utils.utils import first_and_last
 
 
-@advent_solution(day=1, year=2023, name="Trebuchet?!")
+@solver(day=1, year=2023, name="Trebuchet?!")
 @part_one_example(
     input=["1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet"], output="142"
 )
