@@ -10,10 +10,10 @@ import unittest
 @part_one_example(input="x", output="22")
 @part_two_example(input="89", output="yes")
 class DecoratedTestSolution(AbstractSolver):
-    def part_one(self, input: str) -> str | None:
+    def part_one(self, input: str) -> int | str | None:
         return "1A_part_one"
 
-    def part_two(self, input: str) -> str | None:
+    def part_two(self, input: str) -> int | str | None:
         return "1A_part_two"
 
 

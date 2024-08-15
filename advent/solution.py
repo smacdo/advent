@@ -19,11 +19,11 @@ class AbstractSolver(ABC):
     """Base class for a solver capable of solving puzzle inputs."""
 
     @abstractmethod
-    def part_one(self, input: str) -> str | None:
+    def part_one(self, input: str) -> int | str | None:
         pass
 
     @abstractmethod
-    def part_two(self, input: str) -> str | None:
+    def part_two(self, input: str) -> int | str | None:
         pass
 
 

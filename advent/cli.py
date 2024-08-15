@@ -63,14 +63,14 @@ def check_examples(solver_class: type[AbstractSolver]):
         result = solver.part_one(example.input)
 
         if not example.output == result:
-            raise ExampleFailed(result, example)
+            raise ExampleFailed(str(result), example)
 
     for example in get_global_solver_registry().get_examples(solver_class, Part.Two):
         solver = solver_class()
         result = solver.part_two(example.input)
 
         if not example.output == result:
-            raise ExampleFailed(result, example)
+            raise ExampleFailed(str(result), example)
 
 
 def check_result(part_name: str, expected: str | None, actual: str | None) -> bool:
@@ -152,10 +152,10 @@ def solve(args):
     # TODO: Store correct answers when answer data is missing.
     # TODO: Store incorrect answer along with hints.
     part_one = solver.part_one(puzzle.input)
-    check_result("part one", part_one, puzzle.part_one_answer.correct_answer)
+    check_result("part one", str(part_one), puzzle.part_one_answer.correct_answer)
 
     part_two = solver.part_two(puzzle.input)
-    check_result("part two", part_two, puzzle.part_two_answer.correct_answer)
+    check_result("part two", str(part_two), puzzle.part_two_answer.correct_answer)
 
     # Print out run time statistics before exiting.
 

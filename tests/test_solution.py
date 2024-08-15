@@ -11,26 +11,26 @@ import unittest
 
 
 class Solution_1A(AbstractSolver):
-    def part_one(self, input: str) -> str | None:
+    def part_one(self, input: str) -> int | str | None:
         return "1A_part_one"
 
-    def part_two(self, input: str) -> str | None:
+    def part_two(self, input: str) -> int | str | None:
         return "1A_part_two"
 
 
 class Solution_1B(AbstractSolver):
-    def part_one(self, input: str) -> str | None:
+    def part_one(self, input: str) -> int | str | None:
         return "1B_part_one"
 
-    def part_two(self, input: str) -> str | None:
+    def part_two(self, input: str) -> int | str | None:
         return "1B_part_two"
 
 
 class Solution_1C(AbstractSolver):
-    def part_one(self, input: str) -> str | None:
+    def part_one(self, input: str) -> int | str | None:
         return "1C_part_one"
 
-    def part_two(self, input: str) -> str | None:
+    def part_two(self, input: str) -> int | str | None:
         return "1C_part_two"
 
 
@@ -39,10 +39,10 @@ class Solution_2A(AbstractSolver):
         self.x = x
         self.y = y
 
-    def part_one(self, input: str) -> str | None:
+    def part_one(self, input: str) -> int | str | None:
         return f"2A{self.x}_part_one"
 
-    def part_two(self, input: str) -> str | None:
+    def part_two(self, input: str) -> int | str | None:
         return f"2A{self.y}_part_two"
 
 
