@@ -1,5 +1,6 @@
 from advent.aoc.client import AocClient, AocLoginConfig
 from advent.data import FileBackedPuzzleStore
+from advent.plugins import load_all_solutions
 from advent.solution import (
     AbstractSolver,
     Example,
@@ -9,7 +10,6 @@ from advent.solution import (
 from pathlib import Path
 
 import argparse
-import importlib
 import logging
 
 logger = logging.getLogger(__name__)
@@ -39,9 +39,9 @@ class AdventUserException(Exception):
 
 
 class AdventSolutionMissing(AdventUserException):
-    def __init__(self, year: int, day: int, expected_module: str) -> None:
+    def __init__(self, year: int, day: int) -> None:
         super().__init__(
-            f"‼️ There is no code implementing a solution for year {year} day {day} (expected module at: {expected_module})",
+            f"‼️ There is no code implementing a solution for year {year} day {day} (expected file `advent/solutions/y{year}/day{day}.py`)",
         )
 
 
@@ -93,10 +93,15 @@ def check_result(part_name: str, expected: str | None, actual: str | None) -> bo
     return False
 
 
+def cli_solve(args):
+    load_all_solutions()
+    solve()
+
+
 # TODO: Modularize this code.
 # TODO: Inject a fake AOC client and then test it as well!
 # TODO: Inject a fake module discovery interface.
-def solve(args):
+def solve():
     year = 2023
     day = 1
 
@@ -109,14 +114,10 @@ def solve(args):
     # Get a list of available solver classes, and create the requested solver.
     # If there is no solver for the requested day then print an error and return
     # to the caller.
-    # TODO: Do the discovery and loading dynamically.
-    module_name = f"advent.solutions.y2023.day{day}"
-    importlib.import_module(module_name)
-
     registry = get_global_solver_registry()
 
     if not registry.has_solver_for(year, day):
-        raise AdventSolutionMissing(year, day, module_name)
+        raise AdventSolutionMissing(year, day)
 
     solver = registry.find_solver_for(year, day).create_solver_instance()
 
@@ -201,7 +202,7 @@ def main():
     if args.subparser_name == "output":
         pass
     elif args.subparser_name == "solve":
-        return solve(args)
+        return cli_solve(args)
     elif args.subparser_name == "sync":
         return sync(args)
 
