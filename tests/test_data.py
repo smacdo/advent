@@ -12,7 +12,7 @@ import tempfile
 class FileBackedPuzzleStoreTests(unittest.TestCase):
     def test_set_and_read_back(self):
         with tempfile.TemporaryDirectory() as tempdir:
-            f = FileBackedPuzzleStore(Path(tempdir), year=1969)
+            f = FileBackedPuzzleStore(Path(tempdir))
 
             # Write three days of input
             pd0 = PuzzleData(
@@ -25,18 +25,18 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
                 "testing\n1\n23", PartAnswerCache("part1"), PartAnswerCache("part two")
             )
 
-            f.set(0, pd0)
-            f.set(1, pd1)
-            f.set(5, pd2)
+            f.set(1969, 0, pd0)
+            f.set(1969, 1, pd1)
+            f.set(1969, 5, pd2)
 
             # Read back the three days of input
-            self.assertEqual(f.get(0), pd0)
-            self.assertEqual(f.get(1), pd1)
-            self.assertEqual(f.get(5), pd2)
+            self.assertEqual(f.get(1969, 0), pd0)
+            self.assertEqual(f.get(1969, 1), pd1)
+            self.assertEqual(f.get(1969, 5), pd2)
 
     def test_set_and_read_back_with_missing_fields(self):
         with tempfile.TemporaryDirectory() as tempdir:
-            f = FileBackedPuzzleStore(Path(tempdir), year=1969)
+            f = FileBackedPuzzleStore(Path(tempdir))
 
             # Write three days of input
             pd0 = PuzzleData("hello world", PartAnswerCache(), PartAnswerCache("p2a"))
@@ -45,14 +45,14 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
             )
             pd2 = PuzzleData("testing\n1\n23", PartAnswerCache(), PartAnswerCache())
 
-            f.set(0, pd0)
-            f.set(1, pd1)
-            f.set(5, pd2)
+            f.set(1969, 0, pd0)
+            f.set(1969, 1, pd1)
+            f.set(1969, 5, pd2)
 
             # Read back the three days of input
-            self.assertEqual(f.get(0), pd0)
-            self.assertEqual(f.get(1), pd1)
-            self.assertEqual(f.get(5), pd2)
+            self.assertEqual(f.get(1969, 0), pd0)
+            self.assertEqual(f.get(1969, 1), pd1)
+            self.assertEqual(f.get(1969, 5), pd2)
 
     def test_get_days(self):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -61,7 +61,7 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
             (Path(tempdir) / "NOT_A_DAY").mkdir()
 
             # Set three days of input.
-            f = FileBackedPuzzleStore(Path(tempdir), year=1969)
+            f = FileBackedPuzzleStore(Path(tempdir))
 
             pd0 = PuzzleData(
                 "hello world", PartAnswerCache("p1a"), PartAnswerCache("p2a")
@@ -73,12 +73,12 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
                 "testing\n1\n23", PartAnswerCache("part1"), PartAnswerCache("part two")
             )
 
-            f.set(0, pd0)
-            f.set(1, pd1)
-            f.set(5, pd2)
+            f.set(1969, 0, pd0)
+            f.set(1969, 1, pd1)
+            f.set(1969, 5, pd2)
 
             # Read back the days as a list.
-            self.assertSequenceEqual(f.days(), [0, 1, 5])
+            self.assertSequenceEqual(f.days(1969), [0, 1, 5])
 
     def test_has_days(self):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -87,7 +87,7 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
             (Path(tempdir) / "NOT_A_DAY").mkdir()
 
             # Set three days of input.
-            f = FileBackedPuzzleStore(Path(tempdir), year=1969)
+            f = FileBackedPuzzleStore(Path(tempdir))
 
             pd0 = PuzzleData(
                 "hello world", PartAnswerCache("p1a"), PartAnswerCache("p2a")
@@ -99,40 +99,40 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
                 "testing\n1\n23", PartAnswerCache("part1"), PartAnswerCache("part two")
             )
 
-            f.set(0, pd0)
-            f.set(1, pd1)
-            f.set(5, pd2)
+            f.set(1969, 0, pd0)
+            f.set(1969, 1, pd1)
+            f.set(1969, 5, pd2)
 
             # Check if only days 0, 1 and 5 exist.
-            self.assertTrue(f.has_day(0))
-            self.assertTrue(f.has_day(1))
-            self.assertTrue(f.has_day(5))
+            self.assertTrue(f.has_day(1969, 0))
+            self.assertTrue(f.has_day(1969, 1))
+            self.assertTrue(f.has_day(1969, 5))
 
-            self.assertFalse(f.has_day(2))
-            self.assertFalse(f.has_day(3))
-            self.assertFalse(f.has_day(4))
-            self.assertFalse(f.has_day(6))
+            self.assertFalse(f.has_day(1969, 2))
+            self.assertFalse(f.has_day(1969, 3))
+            self.assertFalse(f.has_day(1969, 4))
+            self.assertFalse(f.has_day(1969, 6))
 
     def test_add_day(self):
         with tempfile.TemporaryDirectory() as tempdir:
-            f = FileBackedPuzzleStore(Path(tempdir), year=1969)
+            f = FileBackedPuzzleStore(Path(tempdir))
 
             # Write three days of input
-            f.add_day(0, "hello world")
-            f.add_day(1, "why hello there")
-            f.add_day(5, "testing\n1\n23")
+            f.add_day(1969, 0, "hello world")
+            f.add_day(1969, 1, "why hello there")
+            f.add_day(1969, 5, "testing\n1\n23")
 
             # Read back the three days of input
             self.assertEqual(
-                f.get(0),
+                f.get(1969, 0),
                 PuzzleData("hello world", PartAnswerCache(), PartAnswerCache()),
             )
             self.assertEqual(
-                f.get(1),
+                f.get(1969, 1),
                 PuzzleData("why hello there", PartAnswerCache(), PartAnswerCache()),
             )
             self.assertEqual(
-                f.get(5),
+                f.get(1969, 5),
                 PuzzleData("testing\n1\n23", PartAnswerCache(), PartAnswerCache()),
             )
 

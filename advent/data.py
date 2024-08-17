@@ -241,21 +241,26 @@ class PuzzleStore(ABC):
     """Stores puzzle data required by advent solutions"""
 
     @abstractmethod
-    def get(self, day: int) -> PuzzleData:
+    def get(self, year: int, day: int) -> PuzzleData:
         """Retrieve puzzle data for the given day or throws an exception."""
         pass
 
     @abstractmethod
-    def set(self, day: int, input: PuzzleData):
+    def set(self, year: int, day: int, input: PuzzleData):
         """Stores puzzle data for the given day."""
         pass
 
     @abstractmethod
-    def has_day(self, day: int) -> bool:
+    def add_day(self, year: int, day: int, input: str):
+        """Sets input for the given day."""
+        pass
+
+    @abstractmethod
+    def has_day(self, year: int, day: int) -> bool:
         """Check if there is puzzle data for the given day"""
 
     @abstractmethod
-    def days(self) -> list[int]:
+    def days(self, year: int) -> list[int]:
         """Get a list of days with puzzle data sorted in ascending order."""
         pass
 
@@ -267,28 +272,27 @@ class PuzzleStoreFileMissing(Exception):
         )
 
 
-class FileBackedPuzzleStore:
+class FileBackedPuzzleStore(PuzzleStore):
     """Stores inputs on the file system and encrypts the data prior to storage."""
 
-    def __init__(self, data_dir: Path, year: int) -> None:
-        self.year: int = year
-        self.repo_dir: Path = data_dir / f"y{year}"
+    def __init__(self, data_dir: Path) -> None:
+        self.repo_dir: Path = data_dir
 
-    def get(self, day: int) -> PuzzleData:
-        input = self._load_field(day, INPUT_FILE_NAME, unobscure=True)
+    def get(self, year: int, day: int) -> PuzzleData:
+        input = self._load_field(year, day, INPUT_FILE_NAME, unobscure=True)
 
         if input is None:
             raise PuzzleStoreFileMissing(
-                year=self.year, day=day, file_path=self.repo_dir / str(day)
+                year=year, day=day, file_path=self.repo_dir / f"y{year}" / str(day)
             )
 
-        part_one_answer_data = self._load_field(day, PART_ONE_ANSWER_FILE_NAME)
+        part_one_answer_data = self._load_field(year, day, PART_ONE_ANSWER_FILE_NAME)
         part_one_answer = (
             PartAnswerCache.deserialize(part_one_answer_data)
             if part_one_answer_data is not None
             else PartAnswerCache()
         )
-        part_two_answer_data = self._load_field(day, PART_TWO_ANSWER_FILE_NAME)
+        part_two_answer_data = self._load_field(year, day, PART_TWO_ANSWER_FILE_NAME)
         part_two_answer = (
             PartAnswerCache.deserialize(part_two_answer_data)
             if part_two_answer_data is not None
@@ -302,9 +306,9 @@ class FileBackedPuzzleStore:
         )
 
     def _load_field(
-        self, day: int, field_file_name: str, unobscure: bool = False
+        self, year: int, day: int, field_file_name: str, unobscure: bool = False
     ) -> str | None:
-        input_path = self.repo_dir / str(day) / field_file_name
+        input_path = self.repo_dir / f"y{year}" / str(day) / field_file_name
 
         if not input_path.exists():
             return None
@@ -317,44 +321,49 @@ class FileBackedPuzzleStore:
                 else:
                     return file_bytes.decode("utf-8")
 
-    def set(self, day: int, data: PuzzleData):
-        day_dir = self.repo_dir / str(day)
+    def set(self, year: int, day: int, input: PuzzleData):
+        day_dir = self.repo_dir / f"y{year}" / str(day)
 
         # Create the directory for the day if it does not already exist.
         if not day_dir.exists():
             day_dir.mkdir(parents=True)
 
         # Write the puzzle data to disk.
-        self._save_field(day, INPUT_FILE_NAME, data.input, obscure=True)
-        part_one_answer_data = data.part_one_answer.serialize()
-        part_two_answer_data = data.part_two_answer.serialize()
+        self._save_field(year, day, INPUT_FILE_NAME, input.input, obscure=True)
+        part_one_answer_data = input.part_one_answer.serialize()
+        part_two_answer_data = input.part_two_answer.serialize()
 
         if part_one_answer_data != "":
-            self._save_field(day, PART_ONE_ANSWER_FILE_NAME, part_one_answer_data)
+            self._save_field(year, day, PART_ONE_ANSWER_FILE_NAME, part_one_answer_data)
 
         if part_two_answer_data != "":
-            self._save_field(day, PART_TWO_ANSWER_FILE_NAME, part_two_answer_data)
+            self._save_field(year, day, PART_TWO_ANSWER_FILE_NAME, part_two_answer_data)
 
     def _save_field(
-        self, day: int, field_file_name: str, value: str, obscure: bool = False
+        self,
+        year: int,
+        day: int,
+        field_file_name: str,
+        value: str,
+        obscure: bool = False,
     ):
-        with (self.repo_dir / str(day) / field_file_name).open("wb") as f:
+        with (self.repo_dir / f"y{year}" / str(day) / field_file_name).open("wb") as f:
             if obscure:
                 f.write(b64e(zlib.compress(value.encode("utf-8"), 9)))
             else:
                 f.write(value.encode("utf-8"))
 
-    def add_day(self, day: int, input: str):
-        self.set(day, PuzzleData(input, PartAnswerCache(), PartAnswerCache()))
+    def add_day(self, year: int, day: int, input: str):
+        self.set(year, day, PuzzleData(input, PartAnswerCache(), PartAnswerCache()))
 
-    def has_day(self, day: int) -> bool:
-        input_file = self.repo_dir / str(day) / INPUT_FILE_NAME
+    def has_day(self, year: int, day: int) -> bool:
+        input_file = self.repo_dir / f"y{year}" / str(day) / INPUT_FILE_NAME
         return input_file.exists()
 
-    def days(self) -> list[int]:
+    def days(self, year: int) -> list[int]:
         d = [
             int(x.name)
-            for x in self.repo_dir.iterdir()
+            for x in (self.repo_dir / f"y{year}").iterdir()
             if x.is_dir() and x.name.isdigit()
         ]
         d.sort()

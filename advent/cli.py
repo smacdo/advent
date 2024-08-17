@@ -1,10 +1,11 @@
 from advent.aoc.client import AocClient, AocLoginConfig
-from advent.data import FileBackedPuzzleStore
+from advent.data import FileBackedPuzzleStore, PuzzleData
 from advent.plugins import load_all_solutions
 from advent.solution import (
     AbstractSolver,
     Example,
     Part,
+    SolverMetadata,
     get_global_solver_registry,
 )
 from pathlib import Path
@@ -58,6 +59,11 @@ def output(args):
 
 
 def check_examples(solver_class: type[AbstractSolver]):
+    """
+    Checks the example inputs for `solver_class` match the example outputs when
+    instantiating a new instance of `solver_class` and running the inputs through
+     `part_one` and `part_two` methods.
+    """
     for example in get_global_solver_registry().get_examples(solver_class, Part.One):
         solver = solver_class()
         result = solver.part_one(example.input)
@@ -95,16 +101,13 @@ def check_result(part_name: str, expected: str | None, actual: str | None) -> bo
 
 def cli_solve(args):
     load_all_solutions()
-    solve()
+    solve(2023, 1)
 
 
 # TODO: Modularize this code.
 # TODO: Inject a fake AOC client and then test it as well!
 # TODO: Inject a fake module discovery interface.
-def solve():
-    year = 2023
-    day = 1
-
+def solve(year: int, day: int):
     #
     aoc_client = create_aoc_client()
 
@@ -119,29 +122,49 @@ def solve():
     if not registry.has_solver_for(year, day):
         raise AdventSolutionMissing(year, day)
 
-    solver = registry.find_solver_for(year, day).create_solver_instance()
+    # Check if the puzzle input is cached on disk. If the input for this puzzle
+    # are missing then load the inputs from the network.
+    store = FileBackedPuzzleStore(Path("data"))
 
-    # Load puzzle data (inputs and answers) from disk. If there is no puzzle
-    # data for the selected day then try to load it from the AOC website.
-    # TODO: Handle if the data is missing.
-    puzzle_store = FileBackedPuzzleStore(Path("data"), year)
-
-    if not puzzle_store.has_day(day):
+    if not store.has_day(year, day):
         logger.debug("puzzle data is missing for year {year} day {day}")
 
         # The puzzle data for this day is missing. Try to load it from the AOC
         # website.
         # TODO: Raise an exception with helpful text if data cannot be fetched.
         input = aoc_client.fetch_input_for(year, day)
-        puzzle_store.add_day(day, input)
+        store.add_day(year, day, input)
 
         logger.info("puzzle input for year {year} day {day} has been loaded and cached")
 
-    puzzle = puzzle_store.get(day)
+    puzzle = store.get(year, day)
+
+    #
+    run_solver(
+        solver_info=registry.find_solver_for(year, day),
+        puzzle=puzzle,
+        client=aoc_client,
+    )
+
+    # Check if the puzzle answers were modified. If so then persist the new
+    # puzzle data to disk.
+    og_puzzle = store.get(year, day)
+
+    if puzzle != og_puzzle:
+        # TODO: log
+        store.set(year, day, puzzle)
+
+    # Print out run time statistics before exiting.
+
+
+def run_solver(solver_info: SolverMetadata, puzzle: PuzzleData, client: AocClient):
+    solver = solver_info.create_solver_instance()
+    year = solver_info.year()
+    day = solver_info.day()
 
     # Validate any examples first to check the state of the solver.
     check_examples(type(solver))
-    print("👍 examples are good")
+    print(f"👍 Tested the examples for year {year} day {day} in the solver")
 
     # Compute the part one and part two answers using the puzzle's input.
     #
@@ -153,12 +176,10 @@ def solve():
     # TODO: Store correct answers when answer data is missing.
     # TODO: Store incorrect answer along with hints.
     part_one = solver.part_one(puzzle.input)
-    check_result("part one", str(part_one), puzzle.part_one_answer.correct_answer)
+    check_result("Part one", str(part_one), puzzle.part_one_answer.correct_answer)
 
     part_two = solver.part_two(puzzle.input)
-    check_result("part two", str(part_two), puzzle.part_two_answer.correct_answer)
-
-    # Print out run time statistics before exiting.
+    check_result("Part two", str(part_two), puzzle.part_two_answer.correct_answer)
 
     # Done!
     return
