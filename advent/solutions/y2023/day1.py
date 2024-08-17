@@ -20,7 +20,7 @@ from advent.utils.utils import first_and_last
     output="281",
 )
 class Day1Solver(AbstractSolver):
-    def part_one(self, input: str) -> str | None:
+    def part_one(self, input: str) -> int | str | None:
         ### Day 1 - Star 1 #############################################################
         # Load the input file, and for each line get the first and last digit and
         # concatenate them into a two digit number. Sum all those numbers together for
@@ -43,7 +43,7 @@ class Day1Solver(AbstractSolver):
 
         return str(sum)
 
-    def part_two(self, input: str) -> str | None:
+    def part_two(self, input: str) -> int | str | None:
         ### Day 1 - Star 2 #############################################################
         # This is annoying - some of the two digit combinations share the last/first
         # character, eg `oneight` -> `18` rather than `oneeight`.

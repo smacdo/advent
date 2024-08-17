@@ -31,6 +31,14 @@ class Part(Enum):
     One = 0
     Two = 1
 
+    def __str__(self) -> str:
+        if self == Part.One:
+            return "Part one"
+        elif self == Part.Two:
+            return "Part two"
+        else:
+            raise Exception("Unhandled enum case in Part __str__")
+
 
 class Example:
     """

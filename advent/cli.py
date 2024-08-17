@@ -1,5 +1,11 @@
+from abc import ABC, abstractmethod
 from advent.aoc.client import AocClient, AocLoginConfig
-from advent.data import FileBackedPuzzleStore, PuzzleData
+from advent.data import (
+    AnswerResponse,
+    FileBackedPuzzleStore,
+    PartAnswerCache,
+    PuzzleData,
+)
 from advent.plugins import load_all_solutions
 from advent.solution import (
     AbstractSolver,
@@ -53,6 +59,80 @@ class ExampleFailed(AdventUserException):
         )
 
 
+class CheckSolutionResult(ABC):
+    part: Part
+
+    def __init__(self, part: Part):
+        self.part = part
+
+    @abstractmethod
+    def status_text(self) -> str:
+        pass
+
+
+class CheckSolutionResult_NotFinished(CheckSolutionResult):
+    def __init__(self, part: Part):
+        super().__init__(part)
+
+    def status_text(self) -> str:
+        return f"👻 Answer for {self.part} is not finished"
+
+
+class CheckSolutionResult_Ok(CheckSolutionResult):
+    answer: int | str | None
+
+    def __init__(self, part: Part, answer: int | str):
+        super().__init__(part)
+        self.answer = answer
+
+    def status_text(self) -> str:
+        return f"✅ {self.part}: {self.answer}"
+
+
+class CheckSolutionResult_Wrong(CheckSolutionResult):
+    actual_answer: int | str | None
+    expected_answer: int | str | None
+
+    def __init__(
+        self, part: Part, actual_answer: int | str, expected_answer: int | str | None
+    ):
+        super().__init__(part)
+        self.actual_answer = actual_answer
+        self.expected_answer = expected_answer
+
+    def status_text(self) -> str:
+        if self.expected_answer is None:
+            return f"❌ Wrong answer for {str(self.part).lower()}: {self.actual_answer}"
+        else:
+            return (
+                f"❌ Wrong answer for {str(self.part).lower()}\n"
+                f"       Expected: {self.expected_answer}\n"
+                f"         Actual: {self.actual_answer}"
+            )
+
+
+class CheckSolutionResult_TooHigh(CheckSolutionResult):
+    actual_answer: int | str | None
+
+    def __init__(self, part: Part, actual_answer: int | str):
+        super().__init__(part)
+        self.actual_answer = actual_answer
+
+    def status_text(self) -> str:
+        return f"❌ Wrong answer for {str(self.part).lower()}: {self.actual_answer} is too high"
+
+
+class CheckSolutionResult_TooLow(CheckSolutionResult):
+    actual_answer: int | str | None
+
+    def __init__(self, part: Part, actual_answer: int | str):
+        super().__init__(part)
+        self.actual_answer = actual_answer
+
+    def status_text(self) -> str:
+        return f"❌ Wrong answer for {str(self.part).lower()}: {self.actual_answer} is too low"
+
+
 def output(args):
     # TODO: Print output for the listed day.
     pass
@@ -79,24 +159,48 @@ def check_examples(solver_class: type[AbstractSolver]):
             raise ExampleFailed(str(result), example)
 
 
-def check_result(part_name: str, expected: str | None, actual: str | None) -> bool:
+def check_solution(
+    part: Part, solution: int | str | None, answer_cache: PartAnswerCache
+) -> CheckSolutionResult:
     # TODO: Split the printing from the checking and also make it easier to count # OK vs FAIL
-    if actual is None:
-        # TODO: Better exception
-        raise Exception(f"{part_name} answer data is missing")
+    if solution is None:
+        return CheckSolutionResult_NotFinished(part)
 
-    if expected is None:
-        print("👻 Answer for {part_name} is not finished")
-    else:
-        if expected == actual:
-            print(f"✅ {part_name}: {actual}")
-            return True
+    if answer_cache.correct_answer is not None:
+        if solution == answer_cache.correct_answer:
+            return CheckSolutionResult_Ok(part, solution)
         else:
-            print(f"❌ Wrong answer for {part_name}")
-            print(f"  Expected: {expected}")
-            print(f"    Actual: {actual}")
+            return CheckSolutionResult_Wrong(
+                part, answer_cache.correct_answer, solution
+            )
+    else:
+        # Use the answer cache to see if there is already a result for this
+        # solution.
+        answer_response = answer_cache.check_answer(solution)
 
-    return False
+        # The cache doesn't have enough information to check if the answer is
+        # correct or not. Try to submit a response to the AOC backend and see
+        # what it says about the solution.
+        if answer_response == AnswerResponse.Unknown:
+            # TODO: Check the answer by submitting it to the client and seeing what
+            #       the response is.
+            # TODO: Update the answer cache with the response.
+            raise Exception("submitting answers not implemented yet")
+
+        # Convert the answer cache's response to a result that can be used by
+        # the solution runner framework when returned from this method.
+        if answer_response == AnswerResponse.Ok:
+            return CheckSolutionResult_Ok(part, solution)
+        elif answer_response == AnswerResponse.Wrong:
+            return CheckSolutionResult_Wrong(
+                part, actual_answer=solution, expected_answer=None
+            )
+        elif answer_response == AnswerResponse.TooLow:
+            return CheckSolutionResult_TooLow(part, solution)
+        elif answer_response == AnswerResponse.TooHigh:
+            return CheckSolutionResult_TooHigh(part, solution)
+        else:
+            raise ValueError("Unhandled enum value for AnswerResponse")
 
 
 def cli_solve(args):
@@ -176,10 +280,10 @@ def run_solver(solver_info: SolverMetadata, puzzle: PuzzleData, client: AocClien
     # TODO: Store correct answers when answer data is missing.
     # TODO: Store incorrect answer along with hints.
     part_one = solver.part_one(puzzle.input)
-    check_result("Part one", str(part_one), puzzle.part_one_answer.correct_answer)
+    print(check_solution(Part.One, part_one, puzzle.part_one_answer).status_text())
 
     part_two = solver.part_two(puzzle.input)
-    check_result("Part two", str(part_two), puzzle.part_two_answer.correct_answer)
+    print(check_solution(Part.Two, part_two, puzzle.part_two_answer).status_text())
 
     # Done!
     return
