@@ -4,7 +4,7 @@ from enum import Enum
 
 from advent.aoc.client import AocClient
 from advent.data import AnswerResponse, PartAnswerCache, PuzzleData
-from advent.solution import AbstractSolver, Example, Part, SolverMetadata
+from advent.solution import Example, Part, SolverMetadata
 
 
 class CheckResult(ABC):
@@ -82,12 +82,15 @@ class RunSolverResult:
         self.part_two = part_two_result
 
     def set_result(self, part: Part, result: CheckResult):
+        """Get the result for part one if `part == Part.One` otherwise get the result for part two."""
         if part == Part.One:
             self.part_one = result
         else:
             self.part_two = result
 
     def get_result(self, part: Part) -> CheckResult | None:
+        """Set the result for part one if `part == Part.One` otherwise set the result for part two."""
+
         if part == Part.One:
             return self.part_one
         else:
@@ -175,31 +178,6 @@ def run_solver(
     return run_result
 
 
-def check_examples(
-    solver_class: type[AbstractSolver],
-    part_one_examples: list[Example],
-    part_two_examples: list[Example],
-) -> CheckResult | None:
-    """
-    Checks the example inputs for `solver_class` match the example outputs when
-    instantiating a new instance of `solver_class` and running the inputs through
-     `part_one` and `part_two` methods.
-    """
-    for example in part_one_examples:
-        solver = solver_class()
-        result = solver.part_one(example.input)
-
-        if not example.output == result:
-            return CheckResult_ExampleFailed(str(result), example)
-
-    for example in part_two_examples:
-        solver = solver_class()
-        result = solver.part_two(example.input)
-
-        if not example.output == result:
-            return CheckResult_ExampleFailed(str(result), example)
-
-
 def check_solution_part(
     part: Part, answer: int | str | None, answer_cache: PartAnswerCache
 ) -> CheckResult:
@@ -208,58 +186,43 @@ def check_solution_part(
     if answer is None:
         return CheckResult_NotFinished(part)
 
-    # Try to use the answer cache to check if the solution is correct.
-    if answer_cache.correct_answer is not None:
-        # The answer cache knows the correct answer which can be included in the
-        # result!
-        if answer == answer_cache.correct_answer:
-            # The solution is correct! Return `None` to indicate there was no
-            # error.
-            return CheckResult_Ok(part)
-        else:
-            # The solution is wrong but the correct expected solution can be
-            # included in the result.
-            return CheckResult_Wrong(
-                part=part,
-                actual_answer=answer,
-                expected_answer=answer_cache.correct_answer,
-                hint=None,
-            )
+    # Use the previous results in the answer cache to see if the answer is
+    # too low, high or otherwise incorrect.
+    answer_response = answer_cache.check_answer(answer)
+
+    # The cache doesn't have enough information to check if the answer is
+    # incorrect which means this solution _could_ be the correct answer. Use
+    # the provided AOC client to submit the solution and see what the result
+    # is.
+    if answer_response == AnswerResponse.Unknown:
+        # TODO: Submit the solution and map the response to `answer_response`.
+        # TODO: Write the response to the answer cache.
+        raise Exception("submitting answers not implemented yet")
+
+    # Check if the answer is OK, and for any result that is not OK return
+    # a matching CheckResult value.
+    if answer_response == AnswerResponse.Ok:
+        return CheckResult_Ok(part)
+    elif answer_response == AnswerResponse.Wrong:
+        return CheckResult_Wrong(
+            part=part,
+            actual_answer=answer,
+            expected_answer=answer_cache.correct_answer,
+            hint=None,
+        )
+    elif answer_response == AnswerResponse.TooLow:
+        return CheckResult_Wrong(
+            part=part,
+            actual_answer=answer,
+            expected_answer=answer_cache.correct_answer,
+            hint=CheckHint.TooLow,
+        )
+    elif answer_response == AnswerResponse.TooHigh:
+        return CheckResult_Wrong(
+            part=part,
+            actual_answer=answer,
+            expected_answer=answer_cache.correct_answer,
+            hint=CheckHint.TooHigh,
+        )
     else:
-        # Use the previous results in the answer cache to see if the answer is
-        # too low, high or otherwise incorrect.
-        answer_response = answer_cache.check_answer(answer)
-
-        # The cache doesn't have enough information to check if the answer is
-        # incorrect which means this solution _could_ be the correct answer. Use
-        # the provided AOC client to submit the solution and see what the result
-        # is.
-        if answer_response == AnswerResponse.Unknown:
-            # TODO: Submit the solution and map the response to `answer_response`.
-            # TODO: Write the response to the answer cache.
-            raise Exception("submitting answers not implemented yet")
-
-        # Check if the answer is OK, and for any result that is not OK return
-        # a matching CheckResult value.
-        if answer_response == AnswerResponse.Ok:
-            return CheckResult_Ok(part)
-        elif answer_response == AnswerResponse.Wrong:
-            return CheckResult_Wrong(
-                part=part, actual_answer=answer, expected_answer=None, hint=None
-            )
-        elif answer_response == AnswerResponse.TooLow:
-            return CheckResult_Wrong(
-                part=part,
-                actual_answer=answer,
-                expected_answer=None,
-                hint=CheckHint.TooLow,
-            )
-        elif answer_response == AnswerResponse.TooHigh:
-            return CheckResult_Wrong(
-                part=part,
-                actual_answer=answer,
-                expected_answer=None,
-                hint=CheckHint.TooHigh,
-            )
-        else:
-            raise ValueError("Unhandled enum value for AnswerResponse")
+        raise ValueError("Unhandled enum value for AnswerResponse")
