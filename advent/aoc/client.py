@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import List, Optional
 from bs4 import BeautifulSoup
 from enum import Enum
@@ -117,7 +118,25 @@ class AocCalendarDay:
             return f"{self.day}"
 
 
-class AocClient:
+class AocClient(ABC):
+    """Interacts with the Advent of Code website."""
+
+    @abstractmethod
+    def fetch_input_for(self, year: int, day: int) -> str:
+        pass
+
+    @abstractmethod
+    def fetch_days(self, year: int) -> List[AocCalendarDay]:
+        pass
+
+    @abstractmethod
+    def submit_answer(
+        self, year: int, day: int, part: Part, answer: str
+    ) -> SubmitResponse:
+        pass
+
+
+class AocWebClient(AocClient):
     """Interacts with the Advent of Code website."""
 
     def __init__(self, login_config: AocLoginConfig):
