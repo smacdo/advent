@@ -4,6 +4,7 @@ from advent.data import (
 )
 from advent.plugins import load_all_solutions
 from advent.solution import (
+    MaybeAnswerType,
     Part,
     SolverMetadata,
     get_global_solver_registry,
@@ -37,7 +38,7 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
         )
 
     def on_part_ok(
-        self, answer: int | str | None, solver_metadata: SolverMetadata, part: Part
+        self, answer: MaybeAnswerType, solver_metadata: SolverMetadata, part: Part
     ):
         print(f"✅ {part}: {answer}")
 

@@ -1,6 +1,7 @@
 from advent.solution import (
     AbstractSolver,
     DuplicateSolverType,
+    MaybeAnswerType,
     SolverRegistry,
     SolverMetadata,
 )
@@ -11,26 +12,26 @@ import unittest
 
 
 class Solution_1A(AbstractSolver):
-    def part_one(self, input: str) -> int | str | None:
+    def part_one(self, input: str) -> MaybeAnswerType:
         return "1A_part_one"
 
-    def part_two(self, input: str) -> int | str | None:
+    def part_two(self, input: str) -> MaybeAnswerType:
         return "1A_part_two"
 
 
 class Solution_1B(AbstractSolver):
-    def part_one(self, input: str) -> int | str | None:
+    def part_one(self, input: str) -> MaybeAnswerType:
         return "1B_part_one"
 
-    def part_two(self, input: str) -> int | str | None:
+    def part_two(self, input: str) -> MaybeAnswerType:
         return "1B_part_two"
 
 
 class Solution_1C(AbstractSolver):
-    def part_one(self, input: str) -> int | str | None:
+    def part_one(self, input: str) -> MaybeAnswerType:
         return "1C_part_one"
 
-    def part_two(self, input: str) -> int | str | None:
+    def part_two(self, input: str) -> MaybeAnswerType:
         return "1C_part_two"
 
 
@@ -39,10 +40,10 @@ class Solution_2A(AbstractSolver):
         self.x = x
         self.y = y
 
-    def part_one(self, input: str) -> int | str | None:
+    def part_one(self, input: str) -> MaybeAnswerType:
         return f"2A{self.x}_part_one"
 
-    def part_two(self, input: str) -> int | str | None:
+    def part_two(self, input: str) -> MaybeAnswerType:
         return f"2A{self.y}_part_two"
 
 
@@ -57,10 +58,10 @@ class PartTests(unittest.TestCase):
 class AbstractSolverTests(unittest.TestCase):
     def test_get_part_func(self):
         class GetPartTestAbstractSolver(AbstractSolver):
-            def part_one(self, input: str) -> int | str | None:
+            def part_one(self, input: str) -> MaybeAnswerType:
                 return "one"
 
-            def part_two(self, input: str) -> int | str | None:
+            def part_two(self, input: str) -> MaybeAnswerType:
                 return "two"
 
         solver = GetPartTestAbstractSolver()

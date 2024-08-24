@@ -1,5 +1,5 @@
 from advent.annotations import solver, part_one_example, part_two_example
-from advent.solution import AbstractSolver, Example, Part
+from advent.solution import AbstractSolver, Example, MaybeAnswerType, Part
 from advent.solution import get_global_solver_registry
 
 import unittest
@@ -10,10 +10,10 @@ import unittest
 @part_one_example(input="x", output="22")
 @part_two_example(input="89", output="yes")
 class DecoratedTestSolution(AbstractSolver):
-    def part_one(self, input: str) -> int | str | None:
+    def part_one(self, input: str) -> MaybeAnswerType:
         return "1A_part_one"
 
-    def part_two(self, input: str) -> int | str | None:
+    def part_two(self, input: str) -> MaybeAnswerType:
         return "1A_part_two"
 
 

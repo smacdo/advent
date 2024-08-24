@@ -6,6 +6,9 @@ import os
 
 DEFAULT_VARIANT_NAME = "default"
 
+type MaybeAnswerType = int | str | None
+type AnswerType = int | str
+
 # TODO: @slow
 # TODO: @part_missing
 
@@ -33,14 +36,14 @@ class AbstractSolver(ABC):
     """Base class for a solver capable of solving puzzle inputs."""
 
     @abstractmethod
-    def part_one(self, input: str) -> int | str | None:
+    def part_one(self, input: str) -> MaybeAnswerType:
         pass
 
     @abstractmethod
-    def part_two(self, input: str) -> int | str | None:
+    def part_two(self, input: str) -> MaybeAnswerType:
         pass
 
-    def get_part_func(self, part: Part) -> Callable[[str], int | str | None]:
+    def get_part_func(self, part: Part) -> Callable[[str], MaybeAnswerType]:
         """Returns the solver's `part_one` function if `part == Part.One` otherwise the `part_two` function is returned"""
         if part == Part.One:
             return self.part_one

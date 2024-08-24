@@ -4,7 +4,7 @@ from enum import Enum
 
 from advent.aoc.client import AocClient
 from advent.data import AnswerResponse, PartAnswerCache, PuzzleData
-from advent.solution import Example, Part, SolverMetadata
+from advent.solution import AnswerType, Example, MaybeAnswerType, Part, SolverMetadata
 
 
 class CheckResult(ABC):
@@ -39,15 +39,15 @@ class CheckHint(Enum):
 
 @dataclass
 class CheckResult_Wrong(CheckResult):
-    actual_answer: int | str | None
-    expected_answer: int | str | None
+    actual_answer: MaybeAnswerType
+    expected_answer: MaybeAnswerType
     hint: CheckHint | None
 
     def __init__(
         self,
         part: Part,
-        actual_answer: int | str,
-        expected_answer: int | str | None,
+        actual_answer: AnswerType,
+        expected_answer: MaybeAnswerType,
         hint: CheckHint | None,
     ):
         super().__init__(part)
@@ -59,10 +59,10 @@ class CheckResult_Wrong(CheckResult):
 
 @dataclass
 class CheckResult_ExampleFailed(CheckResult):
-    actual_answer: int | str | None
+    actual_answer: MaybeAnswerType
     example: Example
 
-    def __init__(self, actual_answer: int | str | None, example: Example):
+    def __init__(self, actual_answer: MaybeAnswerType, example: Example):
         super().__init__(example.part)
         self.actual_answer = actual_answer
         self.example = example
@@ -104,7 +104,7 @@ class SolverEventHandlers(ABC):
 
     @abstractmethod
     def on_part_ok(
-        self, answer: int | str | None, solver_metadata: SolverMetadata, part: Part
+        self, answer: MaybeAnswerType, solver_metadata: SolverMetadata, part: Part
     ):
         pass
 
@@ -149,15 +149,8 @@ def run_solver(
 
     events.on_examples_passed(solver_metadata=solver_metadata)
 
-    # Compute the part one and part two answers using the puzzle's input.
-    #
-    # Check if the answers for part one and part two match the expected puzzle
-    # outputs. If these outputs are not available try to load them from the AOC
-    # website.
-    #
-    # TODO: Submit an answer if the answer data is missing.
-    # TODO: Store correct answers when answer data is missing.
-    # TODO: Store incorrect answer along with hints.
+    # Run the solver twice - the first time to get the part one answer, and the
+    # second time to get the part two answer.
     for part in parts:
         solver = solver_metadata.create_solver_instance()
         answer = solver.get_part_func(part)(puzzle.input)
@@ -179,7 +172,7 @@ def run_solver(
 
 
 def check_solution_part(
-    part: Part, answer: int | str | None, answer_cache: PartAnswerCache
+    part: Part, answer: MaybeAnswerType, answer_cache: PartAnswerCache
 ) -> CheckResult:
     """TODO"""
     # `None` indicates the solver hasn't implemented a solution for this part.
@@ -195,6 +188,9 @@ def check_solution_part(
     # the provided AOC client to submit the solution and see what the result
     # is.
     if answer_response == AnswerResponse.Unknown:
+        # TODO: Submit an answer if the answer data is missing.
+        # TODO: Store correct answers when answer data is missing.
+        # TODO: Store incorrect answer along with hints.
         # TODO: Submit the solution and map the response to `answer_response`.
         # TODO: Write the response to the answer cache.
         raise Exception("submitting answers not implemented yet")

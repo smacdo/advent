@@ -3,7 +3,13 @@ import unittest
 
 from advent.aoc.client import AocCalendarDay, AocClient, SubmitResponse
 from advent.data import PartAnswerCache, PuzzleData
-from advent.solution import AbstractSolver, Example, Part, SolverMetadata
+from advent.solution import (
+    AbstractSolver,
+    Example,
+    MaybeAnswerType,
+    Part,
+    SolverMetadata,
+)
 from advent.solver import (
     CheckHint,
     CheckResult,
@@ -18,7 +24,7 @@ from advent.solver import (
 
 
 class DecoratedTestSolution(AbstractSolver):
-    def part_one(self, input: str) -> int | str | None:
+    def part_one(self, input: str) -> MaybeAnswerType:
         if input == "part_one_fail":
             return "part_one_bad_output"
         elif input == "part_one_low":
@@ -28,7 +34,7 @@ class DecoratedTestSolution(AbstractSolver):
 
         return "part_one_ok"
 
-    def part_two(self, input: str) -> int | str | None:
+    def part_two(self, input: str) -> MaybeAnswerType:
         if input == "part_two_fail":
             return "part_two_bad_output"
         elif input == "part_two_high":
@@ -57,7 +63,7 @@ class MockSolverEventHandlers(SolverEventHandlers):
         pass
 
     def on_part_ok(
-        self, answer: int | str | None, solver_metadata: SolverMetadata, part: Part
+        self, answer: MaybeAnswerType, solver_metadata: SolverMetadata, part: Part
     ):
         pass
 
