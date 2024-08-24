@@ -6,6 +6,8 @@ from pathlib import Path
 
 import zlib
 
+from advent.solution import Part
+
 # TODO: Use encryption rather than merely obscuring the input
 
 
@@ -235,6 +237,13 @@ class PuzzleData:
             )
         else:
             return False
+
+    def get_answer(self, part: Part) -> PartAnswerCache:
+        """Returns the answer cache for part one if `part == Part.One` otherwise returns the answer cache for part two."""
+        if part == Part.One:
+            return self.part_one_answer
+        else:
+            return self.part_two_answer
 
 
 class PuzzleStore(ABC):

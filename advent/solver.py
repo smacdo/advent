@@ -74,10 +74,24 @@ class RunSolverResult:
     part_two: CheckResult | None
 
     def __init__(
-        self, part_one_result: CheckResult | None, part_two_result: CheckResult | None
+        self,
+        part_one_result: CheckResult | None = None,
+        part_two_result: CheckResult | None = None,
     ):
         self.part_one = part_one_result
         self.part_two = part_two_result
+
+    def set_result(self, part: Part, result: CheckResult):
+        if part == Part.One:
+            self.part_one = result
+        else:
+            self.part_two = result
+
+    def get_result(self, part: Part) -> CheckResult | None:
+        if part == Part.One:
+            return self.part_one
+        else:
+            return self.part_two
 
 
 class SolverEventHandlers(ABC):
@@ -104,28 +118,33 @@ def run_solver(
     client: AocClient,
     events: SolverEventHandlers,
 ) -> RunSolverResult:
-    solver = solver_metadata.create_solver_instance()
+    run_result = RunSolverResult()
 
     # Validate any examples first to check the state of the solver.
-    example_check_result = check_examples(
-        type(solver),
-        list(solver_metadata.examples(Part.One)),
-        list(solver_metadata.examples(Part.Two)),
-    )
+    parts = (Part.One, Part.Two)
 
-    if example_check_result is None:
-        events.on_examples_passed(solver_metadata=solver_metadata)
-    else:
-        events.on_part_wrong(
-            result=example_check_result,
-            solver_metadata=solver_metadata,
-            part=example_check_result.part,
-        )
+    for part in parts:
+        for example in solver_metadata.examples(part):
+            solver = solver_metadata.create_solver_instance()
+            answer = solver.get_part_func(part)(example.input)
 
-        return RunSolverResult(
-            example_check_result if example_check_result.part == Part.One else None,
-            example_check_result if example_check_result.part == Part.Two else None,
-        )
+            if example.output != answer:
+                result = CheckResult_ExampleFailed(
+                    actual_answer=answer, example=example
+                )
+
+                run_result.set_result(
+                    part,
+                    result,
+                )
+
+                events.on_part_wrong(
+                    result=result, solver_metadata=solver_metadata, part=part
+                )
+
+                return run_result
+
+    events.on_examples_passed(solver_metadata=solver_metadata)
 
     # Compute the part one and part two answers using the puzzle's input.
     #
@@ -133,42 +152,27 @@ def run_solver(
     # outputs. If these outputs are not available try to load them from the AOC
     # website.
     #
-    # TODO: Refactor to loop part one and part two.
     # TODO: Submit an answer if the answer data is missing.
     # TODO: Store correct answers when answer data is missing.
     # TODO: Store incorrect answer along with hints.
-    part_one = solver.part_one(puzzle.input)
-    part_one_result = check_solution_part(
-        part=Part.One, answer=part_one, answer_cache=puzzle.part_one_answer
-    )
+    for part in parts:
+        solver = solver_metadata.create_solver_instance()
+        answer = solver.get_part_func(part)(puzzle.input)
 
-    if part_one_result.is_ok():
-        events.on_part_ok(
-            answer=part_one, solver_metadata=solver_metadata, part=Part.One
-        )
-    else:
-        events.on_part_wrong(
-            result=part_one_result, solver_metadata=solver_metadata, part=Part.One
+        result = check_solution_part(
+            part=part, answer=answer, answer_cache=puzzle.get_answer(part=part)
         )
 
-        return RunSolverResult(part_one_result=part_one_result, part_two_result=None)
+        run_result.set_result(part, result)
 
-    part_two = solver.part_two(puzzle.input)
-    part_two_result = check_solution_part(Part.Two, part_two, puzzle.part_two_answer)
+        if result.is_ok():
+            events.on_part_ok(answer=answer, solver_metadata=solver_metadata, part=part)
+        else:
+            # Answer is not correct - bail out to exit early.
+            break
 
-    if part_two_result.is_ok():
-        events.on_part_ok(
-            answer=part_two, solver_metadata=solver_metadata, part=Part.Two
-        )
-    else:
-        events.on_part_wrong(
-            result=part_two_result, solver_metadata=solver_metadata, part=Part.Two
-        )
-
-    # Done!
-    return RunSolverResult(
-        part_one_result=part_one_result, part_two_result=part_two_result
-    )
+    # All done - either good or bad return the results.
+    return run_result
 
 
 def check_examples(

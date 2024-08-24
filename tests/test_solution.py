@@ -54,6 +54,21 @@ class PartTests(unittest.TestCase):
         self.assertNotEqual(Part.Two, Part.One)
 
 
+class AbstractSolverTests(unittest.TestCase):
+    def test_get_part_func(self):
+        class GetPartTestAbstractSolver(AbstractSolver):
+            def part_one(self, input: str) -> int | str | None:
+                return "one"
+
+            def part_two(self, input: str) -> int | str | None:
+                return "two"
+
+        solver = GetPartTestAbstractSolver()
+
+        self.assertEqual(solver.get_part_func(Part.One)(""), "one")
+        self.assertEqual(solver.get_part_func(Part.Two)(""), "two")
+
+
 class ExampleTests(unittest.TestCase):
     def test_multi_line_input_is_converted_to_single_str_with_newlines(self):
         self.assertEqual(

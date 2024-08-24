@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from enum import Enum
 from typing import Generator
 import os
@@ -15,18 +16,6 @@ DEFAULT_VARIANT_NAME = "default"
 # TODO: PartStatus [Missing, Incomplete, Broken, Finished]
 
 
-class AbstractSolver(ABC):
-    """Base class for a solver capable of solving puzzle inputs."""
-
-    @abstractmethod
-    def part_one(self, input: str) -> int | str | None:
-        pass
-
-    @abstractmethod
-    def part_two(self, input: str) -> int | str | None:
-        pass
-
-
 class Part(Enum):
     One = 0
     Two = 1
@@ -38,6 +27,25 @@ class Part(Enum):
             return "Part two"
         else:
             raise Exception("Unhandled enum case in Part __str__")
+
+
+class AbstractSolver(ABC):
+    """Base class for a solver capable of solving puzzle inputs."""
+
+    @abstractmethod
+    def part_one(self, input: str) -> int | str | None:
+        pass
+
+    @abstractmethod
+    def part_two(self, input: str) -> int | str | None:
+        pass
+
+    def get_part_func(self, part: Part) -> Callable[[str], int | str | None]:
+        """Returns the solver's `part_one` function if `part == Part.One` otherwise the `part_two` function is returned"""
+        if part == Part.One:
+            return self.part_one
+        else:
+            return self.part_two
 
 
 class Example:

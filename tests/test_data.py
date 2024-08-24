@@ -8,6 +8,23 @@ from pathlib import Path
 import unittest
 import tempfile
 
+from advent.solution import Part
+
+
+class PuzzleDataTests(unittest.TestCase):
+    def test_get_part_answer(self):
+        part_one_answer = PartAnswerCache(correct_answer="one is right")
+        part_two_answer = PartAnswerCache(correct_answer="two is right")
+
+        puzzle_data = PuzzleData(
+            input="",
+            part_one_answer=part_one_answer,
+            part_two_answer=part_two_answer,
+        )
+
+        self.assertEqual(puzzle_data.get_answer(Part.One), part_one_answer)
+        self.assertEqual(puzzle_data.get_answer(Part.Two), part_two_answer)
+
 
 class FileBackedPuzzleStoreTests(unittest.TestCase):
     def test_set_and_read_back(self):
