@@ -2,23 +2,28 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
-from advent.aoc.client import AocClient
+from advent.aoc.client import AocClient, SubmitResponse
 from advent.data import AnswerResponse, PartAnswerCache, PuzzleData
 from advent.solution import AnswerType, Example, MaybeAnswerType, Part, SolverMetadata
 
 
 class CheckResult(ABC):
+    """Abstract base class for the various conditions that can occur when checking the answer for one of the puzzle parts."""
+
     part: Part
 
     def __init__(self, part: Part):
         self.part = part
 
     def is_ok(self) -> bool:
+        """Returns true if the condition is one where the answer is correct, otherwise false if it is not correct."""
         return False
 
 
 @dataclass
 class CheckResult_Ok(CheckResult):
+    """Represents the condition where the answer was correct for the part."""
+
     def __init__(self, part: Part):
         super().__init__(part)
 
@@ -27,7 +32,30 @@ class CheckResult_Ok(CheckResult):
 
 
 @dataclass
+class CheckResult_ExampleFailed(CheckResult):
+    """Represents the condition where the output of this part didn't match one of the solution's example outputs"""
+
+    actual_answer: MaybeAnswerType
+    example: Example
+
+    def __init__(self, actual_answer: MaybeAnswerType, example: Example):
+        super().__init__(example.part)
+        self.actual_answer = actual_answer
+        self.example = example
+
+
+@dataclass
+class CheckResult_TooSoon(CheckResult):
+    """Represents the condition where too many answers are submitted in too short of a timeframe, and the backend judge is telling us to wait before submitting a new answer"""
+
+    def __init__(self, part: Part):
+        super().__init__(part)
+
+
+@dataclass
 class CheckResult_NotFinished(CheckResult):
+    """Represents the condition where the answer for this part has not been implemented"""
+
     def __init__(self, part: Part):
         super().__init__(part)
 
@@ -39,6 +67,15 @@ class CheckHint(Enum):
 
 @dataclass
 class CheckResult_Wrong(CheckResult):
+    """
+    Represents the condition where the answer was not correct.
+
+    Slots:
+    `actual_answer`:   The answer that was returned when running the solver.
+    `expected_answer`: The correct answer if available, otherwise this will be `None`.
+    `hint`:            A hint that `actual_answer` is too low or hi if available, otherwise `None`.
+    """
+
     actual_answer: MaybeAnswerType
     expected_answer: MaybeAnswerType
     hint: CheckHint | None
@@ -58,18 +95,9 @@ class CheckResult_Wrong(CheckResult):
 
 
 @dataclass
-class CheckResult_ExampleFailed(CheckResult):
-    actual_answer: MaybeAnswerType
-    example: Example
-
-    def __init__(self, actual_answer: MaybeAnswerType, example: Example):
-        super().__init__(example.part)
-        self.actual_answer = actual_answer
-        self.example = example
-
-
-@dataclass
 class RunSolverResult:
+    """Holds the results of running a solver."""
+
     part_one: CheckResult | None
     part_two: CheckResult | None
 
@@ -156,7 +184,11 @@ def run_solver(
         answer = solver.get_part_func(part)(puzzle.input)
 
         result = check_solution_part(
-            part=part, answer=answer, answer_cache=puzzle.get_answer(part=part)
+            solver_metadata=solver_metadata,
+            part=part,
+            answer=answer,
+            answer_cache=puzzle.get_answer(part=part),
+            client=client,
         )
 
         run_result.set_result(part, result)
@@ -165,6 +197,9 @@ def run_solver(
             events.on_part_ok(answer=answer, solver_metadata=solver_metadata, part=part)
         else:
             # Answer is not correct - bail out to exit early.
+            events.on_part_wrong(
+                result=result, solver_metadata=solver_metadata, part=part
+            )
             break
 
     # All done - either good or bad return the results.
@@ -172,7 +207,11 @@ def run_solver(
 
 
 def check_solution_part(
-    part: Part, answer: MaybeAnswerType, answer_cache: PartAnswerCache
+    solver_metadata: SolverMetadata,
+    part: Part,
+    answer: MaybeAnswerType,
+    answer_cache: PartAnswerCache,
+    client: AocClient,
 ) -> CheckResult:
     """TODO"""
     # `None` indicates the solver hasn't implemented a solution for this part.
@@ -193,7 +232,49 @@ def check_solution_part(
         # TODO: Store incorrect answer along with hints.
         # TODO: Submit the solution and map the response to `answer_response`.
         # TODO: Write the response to the answer cache.
-        raise Exception("submitting answers not implemented yet")
+        submit_response = client.submit_answer(
+            year=solver_metadata.year(),
+            day=solver_metadata.day(),
+            part=part,
+            answer=str(answer),
+        )
+
+        if (
+            submit_response == SubmitResponse.Ok
+            or submit_response == SubmitResponse.AlreadyAnswered
+        ):
+            answer_cache.set_correct_answer(str(answer))
+            return CheckResult_Ok(part)
+        elif submit_response == SubmitResponse.TooSoon:
+            return CheckResult_TooSoon(part)
+        elif submit_response == SubmitResponse.Wrong:
+            answer_cache.add_wrong_answer(str(answer))
+            return CheckResult_Wrong(
+                part=part,
+                actual_answer=answer,
+                expected_answer=answer_cache.correct_answer,
+                hint=None,
+            )
+        elif submit_response == SubmitResponse.TooLow:
+            answer_cache.set_low_boundary(int(answer))
+            return CheckResult_Wrong(
+                part=part,
+                actual_answer=answer,
+                expected_answer=answer_cache.correct_answer,
+                hint=CheckHint.TooLow,
+            )
+        elif submit_response == SubmitResponse.TooHigh:
+            answer_cache.set_high_boundary(int(answer))
+            return CheckResult_Wrong(
+                part=part,
+                actual_answer=answer,
+                expected_answer=answer_cache.correct_answer,
+                hint=CheckHint.TooHigh,
+            )
+        else:
+            raise ValueError(
+                f"Unhandled enum value `{submit_response}` for SubmitResponse"
+            )
 
     # Check if the answer is OK, and for any result that is not OK return
     # a matching CheckResult value.
@@ -221,4 +302,4 @@ def check_solution_part(
             hint=CheckHint.TooHigh,
         )
     else:
-        raise ValueError("Unhandled enum value for AnswerResponse")
+        raise ValueError(f"Unhandled enum value `{answer_response}` for AnswerResponse")

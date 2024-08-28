@@ -100,6 +100,22 @@ class SolverMetadataTests(unittest.TestCase):
         self.assertEqual(m_named_variant._variant_name, "foobar")
         self.assertEqual(m_missing_variant._variant_name, "default")
 
+    def test_add_examples_at_init_time(self):
+        ex1 = Example("input_part_one_a", "output_part_one", Part.One)
+        ex2 = Example("input_part_two_a", "output_part_two", Part.Two)
+        ex3 = Example("input_part_two_b", "output_part_two", Part.Two)
+        ex4 = Example("input_part_one_b", "output_part_one", Part.One)
+
+        m = SolverMetadata(
+            klass=Solution_1A,
+            day=15,
+            year=2010,
+            examples=[ex1, ex2, ex3, ex4],
+        )
+
+        self.assertSequenceEqual(list(m.examples(Part.One)), [ex1, ex4])
+        self.assertSequenceEqual(list(m.examples(Part.Two)), [ex2, ex3])
+
 
 class SolverRegistryTests(unittest.TestCase):
     def test_add_single_solution(self):

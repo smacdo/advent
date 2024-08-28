@@ -107,6 +107,7 @@ class SolverMetadata:
         puzzle_name: str | None = None,
         variant_name: str | None = None,
         is_slow: bool = False,
+        examples: list[Example] | None = None,
     ):
         self.klass = klass
         self._day = day
@@ -120,6 +121,13 @@ class SolverMetadata:
         self._is_slow: bool = is_slow
         self._part_one_examples = list()
         self._part_two_examples = list()
+
+        if examples is not None:
+            for example in examples:
+                if example.part == Part.One:
+                    self._part_one_examples.append(example)
+                else:
+                    self._part_two_examples.append(example)
 
     def create_solver_instance(self, **kwargs) -> AbstractSolver:
         return self.klass(**kwargs)
