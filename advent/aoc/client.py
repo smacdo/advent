@@ -142,6 +142,7 @@ class AocWebClient(AocClient):
     def __init__(self, login_config: AocLoginConfig):
         self.headers = {
             "cookie": f"session={login_config.session_id}",
+            "user-agent": "github.com/smacdo/advent [email: dev@smacdo.com]",
         }
 
     def fetch_input_for(self, year: int, day: int) -> str:
