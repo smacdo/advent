@@ -1,4 +1,4 @@
-from advent.aoc.client import AocClient, AocLoginConfig, AocWebClient
+from advent.aoc.client import AocClientConfig, AocWebClient
 from advent.data import (
     FileBackedPuzzleStore,
 )
@@ -13,6 +13,8 @@ from pathlib import Path
 
 import argparse
 import logging
+import os
+import shutil
 
 from advent.solver import (
     CheckHint,
@@ -70,19 +72,18 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
                 )
 
 
-def create_aoc_client() -> AocClient | None:
-    # Load the AOC session cookie
-    login_config = AocLoginConfig.try_load_from_file(".aoc_login")
+def create_aoc_client() -> AocWebClient | None:
+    # Check for the existence of the AOC client config on disk. If it doesn't
+    # exist try to create it, and then exit early with a message to the user to
+    # finish configuring it.
+    if not os.path.exists(".aoc_config"):
+        shutil.copy(".aoc_config.template", ".aoc_config")
 
-    if login_config is None:
-        logging.error(".aoc_login file is missing")
-        logging.error(
-            "***** Please copy your adventofcode.com session cookie to .aoc_session *****"
-        )
-        return None
+        # TODO: better message to the user.
+        logging.error(".aoc_config initialized - please fill out correct values")
 
-    # OK
-    return AocWebClient(login_config)
+    # Load the AOC client configuration file from disk.
+    return AocWebClient(AocClientConfig.load_from_file(".aoc_config"))
 
 
 class AdventUserException(Exception):
@@ -127,7 +128,7 @@ def solve(year: int, day: int):
 
     # Check if the puzzle input is cached on disk. If the input for this puzzle
     # are missing then load the inputs from the network.
-    store = FileBackedPuzzleStore(Path("data"))
+    store = FileBackedPuzzleStore(Path("data"), password=aoc_client.config.password)
 
     if not store.has_day(year, day):
         logger.debug("puzzle data is missing for year {year} day {day}")
@@ -163,7 +164,8 @@ def solve(year: int, day: int):
 
 def sync(args):
     # Load the AOC session cookie
-    login_config = AocLoginConfig.try_load_from_file(".aoc_login")
+    # TODO: error handling fix
+    login_config = AocClientConfig.load_from_file(".aoc_login")
 
     if login_config is None:
         logging.error(".aoc_login file is missing")
@@ -196,6 +198,10 @@ def main():
     args = parser.parse_args()
 
     # Dispatch subcommand.
+    #
+    # TODO: Intercept common exceptions and print out helpful remediation messages.
+    # TODO: cryptography.fernet.InvalidToken --> (probably) incorrect password
+    # TODO: .aoc_config password or session_id missing
     if args.subparser_name == "output":
         pass
     elif args.subparser_name == "solve":

@@ -29,7 +29,7 @@ class PuzzleDataTests(unittest.TestCase):
 class FileBackedPuzzleStoreTests(unittest.TestCase):
     def test_set_and_read_back(self):
         with tempfile.TemporaryDirectory() as tempdir:
-            f = FileBackedPuzzleStore(Path(tempdir))
+            f = FileBackedPuzzleStore(Path(tempdir), password="foobar")
 
             # Write three days of input
             pd0 = PuzzleData(
@@ -53,7 +53,7 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
 
     def test_set_and_read_back_with_missing_fields(self):
         with tempfile.TemporaryDirectory() as tempdir:
-            f = FileBackedPuzzleStore(Path(tempdir))
+            f = FileBackedPuzzleStore(Path(tempdir), password="foobar")
 
             # Write three days of input
             pd0 = PuzzleData("hello world", PartAnswerCache(), PartAnswerCache("p2a"))
@@ -78,7 +78,7 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
             (Path(tempdir) / "NOT_A_DAY").mkdir()
 
             # Set three days of input.
-            f = FileBackedPuzzleStore(Path(tempdir))
+            f = FileBackedPuzzleStore(Path(tempdir), password="foobar")
 
             pd0 = PuzzleData(
                 "hello world", PartAnswerCache("p1a"), PartAnswerCache("p2a")
@@ -104,7 +104,7 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
             (Path(tempdir) / "NOT_A_DAY").mkdir()
 
             # Set three days of input.
-            f = FileBackedPuzzleStore(Path(tempdir))
+            f = FileBackedPuzzleStore(Path(tempdir), password="foobar")
 
             pd0 = PuzzleData(
                 "hello world", PartAnswerCache("p1a"), PartAnswerCache("p2a")
@@ -132,7 +132,7 @@ class FileBackedPuzzleStoreTests(unittest.TestCase):
 
     def test_add_day(self):
         with tempfile.TemporaryDirectory() as tempdir:
-            f = FileBackedPuzzleStore(Path(tempdir))
+            f = FileBackedPuzzleStore(Path(tempdir), password="foobar")
 
             # Write three days of input
             f.add_day(1969, 0, "hello world")

@@ -1,0 +1,6 @@
+# A password for encrypting inputs when cached on disk and checked into git.
+# This password must be identical in each checkout of this repository.
+password=
+# Your Advent of Client session id which can be extracted from the session id
+# cookie in your web browser after logging in.
+session_id=

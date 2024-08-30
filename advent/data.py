@@ -1,10 +1,12 @@
+import base64
+
 from abc import ABC, abstractmethod
-from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-
-import zlib
 
 from advent.solution import Part
 
@@ -284,8 +286,12 @@ class PuzzleStoreFileMissing(Exception):
 class FileBackedPuzzleStore(PuzzleStore):
     """Stores inputs on the file system and encrypts the data prior to storage."""
 
-    def __init__(self, data_dir: Path) -> None:
-        self.repo_dir: Path = data_dir
+    password: str
+    repo_dir: Path
+
+    def __init__(self, data_dir: Path, password: str) -> None:
+        self.password = password
+        self.repo_dir = data_dir
 
     def get(self, year: int, day: int) -> PuzzleData:
         input = self._load_field(year, day, INPUT_FILE_NAME, unobscure=True)
@@ -326,7 +332,7 @@ class FileBackedPuzzleStore(PuzzleStore):
                 file_bytes = f.read()
 
                 if unobscure:
-                    return zlib.decompress(b64d(file_bytes)).decode("utf-8")
+                    return _decrypt_str(file_bytes, self.password)
                 else:
                     return file_bytes.decode("utf-8")
 
@@ -358,7 +364,7 @@ class FileBackedPuzzleStore(PuzzleStore):
     ):
         with (self.repo_dir / f"y{year}" / str(day) / field_file_name).open("wb") as f:
             if obscure:
-                f.write(b64e(zlib.compress(value.encode("utf-8"), 9)))
+                f.write(_encrypt_str(value, self.password))
             else:
                 f.write(value.encode("utf-8"))
 
@@ -400,3 +406,49 @@ class MemoryBackedDataStore:
         d.sort()
 
         return d
+
+
+# Encryption and decryption helpers taken from an Stack Overflow answer.
+# Ref: https://stackoverflow.com/a/73551491
+#
+# NOTE: Uses a fixed salt for simplicity since this code is not aiming for
+#       secure encryption but rather obfusicating the contents of the input data
+#       at the request of the AOC website author.
+FIXED_SALT = bytes(42)
+KDF_ALGORITHM = hashes.SHA256()
+KDF_LENGTH = 32
+KDF_ITERATIONS = 10
+
+
+def _encrypt_str(plaintext: str, password: str) -> bytes:
+    # Derive a symmetric key using the passsword and a fresh random salt.
+    kdf = PBKDF2HMAC(
+        algorithm=KDF_ALGORITHM,
+        length=KDF_LENGTH,
+        salt=FIXED_SALT,
+        iterations=KDF_ITERATIONS,
+    )
+    key = kdf.derive(password.encode("utf-8"))
+
+    # Encrypt the message.
+    f = Fernet(base64.urlsafe_b64encode(key))
+    ciphertext = f.encrypt(plaintext.encode("utf-8"))
+
+    return ciphertext
+
+
+def _decrypt_str(ciphertext: bytes, password: str) -> str:
+    # Derive the symmetric key using the password and provided salt.
+    kdf = PBKDF2HMAC(
+        algorithm=KDF_ALGORITHM,
+        length=KDF_LENGTH,
+        salt=FIXED_SALT,
+        iterations=KDF_ITERATIONS,
+    )
+    key = kdf.derive(password.encode("utf-8"))
+
+    # Decrypt the message
+    f = Fernet(base64.urlsafe_b64encode(key))
+    plaintext = f.decrypt(ciphertext)
+
+    return plaintext.decode("utf-8")

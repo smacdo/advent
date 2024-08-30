@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
 from bs4 import BeautifulSoup
 from enum import Enum
 import logging
@@ -40,21 +39,33 @@ class SubmitResponse(Enum):
         )
 
 
-class HttpError(Exception):
+class ClientException(Exception):
+    pass
+
+
+class HttpError(ClientException):
     def __init__(self, error_code: int):
         super().__init__("Unexpected HTTP {error_code}")
 
 
-class ResourceNotFound(Exception):
+class ResourceNotFound(ClientException):
     def __init__(self):
         super().__init__("the requested http resource was not found")
 
 
-class InvalidSession(Exception):
+class InvalidSession(ClientException):
     def __init__(self):
         super().__init__(
-            "authentication failed - check the session id in `.aoc_session`"
+            "authentication failed - check the session id in `.aoc_config`"
         )
+
+
+class ExpectedConfigKeyMissing(ClientException):
+    key: str
+
+    def __init__(self, key: str):
+        super().__init__(f"{key} config value must be set in <CONFIG_FILE_PATH>")
+        self.key = key
 
 
 def parse_http_response(response: requests.Response) -> str:
@@ -67,38 +78,59 @@ def parse_http_response(response: requests.Response) -> str:
     return response.text.strip()
 
 
-class AocLoginConfig:
+class AocClientConfig:
     """Stores a username and Advent of Code session id used by the Advent of Code
     client class."""
 
-    def __init__(self, username: str, session_id: str):
-        self.username: str = username
-        self.session_id: str = session_id
+    password: str
+    session_id: str
+
+    def __init__(self, password: str, session_id: str):
+        self.password = password
+        self.session_id = session_id
 
     @staticmethod
-    def parse_login_config(file_lines: List[str]) -> Optional["AocLoginConfig"]:
-        """Parses the configuration file which is two lines. The first line is the username and the
-        second line is the session id"""
+    def load_from_str(file_text: str) -> "AocClientConfig":
+        """TODO: describe me plz"""
 
-        if len(file_lines) != 2:
-            # TODO: Better error message?
-            logging.error("expected two lines in login config file")
-            return None
+        # Iterate through the lines in the file with the expectation each line
+        # has the format `KEY = VALUE`. Extract the password and session_id
+        # key values - any other key should be ignored.
+        password: str | None = None
+        session_id: str | None = None
 
-        username = file_lines[0].rstrip()
-        session_id = file_lines[1].rstrip()
+        for line in file_text.splitlines():
+            line = line.strip()
 
-        return AocLoginConfig(username, session_id)
+            if line == "" or line.startswith("#"):
+                continue
+
+            name, value = line.split("=", maxsplit=1)
+
+            name = name.strip()
+            value = value.strip()
+
+            if name == "password":
+                password = value
+            elif name == "session_id":
+                session_id = value
+            else:
+                logger.info(f"unknown config key `{name}`")
+
+        # Make sure the password and session_id were loaded
+        if password is None or password == "":
+            raise ExpectedConfigKeyMissing("password")
+
+        if session_id is None or session_id == "":
+            raise ExpectedConfigKeyMissing("session_id")
+
+        return AocClientConfig(password=password, session_id=session_id)
 
     @staticmethod
-    def try_load_from_file(file_name: str = ".aoc_login") -> Optional["AocLoginConfig"]:
+    def load_from_file(file_name: str = ".aoc_login") -> "AocClientConfig":
         """Tries to load the login configuration from the provided file path"""
-        try:
-            with open(file_name, "r") as file:
-                lines = [line.rstrip() for line in file]
-                return AocLoginConfig.parse_login_config(lines)
-        except FileNotFoundError:
-            return None
+        with open(file_name, "r") as file:
+            return AocClientConfig.load_from_str(file.read())
 
 
 class AocCalendarDay:
@@ -126,7 +158,7 @@ class AocClient(ABC):
         pass
 
     @abstractmethod
-    def fetch_days(self, year: int) -> List[AocCalendarDay]:
+    def fetch_days(self, year: int) -> list[AocCalendarDay]:
         pass
 
     @abstractmethod
@@ -139,9 +171,12 @@ class AocClient(ABC):
 class AocWebClient(AocClient):
     """Interacts with the Advent of Code website."""
 
-    def __init__(self, login_config: AocLoginConfig):
+    config: AocClientConfig
+
+    def __init__(self, config: AocClientConfig):
+        self.config = config
         self.headers = {
-            "cookie": f"session={login_config.session_id}",
+            "cookie": f"session={config.session_id}",
             "user-agent": "github.com/smacdo/advent [email: dev@smacdo.com]",
         }
 
@@ -151,7 +186,7 @@ class AocWebClient(AocClient):
         url = f"https://adventofcode.com/{year}/day/{day}/input"
         return parse_http_response(requests.get(url, headers=self.headers))
 
-    def fetch_days(self, year: int) -> List[AocCalendarDay]:
+    def fetch_days(self, year: int) -> list[AocCalendarDay]:
         """Fetches a list of available Advent of Code days for a given year along with information
         showing if each day was partially or fully completed."""
         url = f"https://adventofcode.com/{year}/"
@@ -159,7 +194,7 @@ class AocWebClient(AocClient):
         soup = BeautifulSoup(page, "html.parser")
         days = []
 
-        for element in soup.find(class_="calendar").find_all("a"):  # type: ignore
+        for element in soup.find(class_="calendar").fincd_all("a"):  # type: ignore
             result = re.search("(\\d+)$", element["href"])
             day = int(result[1])  # type: ignore
 
