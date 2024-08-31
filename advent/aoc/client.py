@@ -133,13 +133,21 @@ class AocClientConfig:
             return AocClientConfig.load_from_str(file.read())
 
 
-class AocCalendarDay:
-    """Represents an Advent of Calendar day."""
+class AocDay:
+    """An Advent of Calendar code puzzle day."""
 
-    def __init__(self, day: int, part_one_solved: bool, part_two_solved: bool):
-        self.day: int = day
-        self.part_one_solved: bool = part_one_solved
-        self.part_two_solved: bool = part_two_solved
+    year: int
+    day: int
+    part_one_solved: bool
+    part_two_solved: bool
+
+    def __init__(
+        self, year: int, day: int, part_one_solved: bool, part_two_solved: bool
+    ):
+        self.year = year
+        self.day = day
+        self.part_one_solved = part_one_solved
+        self.part_two_solved = part_two_solved
 
     def __str__(self) -> str:
         if self.part_two_solved:
@@ -158,7 +166,7 @@ class AocClient(ABC):
         pass
 
     @abstractmethod
-    def fetch_days(self, year: int) -> list[AocCalendarDay]:
+    def fetch_days(self, year: int) -> list[AocDay]:
         pass
 
     @abstractmethod
@@ -186,7 +194,7 @@ class AocWebClient(AocClient):
         url = f"https://adventofcode.com/{year}/day/{day}/input"
         return parse_http_response(requests.get(url, headers=self.headers))
 
-    def fetch_days(self, year: int) -> list[AocCalendarDay]:
+    def fetch_days(self, year: int) -> list[AocDay]:
         """Fetches a list of available Advent of Code days for a given year along with information
         showing if each day was partially or fully completed."""
         url = f"https://adventofcode.com/{year}/"
@@ -206,7 +214,14 @@ class AocWebClient(AocClient):
                 True if element["aria-label"].find("two star") != -1 else False
             )
 
-            days.append(AocCalendarDay(day, part_one_solved, part_two_solved))
+            days.append(
+                AocDay(
+                    year=year,
+                    day=day,
+                    part_one_solved=part_one_solved,
+                    part_two_solved=part_two_solved,
+                )
+            )
 
         days.sort(key=lambda x: x.day)
         return days

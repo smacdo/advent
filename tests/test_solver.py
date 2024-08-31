@@ -1,7 +1,7 @@
 from typing import List
 import unittest
 
-from advent.aoc.client import AocCalendarDay, AocClient, SubmitResponse
+from advent.aoc.client import AocDay, AocClient, SubmitResponse
 from advent.data import PartAnswerCache, PuzzleData
 from advent.solution import (
     AbstractSolver,
@@ -64,7 +64,7 @@ class MockAocClient(AocClient):
     def fetch_input_for(self, year: int, day: int) -> str:
         raise NotImplementedError
 
-    def fetch_days(self, year: int) -> List[AocCalendarDay]:
+    def fetch_days(self, year: int) -> List[AocDay]:
         raise NotImplementedError
 
     def submit_answer(
