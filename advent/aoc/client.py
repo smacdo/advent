@@ -44,19 +44,34 @@ class ClientException(Exception):
 
 
 class HttpError(ClientException):
-    def __init__(self, error_code: int):
-        super().__init__("Unexpected HTTP {error_code}")
+    result_code: int
+
+    def __init__(self, result_code: int, message: str | None = None):
+        self.result_code = result_code
+
+        if message is None:
+            message = f"Unexpected HTTP {result_code}"
+
+        super().__init__(message)
 
 
-class ResourceNotFound(ClientException):
-    def __init__(self):
-        super().__init__("the requested http resource was not found")
+_AOC_HTTP_INVALID_SESSION = 400
+_AOC_HTTP_NOT_FOUND = 404
 
 
-class InvalidSession(ClientException):
+class ResourceNotFound(HttpError):
     def __init__(self):
         super().__init__(
-            "authentication failed - check the session id in `.aoc_config`"
+            message="the requested http resource was not found",
+            result_code=_AOC_HTTP_NOT_FOUND,
+        )
+
+
+class InvalidSession(HttpError):
+    def __init__(self):
+        super().__init__(
+            message="authentication failed - check the session id in `.aoc_config`",
+            result_code=_AOC_HTTP_INVALID_SESSION,
         )
 
 
@@ -68,10 +83,17 @@ class ExpectedConfigKeyMissing(ClientException):
         self.key = key
 
 
+class UnknownPostAnswerError(ClientException):
+    def __init__(self, response_text: str):
+        super().__init__(
+            f"answer submission endpoint returned unexpected response\n```{response_text}\n```\n"
+        )
+
+
 def parse_http_response(response: requests.Response) -> str:
-    if response.status_code == 400:
+    if response.status_code == _AOC_HTTP_INVALID_SESSION:
         raise InvalidSession()
-    elif response.status_code == 404:
+    elif response.status_code == _AOC_HTTP_NOT_FOUND:
         raise ResourceNotFound()
     elif response.status_code > 400:
         raise HttpError(response.status_code)
@@ -91,7 +113,7 @@ class AocClientConfig:
 
     @staticmethod
     def load_from_str(file_text: str) -> "AocClientConfig":
-        """TODO: describe me plz"""
+        """Create a client config from the contents of a file like string"""
 
         # Iterate through the lines in the file with the expectation each line
         # has the format `KEY = VALUE`. Extract the password and session_id
@@ -259,5 +281,4 @@ class AocWebClient(AocClient):
                 elif "already complete it" in message:
                     return SubmitResponse.AlreadyAnswered
 
-        # TODO: report the HTML as well so it can be analyzed
-        raise Exception("answer submission endpoint returned unexpected response")
+        raise UnknownPostAnswerError(soup.prettify())
