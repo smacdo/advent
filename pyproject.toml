@@ -6,15 +6,12 @@ requires = [
     "cmake>=3.18",
     "pybind11>=2.6",
     "ninja",
-    "beautifulsoup4",
-    "requests",
-    "encryption",
     "wheel",
 ]
 
 [project]
 name = "scotts-advent-of-code-solutions"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 version = "0.0.1"
 authors = [
   {name = "Scott MacDonald", email = "smacdo@smacdo.com"}
