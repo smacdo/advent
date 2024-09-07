@@ -3,7 +3,7 @@ import argparse
 
 from advent.days import *  # noqa: F403
 from advent.utils import load_input
-from advent.solver import AdventDaySolver
+from donner.solver import AdventDaySolver
 from oatmeal import inc
 
 

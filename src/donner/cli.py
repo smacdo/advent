@@ -1,13 +1,13 @@
-from advent.client import (
+from donner.client import (
     AocClientConfig,
     AocWebClient,
     ExpectedConfigKeyMissing,
 )
-from advent.data import (
+from donner.data import (
     FileBackedPuzzleStore,
 )
-from advent.plugins import load_all_solutions
-from advent.solution import (
+from donner.plugins import load_all_solutions
+from donner.solution import (
     MaybeAnswerType,
     Part,
     SolverMetadata,
@@ -22,7 +22,7 @@ import os
 import shutil
 import sys
 
-from advent.solver import (
+from donner.solver import (
     CheckHint,
     CheckResult,
     CheckResult_ExampleFailed,
@@ -187,7 +187,7 @@ def sync(args):
     print("TODO: sync")
 
 
-def main():
+def cli_main():
     # Argument parsing.
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="subparser_name")
@@ -234,6 +234,3 @@ def main():
         print(f"The configuration setting `{e.key}` was missing or empty")
         print(f"Fix the `{e.key} = ...` line in the file {e.config_path}")
         print("")
-
-
-main()

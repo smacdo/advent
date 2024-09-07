@@ -1,16 +1,16 @@
 from typing import List
 import unittest
 
-from advent.client import AocDay, AocClient, SubmitResponse
-from advent.data import PartAnswerCache, PuzzleData
-from advent.solution import (
+from donner.client import AocDay, AocClient, SubmitResponse
+from donner.data import PartAnswerCache, PuzzleData
+from donner.solution import (
     AbstractSolver,
     Example,
     MaybeAnswerType,
     Part,
     SolverMetadata,
 )
-from advent.solver import (
+from donner.solver import (
     CheckHint,
     CheckResult,
     CheckResult_ExampleFailed,

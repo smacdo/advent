@@ -1,12 +1,12 @@
-from advent.solution import (
+from donner.solution import (
     AbstractSolver,
     DuplicateSolverType,
     MaybeAnswerType,
     SolverRegistry,
     SolverMetadata,
 )
-from advent.solution import NoSolversFound, SolverVariantNotFound
-from advent.solution import Part, Example
+from donner.solution import NoSolversFound, SolverVariantNotFound
+from donner.solution import Part, Example
 
 import unittest
 

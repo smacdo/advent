@@ -1,4 +1,4 @@
-from advent.client import AocClientConfig, SubmitResponse
+from donner.client import AocClientConfig, SubmitResponse
 import unittest
 
 

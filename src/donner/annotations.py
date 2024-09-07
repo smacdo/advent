@@ -1,4 +1,4 @@
-from advent.solution import (
+from donner.solution import (
     AbstractSolver,
     Example,
     Part,

@@ -14,7 +14,7 @@ requires = [
 
 [project]
 name = "scotts-advent-of-code-solutions"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 version = "0.0.1"
 authors = [
   {name = "Scott MacDonald", email = "smacdo@smacdo.com"}

@@ -1,4 +1,4 @@
-from advent.data import (
+from donner.data import (
     AnswerResponse,
     FileBackedPuzzleStore,
     PartAnswerCache,
@@ -8,7 +8,7 @@ from pathlib import Path
 import unittest
 import tempfile
 
-from advent.solution import Part
+from donner.solution import Part
 
 
 class PuzzleDataTests(unittest.TestCase):

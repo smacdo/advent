@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from advent.solution import Part
+from donner.solution import Part
 
 # TODO: Use encryption rather than merely obscuring the input
 

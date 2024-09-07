@@ -1,12 +1,13 @@
 #include "point.h"
 
+/*
 #include <cmath>
 #include <functional>
 
 #include <structmember.h>
 
 namespace {
-  /** Create a new Point PyObject and initialize to the given x and y. */
+  /// Create a new Point PyObject and initialize to the given x and y.
   PyObject* create_point(long x, long y) {
     PyObject* init_args = Py_BuildValue("ll", x, y);
     PyObject* point_obj = PyObject_CallObject((PyObject*)&PointType, init_args);
@@ -15,9 +16,7 @@ namespace {
     return point_obj;
   }
 
-  /**
-   * Cast a Python object to a long, and return true if the cast succeeded.
-   */
+  /// Cast a Python object to a long, and return true if the cast succeeded.
   bool from_pyobj(PyObject* long_obj, long* out) {
     if (!PyLong_Check(long_obj)) {
       return false;
@@ -367,3 +366,4 @@ PyObject* Point_setstate(Point* self, PyObject* state) {
 
   Py_RETURN_NONE;
 }
+*/

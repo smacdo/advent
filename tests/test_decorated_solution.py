@@ -1,6 +1,6 @@
-from advent.annotations import solver, part_one_example, part_two_example
-from advent.solution import AbstractSolver, Example, MaybeAnswerType, Part
-from advent.solution import get_global_solver_registry
+from donner.annotations import solver, part_one_example, part_two_example
+from donner.solution import AbstractSolver, Example, MaybeAnswerType, Part
+from donner.solution import get_global_solver_registry
 
 import unittest
 

@@ -7,7 +7,7 @@ import os
 import re
 import requests
 
-from advent.solution import Part
+from donner.solution import Part
 
 
 logger = logging.getLogger(__name__)

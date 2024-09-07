@@ -1,24 +1,33 @@
-#!/usr/bin/env python3
-import unittest
-
-from advent.solver import AdventDaySolver, AdventDayTestCase, solver_main
+from donner.annotations import solver, part_one_example, part_two_example
+from donner.solution import AbstractSolver
 from advent.utils import first_and_last
 
 
-class Solver(
-    AdventDaySolver, day=1, year=2023, name="Trebuchet?!", solution=(55108, 56324)
-):
-    def __init__(self, input):
-        super().__init__(input)
-
-    def solve(self):
+@solver(day=1, year=2023, name="Trebuchet?!")
+@part_one_example(
+    input=["1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet"], output="142"
+)
+@part_two_example(
+    input=[
+        "two1nine",
+        "eightwothree",
+        "abcone2threexyz",
+        "xtwone3four",
+        "4nineeightseven2",
+        "zoneight234",
+        "7pqrstsixteen",
+    ],
+    output="281",
+)
+class Day1Solver(AbstractSolver):
+    def part_one(self, input: str) -> int | str | None:
         ### Day 1 - Star 1 #############################################################
         # Load the input file, and for each line get the first and last digit and
         # concatenate them into a two digit number. Sum all those numbers together for
         # the solution.
         sum = 0
 
-        for line in self.input:
+        for line in input.splitlines():
             # filter out any values that are not digits from the line
             digits = filter(str.isdigit, line)
             first, last = first_and_last(digits)
@@ -32,8 +41,9 @@ class Solver(
             number = int(first) * 10 + int(last)
             sum += number
 
-        part_1 = sum
+        return str(sum)
 
+    def part_two(self, input: str) -> int | str | None:
         ### Day 1 - Star 2 #############################################################
         # This is annoying - some of the two digit combinations share the last/first
         # character, eg `oneight` -> `18` rather than `oneeight`.
@@ -62,7 +72,7 @@ class Solver(
         sum = 0
 
         # Go through each line in the file:
-        for line in self.input:
+        for line in input.splitlines():
             digits = []
 
             # Go through each character in the line:
@@ -96,15 +106,4 @@ class Solver(
             number = int(first) * 10 + int(last)
             sum += number
 
-        part_2 = sum
-
-        return (part_1, part_2)
-
-
-class Tests(AdventDayTestCase):
-    def setUp(self):
-        super().setUp(Solver)
-
-
-if __name__ == "__main__":
-    solver_main(unittest.TestProgram(exit=False), Solver)
+        return str(sum)
