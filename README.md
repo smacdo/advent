@@ -7,10 +7,9 @@ be considered high quality reviewable code. :)
 ```
 python3 -m venv env
 source ./env/bin/activate
-pip install -r requirements.txt
-python3 setup.py install
+pip install .
 
-python3 -m advent.cli
+advent_cli
 ```
  - Run tests: `python3 -m unittest discover tests`
 

@@ -1,4 +1,4 @@
-from advent.aoc.client import (
+from advent.client import (
     AocClientConfig,
     AocWebClient,
     ExpectedConfigKeyMissing,
@@ -20,6 +20,7 @@ import cryptography.fernet
 import logging
 import os
 import shutil
+import sys
 
 from advent.solver import (
     CheckHint,
@@ -214,6 +215,9 @@ def main():
             return cli_solve(args)
         elif args.subparser_name == "sync":
             return sync(args)
+        else:
+            parser.print_help(sys.stderr)
+            sys.exit(1)
     except cryptography.fernet.InvalidToken as e:
         logging.exception(e)
 

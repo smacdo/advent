@@ -1,4 +1,0 @@
-setuptools
-beautifulsoup4
-requests
-encryption

@@ -1,4 +1,4 @@
-from advent.aoc.client import AocClientConfig, SubmitResponse
+from advent.client import AocClientConfig, SubmitResponse
 import unittest
 
 

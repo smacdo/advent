@@ -1,7 +1,7 @@
 from typing import List
 import unittest
 
-from advent.aoc.client import AocDay, AocClient, SubmitResponse
+from advent.client import AocDay, AocClient, SubmitResponse
 from advent.data import PartAnswerCache, PuzzleData
 from advent.solution import (
     AbstractSolver,

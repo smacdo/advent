@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
-from advent.aoc.client import AocClient, SubmitResponse
+from advent.client import AocClient, SubmitResponse
 from advent.data import AnswerResponse, PartAnswerCache, PuzzleData
 from advent.solution import AnswerType, Example, MaybeAnswerType, Part, SolverMetadata
 
