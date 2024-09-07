@@ -37,7 +37,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual("-4, -123", f"{Point(-4, -123)}")
 
     def test_point_repr(self):
-        self.assertEqual("Point(x=-4, y=-123)", repr(Point(-4, -123)))
+        self.assertEqual("oatmeal.Point(-4, -123)", repr(Point(-4, -123)))
 
     def test_get_set_by_index(self):
         p = Point(16, 8123)
