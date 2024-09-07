@@ -18,4 +18,4 @@ authors = [
 ]
 
 [project.scripts]
-advent_cli = "advent.cli:main"
+advent_cli = "advent.main:main"
