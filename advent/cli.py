@@ -1,4 +1,8 @@
-from advent.aoc.client import AocClientConfig, AocWebClient
+from advent.aoc.client import (
+    AocClientConfig,
+    AocWebClient,
+    ExpectedConfigKeyMissing,
+)
 from advent.data import (
     FileBackedPuzzleStore,
 )
@@ -12,6 +16,7 @@ from advent.solution import (
 from pathlib import Path
 
 import argparse
+import cryptography.fernet
 import logging
 import os
 import shutil
@@ -202,12 +207,29 @@ def main():
     # TODO: Intercept common exceptions and print out helpful remediation messages.
     # TODO: cryptography.fernet.InvalidToken --> (probably) incorrect password
     # TODO: .aoc_config password or session_id missing
-    if args.subparser_name == "output":
-        pass
-    elif args.subparser_name == "solve":
-        return cli_solve(args)
-    elif args.subparser_name == "sync":
-        return sync(args)
+    try:
+        if args.subparser_name == "output":
+            pass
+        elif args.subparser_name == "solve":
+            return cli_solve(args)
+        elif args.subparser_name == "sync":
+            return sync(args)
+    except cryptography.fernet.InvalidToken as e:
+        logging.exception(e)
+
+        print("")
+        print("Could not decrypt puzzle inputs stored on the local machine")
+        print(
+            "Try checking the password setting in your .aoc_config to make sure it is correct. If the issue persists you can delete the puzzle data cache and start over."
+        )
+        print("")
+    except ExpectedConfigKeyMissing as e:
+        logging.exception(e)
+
+        print("")
+        print(f"The configuration setting `{e.key}` was missing or empty")
+        print(f"Fix the `{e.key} = ...` line in the file {e.config_path}")
+        print("")
 
 
 main()

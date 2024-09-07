@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from bs4 import BeautifulSoup
 from enum import Enum
+
 import logging
+import os
 import re
 import requests
 
@@ -77,10 +79,12 @@ class InvalidSession(HttpError):
 
 class ExpectedConfigKeyMissing(ClientException):
     key: str
+    config_path: str | None
 
-    def __init__(self, key: str):
-        super().__init__(f"{key} config value must be set in <CONFIG_FILE_PATH>")
+    def __init__(self, key: str, config_path: str | None):
+        super().__init__(f"{key} config value must be set in {config_path}")
         self.key = key
+        self.config_path = config_path
 
 
 class UnknownPostAnswerError(ClientException):
@@ -112,7 +116,9 @@ class AocClientConfig:
         self.session_id = session_id
 
     @staticmethod
-    def load_from_str(file_text: str) -> "AocClientConfig":
+    def load_from_str(
+        file_text: str, config_path: str | None = None
+    ) -> "AocClientConfig":
         """Create a client config from the contents of a file like string"""
 
         # Iterate through the lines in the file with the expectation each line
@@ -141,10 +147,10 @@ class AocClientConfig:
 
         # Make sure the password and session_id were loaded
         if password is None or password == "":
-            raise ExpectedConfigKeyMissing("password")
+            raise ExpectedConfigKeyMissing("password", config_path=config_path)
 
         if session_id is None or session_id == "":
-            raise ExpectedConfigKeyMissing("session_id")
+            raise ExpectedConfigKeyMissing("session_id", config_path=config_path)
 
         return AocClientConfig(password=password, session_id=session_id)
 
@@ -152,7 +158,9 @@ class AocClientConfig:
     def load_from_file(file_name: str = ".aoc_login") -> "AocClientConfig":
         """Tries to load the login configuration from the provided file path"""
         with open(file_name, "r") as file:
-            return AocClientConfig.load_from_str(file.read())
+            return AocClientConfig.load_from_str(
+                file.read(), config_path=os.path.abspath(file_name)
+            )
 
 
 class AocDay:
