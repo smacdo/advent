@@ -12,7 +12,7 @@ struct Point {
   bool operator==(const Point&) const = default;
   bool operator!=(const Point&) const = default;
 
-  friend Point operator-(Point lhs) { return Point(lhs.x, lhs.y); }
+  friend Point operator-(Point lhs) { return Point(-lhs.x, -lhs.y); }
 
   Point& operator+=(const Point& rhs) {
     x += rhs.x;
@@ -58,6 +58,17 @@ struct Point {
     return lhs;
   }
 
+  Point& operator%=(const int rhs) {
+    x %= rhs;
+    y %= rhs;
+    return *this;
+  }
+
+  friend Point operator%(Point lhs, const int rhs) {
+    lhs %= rhs;
+    return lhs;
+  }
+
   int& operator[](std::size_t component_index) {
     switch (component_index) {
       case 0:
@@ -88,3 +99,5 @@ template<> struct std::hash<Point> {
     return h1 ^ (h2 << 1);
   }
 };
+
+inline Point abs(const Point& p) { return Point(std::abs(p.x), std::abs(p.y)); }

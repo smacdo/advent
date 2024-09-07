@@ -32,6 +32,7 @@ PYBIND11_MODULE(_oatmeal, m) {
 
             return Point(t[0].cast<int>(), t[1].cast<int>());
           }))
+      .def("clone", [](const Point& self) { return Point(self); })
       .def(
           "__repr__",
           [](const Point& p) {
@@ -44,6 +45,8 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def("__hash__", [](const Point& p) { return std::hash<Point>{}(p); })
       .def("__getitem__", [](const Point& p, int i) { return p[i]; })
       .def("__setitem__", [](Point& p, int i, int v) { p[i] = v; })
+      .def("__abs__", [](const Point& self) { return abs(self); })
+      .def("__floordiv__", [](const Point& lhs, int rhs) { return lhs / rhs; })
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def(py::self += py::self)
@@ -52,5 +55,6 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(py::self - py::self)
       .def(py::self * int())
       .def(py::self / int())
+      .def(py::self % int())
       .def(-py::self);
 }
