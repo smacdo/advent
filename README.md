@@ -15,12 +15,10 @@ advent_cli
 ```
  - Run tests: `python3 -m unittest discover tests`
 
-(outdated)
- - Solve a specific day: `python3 main.py solve 0 2023`
- - Run the tests for specific day: `python3 -m advent.days.day0`
- - Run tests: `python3 -m unittest discover tests`
-
-# Tasks
-- Switch to encryption rather than obscuration. Use a ENV VAR to allow testing
-  in CI.
-- Ensure strictest typing checks
+## Oatmeal tests
+```
+mkdir xbuild
+cd xbuild
+cmake ../
+make && ctest
+```

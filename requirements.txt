@@ -2,4 +2,4 @@ beautifulsoup4
 requests
 encryption
 cryptography
-precommit
+pre-commit

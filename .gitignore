@@ -1,6 +1,7 @@
 .aoc_config
 _skbuild
 .ruff_cache
+xbuild/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
