@@ -6,7 +6,6 @@ from donner.client import (
 from donner.data import (
     FileBackedPuzzleStore,
 )
-from donner.plugins import load_all_solutions
 from donner.solution import (
     MaybeAnswerType,
     Part,
@@ -110,7 +109,6 @@ def output(args):
 
 
 def cli_solve(args):
-    load_all_solutions()
     solve(2023, 1)
 
 

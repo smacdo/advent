@@ -1,7 +1,7 @@
 # TODO: Dynamically discover solutions
 from donner.cli import cli_main
 
-from .y2023 import day1  # noqa: F401
+from advent.y2023 import *  # noqa: F403
 
 
 def main():
