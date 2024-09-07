@@ -7,69 +7,69 @@ struct Point {
   int x;
   int y;
 
-  Point(const int x, const int y) : x(x), y(y) {}
+  constexpr Point(const int x, const int y) : x(x), y(y) {}
 
-  bool operator==(const Point&) const = default;
-  bool operator!=(const Point&) const = default;
+  constexpr bool operator==(const Point&) const = default;
+  constexpr bool operator!=(const Point&) const = default;
 
-  friend Point operator-(Point lhs) { return Point(-lhs.x, -lhs.y); }
+  constexpr friend Point operator-(Point lhs) { return Point(-lhs.x, -lhs.y); }
 
-  Point& operator+=(const Point& rhs) {
+  constexpr Point& operator+=(const Point& rhs) {
     x += rhs.x;
     y += rhs.y;
     return *this;
   }
 
-  friend Point operator+(Point lhs, const Point& rhs) {
+  constexpr friend Point operator+(Point lhs, const Point& rhs) {
     lhs += rhs;
     return lhs;
   }
 
-  Point& operator-=(const Point& rhs) {
+  constexpr Point& operator-=(const Point& rhs) {
     x -= rhs.x;
     y -= rhs.y;
     return *this;
   }
 
-  friend Point operator-(Point lhs, const Point& rhs) {
+  constexpr friend Point operator-(Point lhs, const Point& rhs) {
     lhs -= rhs;
     return lhs;
   }
 
-  Point& operator*=(const int rhs) {
+  constexpr Point& operator*=(const int rhs) {
     x *= rhs;
     y *= rhs;
     return *this;
   }
 
-  friend Point operator*(Point lhs, const int rhs) {
+  constexpr friend Point operator*(Point lhs, const int rhs) {
     lhs *= rhs;
     return lhs;
   }
 
-  Point& operator/=(const int rhs) {
+  constexpr Point& operator/=(const int rhs) {
     x /= rhs;
     y /= rhs;
     return *this;
   }
 
-  friend Point operator/(Point lhs, const int rhs) {
+  constexpr friend Point operator/(Point lhs, const int rhs) {
     lhs /= rhs;
     return lhs;
   }
 
-  Point& operator%=(const int rhs) {
+  constexpr Point& operator%=(const int rhs) {
     x %= rhs;
     y %= rhs;
     return *this;
   }
 
-  friend Point operator%(Point lhs, const int rhs) {
+  constexpr friend Point operator%(Point lhs, const int rhs) {
     lhs %= rhs;
     return lhs;
   }
 
-  int& operator[](std::size_t component_index) {
+  constexpr int& operator[](std::size_t component_index) {
     switch (component_index) {
       case 0:
         return x;
@@ -80,7 +80,7 @@ struct Point {
     }
   }
 
-  const int& operator[](std::size_t component_index) const {
+  constexpr const int& operator[](std::size_t component_index) const {
     switch (component_index) {
       case 0:
         return x;
@@ -100,4 +100,6 @@ template<> struct std::hash<Point> {
   }
 };
 
-inline Point abs(const Point& p) { return Point(std::abs(p.x), std::abs(p.y)); }
+inline constexpr Point abs(const Point& p) {
+  return Point(std::abs(p.x), std::abs(p.y));
+}
