@@ -10,7 +10,6 @@ from typing import (
     Union,
     cast,
 )
-import logging
 
 
 T = TypeVar("T")
@@ -112,45 +111,3 @@ def combinations(k: int, items: list[T]) -> Generator[list[T], None, None]:
 
     scratch: list[Optional[T]] = [None for _ in range(0, k)]
     yield from step(0, k, 0, items, scratch)
-
-
-# TODO: Delete below, not needed anymore.
-def load_input(day: int, year: int) -> Iterable[Iterable[str]]:
-    """Loads input for a solver from a given day and year, and returns it as a
-    list of strings."""
-    if not isinstance(day, int):
-        raise TypeError("argument `day` must be type `int`")
-    if not isinstance(year, int):
-        raise TypeError("argument `year` must be type `int`")
-
-    with open(f"inputs/{year}/day{day}.txt", "r", encoding="utf-8") as file:
-        input: Iterable[Iterable[str]] = [line.rstrip() for line in file]
-        return input
-
-
-# TODO: Move to advent.logging.init_logging()
-def init_logging(default_level=logging.INFO):
-    add_logging_level("TRACE", logging.DEBUG - 5)
-    logging.basicConfig(level=default_level)
-
-
-# TODO: Move to advent.logging._add_logging_level()
-def add_logging_level(level_name, level_num):
-    # Simplified version of https://stackoverflow.com/a/35804945
-    method_name = level_name.lower()
-
-    # Generate a function that implements logging at the requested logging level
-    # by checking if it is enabled first.
-    def logForLevel(self, message, *args, **kwargs):
-        if self.isEnabledFor(level_num):
-            self._log(level_num, message, args, **kwargs)
-
-    def log_to_root(message, *args, **kwargs):
-        logging.log(level_num, message, *args, **kwargs)
-
-    # Register the new log level with the Python logging system.
-    logging.addLevelName(level_num, level_name)
-
-    setattr(logging, level_name, level_num)  # Add `logging.$level_name = $level_num`
-    setattr(logging.getLoggerClass(), method_name, logForLevel)
-    setattr(logging, method_name, log_to_root)
