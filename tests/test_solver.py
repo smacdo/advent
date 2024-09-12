@@ -32,7 +32,7 @@ class DecoratedTestSolution(AbstractSolver):
             return -50
         elif input == "part_one_not_finished":
             return None
-        elif input == "part_one_int":
+        elif input == "int":
             return 22
 
         return "part_one_ok"
@@ -44,7 +44,7 @@ class DecoratedTestSolution(AbstractSolver):
             return 128
         elif input == "part_two_not_finished":
             return None
-        elif input == "part_two_int":
+        elif input == "int":
             return -127
 
         return "part_two_ok"
@@ -270,16 +270,16 @@ class RunSolverTests(unittest.TestCase):
             year=2012,
             puzzle_name="test puzzle",
             examples=[
-                Example(input="part_one_int", output="22", part=Part.One),
-                Example(input="part_two_int", output="-127", part=Part.Two),
+                Example(input="int", output="22", part=Part.One),
+                Example(input="int", output="-127", part=Part.Two),
             ],
         )
         events = MockSolverEventHandlers()
 
         puzzle = PuzzleData(
-            input="",
-            part_one_answer=PartAnswerCache(),
-            part_two_answer=PartAnswerCache(),
+            input="int",
+            part_one_answer=PartAnswerCache(correct_answer="22"),
+            part_two_answer=PartAnswerCache(correct_answer="-127"),
         )
 
         # Verify both examples pass.
