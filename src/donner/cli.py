@@ -109,9 +109,7 @@ def output(args):
 
 
 def cli_solve(args):
-    # TODO: Automate this.
     solve(2023, 1)
-    solve(2023, 2)
 
 
 # TODO: Modularize this code.
@@ -190,6 +188,26 @@ def sync(args):
 def cli_main():
     # Argument parsing.
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        help="Print debug log entries",
+        action="store_const",
+        dest="loglevel",
+        const=logging.DEBUG,
+        default=logging.WARNING,
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Print verbose (info) log entries",
+        action="store_const",
+        dest="loglevel",
+        const=logging.INFO,
+    )
+
     subparsers = parser.add_subparsers(title="subcommands", dest="subparser_name")
 
     output_parser = subparsers.add_parser("output")
@@ -202,6 +220,8 @@ def cli_main():
     sync_parser.set_defaults(func=sync)
 
     args = parser.parse_args()
+
+    logging.basicConfig(level=args.loglevel)
 
     # Dispatch subcommand.
     #
