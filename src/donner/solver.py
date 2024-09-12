@@ -157,7 +157,7 @@ def run_solver(
     for part in parts:
         for example in solver_metadata.examples(part):
             solver = solver_metadata.create_solver_instance()
-            answer = solver.get_part_func(part)(example.input)
+            answer = str(solver.get_part_func(part)(example.input))
 
             if example.output != answer:
                 result = CheckResult_ExampleFailed(

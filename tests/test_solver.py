@@ -32,6 +32,8 @@ class DecoratedTestSolution(AbstractSolver):
             return -50
         elif input == "part_one_not_finished":
             return None
+        elif input == "part_one_int":
+            return 22
 
         return "part_one_ok"
 
@@ -42,6 +44,8 @@ class DecoratedTestSolution(AbstractSolver):
             return 128
         elif input == "part_two_not_finished":
             return None
+        elif input == "part_two_int":
+            return -127
 
         return "part_two_ok"
 
@@ -257,6 +261,42 @@ class RunSolverTests(unittest.TestCase):
                 )
             ],
         )
+
+    def test_example_with_str_when_solver_returns_int(self):
+        # Construct and run solver.
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution,
+            day=5,
+            year=2012,
+            puzzle_name="test puzzle",
+            examples=[
+                Example(input="part_one_int", output="22", part=Part.One),
+                Example(input="part_two_int", output="-127", part=Part.Two),
+            ],
+        )
+        events = MockSolverEventHandlers()
+
+        puzzle = PuzzleData(
+            input="",
+            part_one_answer=PartAnswerCache(),
+            part_two_answer=PartAnswerCache(),
+        )
+
+        # Verify both examples pass.
+        result = run_solver(solver_m, puzzle, MockAocClient(), events)
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=CheckResult_Ok(Part.One),
+                part_two_result=CheckResult_Ok(Part.Two),
+            ),
+        )
+
+        self.assertSequenceEqual(events.examples_passed_calls, [solver_m])
+        self.assertSequenceEqual(
+            events.part_ok_calls, [(22, solver_m, Part.One), (-127, solver_m, Part.Two)]
+        )
+        self.assertSequenceEqual(events.part_wrong_calls, [])
 
     def test_generic_wrong_answer_using_answer_cache(self):
         # Construct and run solver.
