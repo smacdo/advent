@@ -10,9 +10,44 @@ from typing import (
     Union,
     cast,
 )
+import re
 
 
 T = TypeVar("T")
+
+
+def expect_re_match(pattern: re.Pattern | str, text: str) -> re.Match:
+    """
+    Matches `text` against the regex `pattern`, and returns the match results.
+    This function will throw an exception if the pattern fails to match.
+
+    See: https://docs.python.org/3/library/re.html#re.Pattern.match
+    """
+    if type(pattern) is re.Pattern:
+        m = pattern.match(text)
+    else:
+        pattern = re.compile(pattern)
+        m = pattern.match(text)
+
+    if m is None:
+        raise Exception(f"expected regex pattern `{pattern}` to match `text`")
+
+    return m
+
+
+def split(
+    text: str, sep: str, ignore_empty: bool = True, strip_whitespace=True
+) -> list[str]:
+    def is_empty(s: str):
+        if strip_whitespace:
+            return len(s.strip()) == 0
+        else:
+            return len(s) == 0
+
+    if ignore_empty:
+        return [x for x in text.split(sep) if not is_empty(x)]
+    else:
+        return text.split(sep)
 
 
 def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> Grid[str]:

@@ -109,7 +109,9 @@ def output(args):
 
 
 def cli_solve(args):
+    # TODO: Automate this.
     solve(2023, 1)
+    solve(2023, 2)
 
 
 # TODO: Modularize this code.

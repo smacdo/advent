@@ -1,12 +1,51 @@
 from advent.utils import (
     first_and_last,
+    split,
     unzip,
     count_if,
     all_pairs,
     combinations,
+    expect_re_match,
 )
-
+import re
 import unittest
+
+
+class TestExpectReMatch(unittest.TestCase):
+    def test_with_pattern(self):
+        pattern = re.compile("(\\d+):(\\d+)")
+        m = expect_re_match(pattern, "13:2")
+
+        self.assertIsNotNone(m)
+        self.assertEqual("13", m.group(1))
+        self.assertEqual("2", m.group(2))
+
+    def test_with_str_pattern(self):
+        m = expect_re_match("(\\d+):(\\d+)", "13:2")
+
+        self.assertIsNotNone(m)
+        self.assertEqual("13", m.group(1))
+        self.assertEqual("2", m.group(2))
+
+    def test_no_match_throws_exception(self):
+        pattern = re.compile("(\\d+):(\\d+)")
+        self.assertRaises(Exception, lambda: expect_re_match(pattern, "13:-8"))
+
+
+class TestSplit(unittest.TestCase):
+    def test_ignore_empty(self):
+        self.assertSequenceEqual(
+            ["12", "x", "4123"],
+            split(text=" 12 x   4123 ", sep=" ", ignore_empty=True),
+        )
+
+    def test_do_not_ignore_empty(self):
+        self.assertSequenceEqual(
+            ["", "12", "x", "", "", "4123", "", ""],
+            split(text=" 12 x   4123  ", sep=" ", ignore_empty=False),
+        )
+
+    # TODO: test trim_whitespace
 
 
 class TestCountIf(unittest.TestCase):
