@@ -38,6 +38,16 @@ def expect_re_match(pattern: re.Pattern | str, text: str) -> re.Match:
 def split(
     text: str, sep: str, ignore_empty: bool = True, strip_whitespace=True
 ) -> list[str]:
+    """
+    Splits `text` into multiple parts using `sep` as the separator.
+
+    ignore_empty:      When true, only parts with len > 0 are returned.
+    strip_whitespace:  When true, parts have leading and trailing whitespace removed.
+
+    Example:
+
+    """
+
     def is_empty(s: str):
         if strip_whitespace:
             return len(s.strip()) == 0
@@ -56,7 +66,18 @@ def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> Grid[str]:
 
 
 def count_if(itr: Union[list[T], Iterable[T]], pred: Callable[[T], bool]) -> int:
-    """Count the number of times `pred` returns true for each item in the collection."""
+    """
+    Count the number of times `pred` returns true for each item in the collection.
+
+    itr:  A list or other iterable object to count.
+    pred: A callable object that takes each item from `itr` as input, and returns
+          `True` if the item should be counted or `False` otherwise.
+
+    Example:
+    ```
+        count_if([1, 2, 3, 4], lambda x: x % 2 == 0) # returns 2
+    ```
+    """
     if isinstance(itr, list):
         itr = iter(itr)
     elif not isinstance(itr, Iterator):
@@ -90,6 +111,9 @@ def first_and_last(itr: Union[Iterable[T], Iterator[T]]) -> Tuple[T, T]:
 
 
 def unzip(itr: Iterable[Tuple[T, T]]) -> Tuple[list[T], list[T]]:
+    """
+    Takes an iterable list of `(x, y)` and returns it as `(list(x...), list(y...))`
+    """
     if not isinstance(itr, Iterable):
         raise TypeError("argument `itr` must be of type `Iterable`")
 
