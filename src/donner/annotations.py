@@ -40,6 +40,27 @@ def solver(
     return wrapper
 
 
+def example(
+    input: str | list[str], part_one: str | None = None, part_two: str | None = None
+):
+    """Add an example input and the expected output for part one and or two for this solver."""
+
+    def wrapper(solver_class: type[AbstractSolver]):
+        if part_one is not None:
+            get_global_solver_registry().add_example(
+                solver_class, Example(input=input, output=part_one, part=Part.One)
+            )
+
+        if part_two is not None:
+            get_global_solver_registry().add_example(
+                solver_class, Example(input=input, output=part_two, part=Part.Two)
+            )
+
+        return solver_class
+
+    return wrapper
+
+
 def part_one_example(input: str | list[str], output: str):
     """Add an example input and the expected output for part one answers for this solver."""
 
