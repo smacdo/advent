@@ -259,7 +259,7 @@ class AocWebClient(AocClient):
     def submit_answer(
         self, year: int, day: int, part: Part, answer: str
     ) -> SubmitResponse:
-        logger.info("submitting answer `{answer}` for year {year} day {day}")
+        logger.info(f"submitting answer `{answer}` for year {year} day {day}")
 
         page = parse_http_response(
             requests.post(
