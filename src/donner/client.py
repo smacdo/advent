@@ -214,7 +214,7 @@ class AocWebClient(AocClient):
     def __init__(self, config: AocClientConfig):
         self.config = config
         self.headers = {
-            "cookie": f"session={config.session_id}",
+            "Cookie": f"session={config.session_id}",
             "user-agent": "github.com/smacdo/advent [email: dev@smacdo.com]",
         }
 
