@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from advent.utils import split
-from donner.annotations import part_one_example, solver
+from donner.annotations import example, solver
 from donner.solution import AbstractSolver
 import logging
 
@@ -45,7 +45,7 @@ def parse_game_line(line: str) -> tuple[int, list[CubeSubset]]:
 
 
 @solver(day=2, year=2023, name="Cube Conundrum")
-@part_one_example(
+@example(
     input=[
         "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green",
         "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue",
@@ -53,7 +53,8 @@ def parse_game_line(line: str) -> tuple[int, list[CubeSubset]]:
         "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red",
         "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green",
     ],
-    output="8",
+    part_one="8",
+    part_two="2286",
 )
 class Day1Solver(AbstractSolver):
     def part_one(self, input: str) -> int | str | None:
@@ -92,4 +93,24 @@ class Day1Solver(AbstractSolver):
         return sum
 
     def part_two(self, input: str) -> int | str | None:
-        return None
+        sum = 0
+
+        for line in input.splitlines():
+            logging.debug(line)
+            game_id, cube_subsets = parse_game_line(line)
+
+            # To find the minimum number of cubes per color simply iterate
+            # through each set and record the maximum number per color seen so
+            # far.
+            max_red = 0
+            max_green = 0
+            max_blue = 0
+
+            for s in cube_subsets:
+                max_red = max(max_red, s.red)
+                max_green = max(max_green, s.green)
+                max_blue = max(max_blue, s.blue)
+
+            sum += max_red * max_green * max_blue
+
+        return sum
