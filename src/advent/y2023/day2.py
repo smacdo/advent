@@ -56,7 +56,7 @@ def parse_game_line(line: str) -> tuple[int, list[CubeSubset]]:
     part_one="8",
     part_two="2286",
 )
-class Day1Solver(AbstractSolver):
+class Day2Solver(AbstractSolver):
     def part_one(self, input: str) -> int | str | None:
         MAX_RED = 12
         MAX_GREEN = 13

@@ -1,1 +1,1 @@
-__all__ = ["day1", "day2"]  # type: ignore
+__all__ = ["day1", "day2", "day3"]  # type: ignore
