@@ -109,9 +109,11 @@ def output(args):
 
 
 def cli_solve(args):
-    # TODO: Automate this.
-    solve(2023, 1)
-    solve(2023, 2)
+    registry = get_global_solver_registry()
+
+    for year in registry.all_years():
+        for day in registry.all_days(year):
+            solve(year=year, day=day)
 
 
 # TODO: Modularize this code.
