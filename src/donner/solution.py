@@ -281,10 +281,25 @@ class SolverRegistry:
             raise SolverVariantNotFound(year=year, day=day, variant=variant_name)
 
     def all_days(self, year: int) -> list[int]:
-        """Returns a generator that yields all the days in the given year with at least one solver"""
+        """
+        Returns a sorted list of days in the requested year that have a solution.
+        """
         days = [k[1] for k in self.solvers if k[0] == year]
         days.sort()
         return days
+
+    def all_years(self) -> list[int]:
+        """
+        Returns a sorted list of years that have at least one day with a solution.
+        """
+        years: list[int] = []
+
+        for year, _ in self.solvers.keys():
+            if year not in years:
+                years.append(year)
+
+        years.sort()
+        return years
 
 
 _GLOBAL_SOLVER_REGISTRY: SolverRegistry = SolverRegistry()

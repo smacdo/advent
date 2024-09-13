@@ -239,6 +239,31 @@ class SolverRegistryTests(unittest.TestCase):
         )
         self.assertSequenceEqual(list(registry.all_days(year=2000)), [1, 2])
 
+    def test_get_years_in_order(self):
+        registry = SolverRegistry()
+        registry.add_metadata(
+            SolverMetadata(
+                klass=Solution_2A, year=2000, day=2, puzzle_name="Solution_2A"
+            )
+        )
+        registry.add_metadata(
+            SolverMetadata(
+                klass=Solution_1A, year=2000, day=1, puzzle_name="Solution_1A"
+            )
+        )
+        registry.add_metadata(
+            SolverMetadata(
+                klass=Solution_1B, year=1999, day=3, puzzle_name="Solution_1B"
+            )
+        )
+        registry.add_metadata(
+            SolverMetadata(
+                klass=Solution_1C, year=2010, day=1, puzzle_name="Solution_1C"
+            )
+        )
+
+        self.assertSequenceEqual(list(registry.all_years()), [1999, 2000, 2010])
+
     def test_create_solvers(self):
         registry = SolverRegistry()
         registry.add_metadata(
