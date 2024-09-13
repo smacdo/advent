@@ -27,6 +27,9 @@ class Day${DAY}Solver(AbstractSolver):
         return None
 ```
 
+# Missing tests
+- Grid.diagonal_neighbors
+
 # Bugs
 - Status message "Tested the examples for ..." should not be printed if solver
   does not have any examples.

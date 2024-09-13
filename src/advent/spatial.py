@@ -100,6 +100,19 @@ class Direction(IntEnum):
             )
 
 
+_DIAGONAL_NEIGHBORS = [
+    Point(-1, -1),
+    Point(0, -1),
+    Point(1, -1),
+    Point(-1, 0),
+    Point(0, 0),
+    Point(1, 0),
+    Point(-1, 1),
+    Point(0, 1),
+    Point(1, 1),
+]
+
+
 class Grid(Generic[T]):
     """Holds a collection of values in a 2d grid."""
 
@@ -189,6 +202,18 @@ class Grid(Generic[T]):
     def col_count(self) -> int:
         """Returns the number of cols in the grid."""
         return self.x_count
+
+    def diagonal_neighbors(self, pt: Point) -> Iterable[Point]:
+        for n in _DIAGONAL_NEIGHBORS:
+            n_pos = n + pt
+
+            if (
+                n_pos.x >= 0
+                and n_pos.x < self.x_count
+                and n_pos.y >= 0
+                and n_pos.y < self.x_count
+            ):
+                yield n_pos
 
     def insert_row(
         self, at_index: int, row: Union[T, Callable[[], T], list[T]]
