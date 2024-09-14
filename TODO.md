@@ -63,6 +63,9 @@ class Day${DAY}Solver(AbstractSolver):
 # Missing tests
 - Grid.diagonal_neighbors
 
+# Utils
+- Add alternate `end = ...` and `last = ...` parameters to the Range constructor.
+
 # Bugs
 - Status message "Tested the examples for ..." should not be printed if solver
   does not have any examples.
