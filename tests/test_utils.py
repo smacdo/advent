@@ -1,7 +1,9 @@
 from advent.utils import (
     Range,
+    ValueCanNotBeNoneError,
     find_ints,
     first_and_last,
+    not_none,
     split,
     unzip,
     count_if,
@@ -11,6 +13,16 @@ from advent.utils import (
 )
 import re
 import unittest
+
+
+class TestNotNone(unittest.TestCase):
+    def test_with_values(self):
+        self.assertEqual(5, not_none(5))
+        self.assertEqual(5, not_none(4 + 1))
+        self.assertEqual("hello", not_none("hello"))
+
+    def test_with_none(self):
+        self.assertRaises(ValueCanNotBeNoneError, lambda: not_none(None))
 
 
 class TestExpectReMatch(unittest.TestCase):
