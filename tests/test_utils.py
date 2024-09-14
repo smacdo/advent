@@ -3,7 +3,9 @@ from advent.utils import (
     ValueCanNotBeNoneError,
     find_ints,
     first_and_last,
+    merge_ranges,
     not_none,
+    sort_ranges,
     split,
     unzip,
     count_if,
@@ -275,3 +277,37 @@ class TestRange(unittest.TestCase):
         self.assertIsNone(Range(10, 6).split(Range(7, 3)))
         self.assertIsNone(Range(10, 6).split(Range(16, 10)))
         self.assertIsNone(Range(10, 6).split(Range(17, 10)))
+
+    def test_sort(self):
+        self.assertSequenceEqual(
+            [Range(-1, 10), Range(4, 2), Range(10, 22)],
+            sort_ranges(
+                [
+                    Range(4, 2),
+                    Range(10, 22),
+                    Range(-1, 10),
+                ]
+            ),
+        )
+
+    def test_merge(self):
+        self.assertSequenceEqual([], merge_ranges([]))
+        self.assertSequenceEqual([Range(4, 3)], merge_ranges([Range(4, 3)]))
+
+        self.assertSequenceEqual(
+            [Range(3, 11)], merge_ranges([Range(3, 3), Range(4, 10)])
+        )
+        self.assertSequenceEqual(
+            [Range(3, 11)], merge_ranges([Range(6, 8), Range(3, 8)])
+        )
+        self.assertSequenceEqual(
+            [Range(4, 5)], merge_ranges([Range(4, 2), Range(6, 3)])
+        )
+        self.assertSequenceEqual(
+            [Range(0, 2), Range(3, 7)], merge_ranges([Range(3, 7), Range(0, 2)])
+        )
+
+        self.assertSequenceEqual(
+            [Range(1, 8), Range(10, 5)],
+            merge_ranges([Range(1, 3), Range(4, 2), Range(6, 3), Range(10, 5)]),
+        )

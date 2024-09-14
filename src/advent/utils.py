@@ -17,11 +17,14 @@ import re
 T = TypeVar("T")
 
 
+class ValueCanNotBeNoneError(Exception):
+    def __init__(self):
+        super().__init__("Value must have a value, it cannot be `None`")
+
+
 def not_none(value: T | None) -> T:
-    # TODO: Write tests.
-    # TODO: Unique exception
     if value is None:
-        raise Exception("value cannot be null")
+        raise ValueCanNotBeNoneError()
     else:
         return value
 
@@ -282,3 +285,34 @@ class Range:
         )
 
         return (before, inner, after)
+
+
+# TODO: Delete this after adding comparison overload to the Range class.
+def sort_ranges(ranges: list[Range]) -> list[Range]:
+    return sorted(ranges, key=lambda x: x.start)
+
+
+def merge_ranges(ranges: list[Range]) -> list[Range]:
+    if len(ranges) <= 1:
+        return ranges
+
+    ranges = sort_ranges(ranges)
+    out_ranges = [ranges[0]]
+
+    for next_r in ranges[1:]:
+        current_r = out_ranges[-1]
+
+        # Check if the next range overlaps the active range or not.
+        if (current_r.start + current_r.length) < next_r.start:
+            # The next range starts after the active range. Make this next range
+            # be the active range.
+            out_ranges.append(next_r)
+        else:
+            # The next range overlaps the current range. Extend the current
+            # range to hold both.
+            current_end = current_r.start + current_r.length
+            next_end = next_r.start + next_r.length
+
+            current_r.length = max(current_end, next_end) - current_r.start
+
+    return out_ranges
