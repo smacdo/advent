@@ -190,7 +190,7 @@ def combinations(k: int, items: list[T]) -> Generator[list[T], None, None]:
     yield from step(0, k, 0, items, scratch)
 
 
-@dataclass
+@dataclass(order=True)
 class Range:
     start: int
     length: int
@@ -230,6 +230,9 @@ class Range:
         raise NotImplementedError()
 
     def overlaps(self, other: "Range") -> bool:
+        """
+        Returns `True` if any portion of the `other` range overlaps this range.
+        """
         return (
             self.start < (other.start + other.length)
             and (self.start + self.length) > other.start
@@ -287,32 +290,41 @@ class Range:
         return (before, inner, after)
 
 
-# TODO: Delete this after adding comparison overload to the Range class.
-def sort_ranges(ranges: list[Range]) -> list[Range]:
-    return sorted(ranges, key=lambda x: x.start)
+def merge_ranges(ranges_in: list[Range]) -> list[Range]:
+    """
+    Merges any overlapping ranges in the `ranges` list, and returns a new list
+    of ranges sorted by starting value.
+    """
+    if len(ranges_in) <= 1:
+        return ranges_in
 
+    # Sort the ranges in increaing order based on the starting value.
+    ranges = sorted(ranges_in)
 
-def merge_ranges(ranges: list[Range]) -> list[Range]:
-    if len(ranges) <= 1:
-        return ranges
-
-    ranges = sort_ranges(ranges)
+    # Push the first range on the stack. This range is the one with the lowest
+    # start value.
     out_ranges = [ranges[0]]
 
+    # Iterate through the remaining ranges in increasing order based on the
+    # starting value.
     for next_r in ranges[1:]:
-        current_r = out_ranges[-1]
+        top_r = out_ranges[-1]
 
-        # Check if the next range overlaps the active range or not.
-        if (current_r.start + current_r.length) < next_r.start:
-            # The next range starts after the active range. Make this next range
-            # be the active range.
+        # Does the next unprocessed range overlap the range at the top of the
+        # stack?
+        if (top_r.start + top_r.length) < next_r.start:
+            # This range does not overlap with the range at the top of the stack.
+            # Push this next range on to the stack.
             out_ranges.append(next_r)
         else:
-            # The next range overlaps the current range. Extend the current
-            # range to hold both.
-            current_end = current_r.start + current_r.length
+            # Yes this range overlaps with the range at the top of the stack.
+            # Extend the length of the range at the top of the stack so it is
+            # long enough to accomodate this next range.
+            current_end = top_r.start + top_r.length
             next_end = next_r.start + next_r.length
 
-            current_r.length = max(current_end, next_end) - current_r.start
+            top_r.length = max(current_end, next_end) - top_r.start
 
+    # The stack of ranges is already sorted in ascending start time order, and
+    # holds the merged intervals. Return it to the caller!
     return out_ranges

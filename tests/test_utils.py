@@ -5,7 +5,6 @@ from advent.utils import (
     first_and_last,
     merge_ranges,
     not_none,
-    sort_ranges,
     split,
     unzip,
     count_if,
@@ -281,7 +280,7 @@ class TestRange(unittest.TestCase):
     def test_sort(self):
         self.assertSequenceEqual(
             [Range(-1, 10), Range(4, 2), Range(10, 22)],
-            sort_ranges(
+            sorted(
                 [
                     Range(4, 2),
                     Range(10, 22),
