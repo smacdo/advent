@@ -10,8 +10,6 @@ from pathlib import Path
 
 from donner.solution import Part
 
-# TODO: Use encryption rather than merely obscuring the input
-
 
 INPUT_FILE_NAME = "input.txt"
 PART_ONE_ANSWER_FILE_NAME = "part-1-answer.txt"
