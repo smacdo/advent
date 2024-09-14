@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from advent.utils import Range, merge_ranges, not_none, split
+from advent.utils import Range, find_ints, merge_ranges, not_none, split
 from donner.annotations import example, solver
 from donner.solution import AbstractSolver
 
@@ -38,7 +38,7 @@ def parse_almanac(almanac_text: str) -> Almanac:
 
     # Parse the seeds
     _, seeds_list_text = split(seeds_line, ":")
-    seeds = [int(s) for s in split(seeds_list_text, " ")]
+    seeds = find_ints(seeds_list_text)
 
     # Parse each X to Y map section.
     maps: list[Map] = []
@@ -51,7 +51,7 @@ def parse_almanac(almanac_text: str) -> Almanac:
             name, _ = split(line, " ")
             maps.append(Map(name, []))
         else:
-            range_parts = [int(x) for x in split(line, " ")]
+            range_parts = find_ints(line)
             dest = Range(start=range_parts[0], length=range_parts[2])
             source = Range(start=range_parts[1], length=(range_parts[2]))
 

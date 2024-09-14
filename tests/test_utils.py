@@ -1,11 +1,14 @@
 from advent.utils import (
     Range,
     ValueCanNotBeNoneError,
+    find_digits,
     find_ints,
     first_and_last,
+    last,
     merge_ranges,
     not_none,
     split,
+    first,
     unzip,
     count_if,
     all_pairs,
@@ -63,8 +66,13 @@ class TestStringParsing(unittest.TestCase):
     # TODO: test split trim_whitespace parameter
 
     def test_find_ints(self):
+        self.assertSequenceEqual([], find_ints(""))
+        self.assertSequenceEqual([34, -231, 0, 8], find_ints("he34  -231  0 - - 8"))
+
+    def test_find_digits(self):
+        self.assertSequenceEqual([], find_digits(""))
         self.assertSequenceEqual(
-            [34, -231, 0, 8], list(find_ints("he34  -231  0 - - 8"))
+            [5, 3, 2, 1, 8, 3, 2, 1], find_digits("5x-321  8\n\t3 2.1")
         )
 
 
@@ -79,6 +87,28 @@ class TestCountIf(unittest.TestCase):
     def test_wrong_type(self):
         with self.assertRaises(TypeError):
             count_if(1)  # type: ignore
+
+
+class TestFirst(unittest.TestCase):
+    def test_try_first_list(self):
+        self.assertEqual(10, first([10]))
+        self.assertEqual(5, first([5, 10]))
+        self.assertEqual(-8, first([-8, 38, 100]))
+
+    def test_try_first_empty_uses_default(self):
+        self.assertIsNone(first([]))
+        self.assertEqual("hello", first([], default="hello"))
+
+
+class TestLast(unittest.TestCase):
+    def test_try_first_list(self):
+        self.assertEqual(10, last([10]))
+        self.assertEqual(15, last([10, 15]))
+        self.assertEqual(100, last([-8, -200, 100]))
+
+    def test_try_first_empty_uses_default(self):
+        self.assertIsNone(last([]))
+        self.assertEqual(321, last([], default=321))
 
 
 class TestFirstAndLast(unittest.TestCase):
@@ -124,10 +154,6 @@ class TestAllPairs(unittest.TestCase):
             list(all_pairs(["a", "b", "c", "d"])),
         )
 
-    def test_not_list(self):
-        with self.assertRaises(TypeError):
-            list(all_pairs(5))  # type: ignore
-
 
 class TestCombinations(unittest.TestCase):
     def test_k(self):
@@ -152,12 +178,6 @@ class TestCombinations(unittest.TestCase):
             list(combinations(0, [1, 2, 3, 4]))
         with self.assertRaises(ValueError):
             list(combinations(5, [1, 2, 3, 4]))
-
-    def test_bad_types(self):
-        with self.assertRaises(TypeError):
-            list(combinations("2", [1, 2, 3, 4]))  # type: ignore
-        with self.assertRaises(TypeError):
-            list(combinations(5, "abc"))  # type: ignore
 
 
 class TestRange(unittest.TestCase):

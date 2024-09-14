@@ -15,8 +15,8 @@ def parse_card(text: str) -> Card:
     _, numbers_text = split(text, ":")
     winning_numbers_text, my_numbers_text = split(numbers_text, "|")
 
-    winning_numbers = list(find_ints(winning_numbers_text))
-    my_numbers = list(find_ints(my_numbers_text))
+    winning_numbers = find_ints(winning_numbers_text)
+    my_numbers = find_ints(my_numbers_text)
 
     return Card(winning_numbers, my_numbers)
 

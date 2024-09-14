@@ -1,6 +1,6 @@
 from donner.annotations import solver, part_one_example, part_two_example
 from donner.solution import AbstractSolver
-from advent.utils import first_and_last
+from advent.utils import find_digits, first_and_last
 
 
 @solver(day=1, year=2023, name="Trebuchet?!")
@@ -29,7 +29,7 @@ class Day1Solver(AbstractSolver):
 
         for line in input.splitlines():
             # filter out any values that are not digits from the line
-            digits = filter(str.isdigit, line)
+            digits = find_digits(line)
             first, last = first_and_last(digits)
 
             # Combine the two digits into a number. Take care that sometimes there
@@ -38,7 +38,7 @@ class Day1Solver(AbstractSolver):
             # This is small trick I picked up in code competitions / interviews. To
             # append digits simply multiply them by 10 for each position you want to
             # shift left by.
-            number = int(first) * 10 + int(last)
+            number = first * 10 + last
             sum += number
 
         return str(sum)

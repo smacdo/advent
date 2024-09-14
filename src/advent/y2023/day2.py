@@ -97,7 +97,7 @@ class Day2Solver(AbstractSolver):
 
         for line in input.splitlines():
             logging.debug(line)
-            game_id, cube_subsets = parse_game_line(line)
+            _, cube_subsets = parse_game_line(line)
 
             # To find the minimum number of cubes per color simply iterate
             # through each set and record the maximum number per color seen so
