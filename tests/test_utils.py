@@ -1,4 +1,6 @@
 from advent.utils import (
+    Range,
+    find_ints,
     first_and_last,
     split,
     unzip,
@@ -32,20 +34,25 @@ class TestExpectReMatch(unittest.TestCase):
         self.assertRaises(Exception, lambda: expect_re_match(pattern, "13:-8"))
 
 
-class TestSplit(unittest.TestCase):
-    def test_ignore_empty(self):
+class TestStringParsing(unittest.TestCase):
+    def test_split_ignore_empty(self):
         self.assertSequenceEqual(
             ["12", "x", "4123"],
             split(text=" 12 x   4123 ", sep=" ", ignore_empty=True),
         )
 
-    def test_do_not_ignore_empty(self):
+    def test_splt_do_not_ignore_empty(self):
         self.assertSequenceEqual(
             ["", "12", "x", "", "", "4123", "", ""],
             split(text=" 12 x   4123  ", sep=" ", ignore_empty=False),
         )
 
-    # TODO: test trim_whitespace
+    # TODO: test split trim_whitespace parameter
+
+    def test_find_ints(self):
+        self.assertSequenceEqual(
+            [34, -231, 0, 8], list(find_ints("he34  -231  0 - - 8"))
+        )
 
 
 class TestCountIf(unittest.TestCase):
@@ -140,5 +147,119 @@ class TestCombinations(unittest.TestCase):
             list(combinations(5, "abc"))  # type: ignore
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestRange(unittest.TestCase):
+    def test_init_with_zero_or_negative_length_raises_exception(self):
+        self.assertRaises(ValueError, lambda: Range(3, 0))
+        self.assertRaises(ValueError, lambda: Range(3, -1))
+
+    def test_str(self):
+        self.assertEqual("[4, 6]", str(Range(4, 3)))
+
+    def test_contains(self):
+        r = Range(4, 3)
+
+        self.assertFalse(-3 in r)
+        self.assertFalse(3 in r)
+        self.assertTrue(4 in r)
+        self.assertTrue(5 in r)
+        self.assertTrue(6 in r)
+        self.assertFalse(7 in r)
+        self.assertFalse(8 in r)
+
+    def test_overlaps(self):
+        r = Range(4, 3)  # [ 4, 5, 6 ]
+
+        self.assertTrue(r.overlaps(Range(4, 3)))
+        self.assertTrue(r.overlaps(Range(6, 1)))
+        self.assertTrue(r.overlaps(Range(5, 2)))
+        self.assertTrue(r.overlaps(Range(4, 10)))
+        self.assertTrue(r.overlaps(Range(-1, 6)))
+        self.assertTrue(r.overlaps(Range(-2, 8)))
+
+        self.assertFalse(r.overlaps(Range(1, 1)))
+        self.assertFalse(r.overlaps(Range(1, 3)))
+        self.assertFalse(r.overlaps(Range(3, 1)))
+        self.assertFalse(r.overlaps(Range(7, 1)))
+        self.assertFalse(r.overlaps(Range(7, 2)))
+        self.assertFalse(r.overlaps(Range(10, 5)))
+
+    def test_iter(self):
+        r = Range(4, 3)
+        self.assertEqual([4, 5, 6], list(r))
+
+    def test_iter_reverse(self):
+        r = Range(4, 3)
+        self.assertEqual([6, 5, 4], list(reversed(r)))
+
+    def test_length(self):
+        self.assertEqual(3, len(Range(4, 3)))
+
+    def test_get(self):
+        r = Range(4, 3)
+        self.assertEqual(4, r[0])
+        self.assertEqual(5, r[1])
+        self.assertEqual(6, r[2])
+
+    def test_get_negative(self):
+        r = Range(4, 3)
+        self.assertEqual(6, r[-1])
+        self.assertEqual(5, r[-2])
+        self.assertEqual(4, r[-3])
+
+    def test_get_raises_exception_if_past_bounds(self):
+        r = Range(4, 3)
+        self.assertRaises(IndexError, lambda: r[3])
+        self.assertRaises(IndexError, lambda: r[-4])
+
+    def test_set_is_not_supported(self):
+        def f():
+            r = Range(4, 3)
+            r[0] = 0
+
+        self.assertRaises(NotImplementedError, lambda: f())
+
+    def test_del_is_not_supported(self):
+        def f():
+            r = Range(4, 3)
+            del r[0]
+
+        self.assertRaises(NotImplementedError, lambda: f())
+
+    def test_split(self):
+        #                10 | 11 | 12 | 13 | 14 | 15
+        # 7  | 8  | 9  | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17
+
+        #                10 | 11           | 14 | 15
+        #                        | 12 | 13
+        self.assertEqual(
+            (Range(10, 2), Range(12, 2), Range(14, 2)), Range(10, 6).split(Range(12, 2))
+        )
+
+        #                -
+        #                10 | 11 | 12 | 13 | 14 | 15
+        self.assertEqual((None, Range(10, 6), None), Range(10, 6).split(Range(10, 6)))
+        self.assertEqual((None, Range(10, 6), None), Range(10, 6).split(Range(9, 8)))
+
+        #                10 | 11 | 12 | 13
+        #                                  | 14 | 15
+        self.assertEqual(
+            (Range(10, 4), Range(14, 2), None), Range(10, 6).split(Range(14, 2))
+        )
+        self.assertEqual(
+            (Range(10, 4), Range(14, 2), None), Range(10, 6).split(Range(14, 3))
+        )
+
+        #                               13 | 14 | 15
+        #                10 | 11 | 12 |
+        self.assertEqual(
+            (None, Range(10, 3), Range(13, 3)), Range(10, 6).split(Range(10, 3))
+        )
+        self.assertEqual(
+            (None, Range(10, 3), Range(13, 3)), Range(10, 6).split(Range(9, 4))
+        )
+
+    def test_split_none(self):
+        self.assertIsNone(Range(10, 6).split(Range(7, 2)))
+        self.assertIsNone(Range(10, 6).split(Range(7, 3)))
+        self.assertIsNone(Range(10, 6).split(Range(16, 10)))
+        self.assertIsNone(Range(10, 6).split(Range(17, 10)))

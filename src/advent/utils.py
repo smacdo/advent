@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from advent.spatial import Grid
 from collections.abc import Iterator
 from typing import (
@@ -14,6 +15,15 @@ import re
 
 
 T = TypeVar("T")
+
+
+def not_none(value: T | None) -> T:
+    # TODO: Write tests.
+    # TODO: Unique exception
+    if value is None:
+        raise Exception("value cannot be null")
+    else:
+        return value
 
 
 def expect_re_match(pattern: re.Pattern | str, text: str) -> re.Match:
@@ -58,6 +68,11 @@ def split(
         return [x for x in text.split(sep) if not is_empty(x)]
     else:
         return text.split(sep)
+
+
+def find_ints(text: str) -> Iterable[int]:
+    """Returns all the integers found in the text string and ignores any non-number characters."""
+    return map(int, re.findall(r"-?[0-9]+", text))
 
 
 def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> Grid[str]:
@@ -170,3 +185,100 @@ def combinations(k: int, items: list[T]) -> Generator[list[T], None, None]:
 
     scratch: list[Optional[T]] = [None for _ in range(0, k)]
     yield from step(0, k, 0, items, scratch)
+
+
+@dataclass
+class Range:
+    start: int
+    length: int
+
+    def __init__(self, start: int, length: int) -> None:
+        if length < 1:
+            raise ValueError(f"Range length {length} must be larger than zero")
+
+        self.start = start
+        self.length = length
+
+    def __str__(self):
+        return f"[{self.start}, {self.start + self.length - 1}]"
+
+    def __contains__(self, value: int) -> bool:
+        return value >= self.start and value < (self.start + self.length)
+
+    def __iter__(self) -> Generator[int, None, None]:
+        for i in range(self.start, self.start + self.length):
+            yield i
+
+    def __len__(self) -> int:
+        return self.length
+
+    def __getitem__(self, index: int) -> int:
+        if index >= 0 and index < self.length:
+            return self.start + index
+        elif index < 0 and index >= (-self.length):
+            return self.start + self.length + index
+        else:
+            raise IndexError(f"Range index {index} out of bounds")
+
+    def __setitem__(self, index: int, value: int):
+        raise NotImplementedError()
+
+    def __delitem__(self, index: int):
+        raise NotImplementedError()
+
+    def overlaps(self, other: "Range") -> bool:
+        return (
+            self.start < (other.start + other.length)
+            and (self.start + self.length) > other.start
+        )
+
+    def split(
+        self, other: "Range"
+    ) -> "tuple[Range | None, Range, Range | None] | None":
+        """
+        Splits `self` into multiple parts assuming `other` intersects.
+        The contents of the tuple are as follows:
+
+        0: The part of this range before `other`
+        1: The part of this range intersects with `other`.
+        2: The part of this range after `other`.
+
+        Tuple components `0` and `2` will be set to `None` if there is no valid
+        range after cutting it up.
+
+        This function will return `None` if `other` does not overlap.
+        """
+        my_start = self.start
+        my_end = self.start + self.length
+        other_start = other.start
+        other_end = other.start + other.length
+
+        # Return `None`` if the provided range does not overlap.
+        if my_start >= other_end or my_end <= other_start:
+            return None
+
+        # Calculate the portion of this range that exists before `other`.
+        before_start = my_start
+        before_end = max(my_start, other_start)
+        before = (
+            Range(before_start, before_end - before_start)
+            if before_end > before_start
+            else None
+        )
+
+        # Calculate the portion of this range that is intersected by `other`.
+        inner_start = max(my_start, other_start)
+        inner_end = min(my_end, other_end)
+        inner = Range(inner_start, inner_end - inner_start)
+
+        # Calculate the portion of this range that exists after `other`.
+        after_start = min(my_end, other_end)
+        after_end = max(my_end, other_end)
+
+        after = (
+            Range(after_start, after_end - after_start)
+            if after_start < my_end
+            else None
+        )
+
+        return (before, inner, after)
