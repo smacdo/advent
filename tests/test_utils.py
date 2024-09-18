@@ -1,6 +1,7 @@
 from advent.utils import (
     Range,
     ValueCanNotBeNoneError,
+    digits_to_int,
     find_digits,
     find_ints,
     first_and_last,
@@ -74,6 +75,27 @@ class TestStringParsing(unittest.TestCase):
         self.assertSequenceEqual(
             [5, 3, 2, 1, 8, 3, 2, 1], find_digits("5x-321  8\n\t3 2.1")
         )
+
+
+class TestDigitsToInt(unittest.TestCase):
+    def test_int_digits(self):
+        self.assertEqual(0, digits_to_int([]))
+        self.assertEqual(0, digits_to_int([0]))
+        self.assertEqual(345, digits_to_int([3, 4, 5]))
+        self.assertEqual(-7328, digits_to_int([-7, 3, 2, 8]))
+
+    def test_str_digits(self):
+        self.assertEqual(0, digits_to_int(["0"]))
+        self.assertEqual(345, digits_to_int(["3", "4", "5"]))
+        self.assertEqual(-7328, digits_to_int(["-7", "3", "2", "8"]))
+
+    def test_raises_exception_if_negative_after_first(self):
+        self.assertRaises(ValueError, lambda: digits_to_int([9, 3, 6, -8]))
+        self.assertRaises(ValueError, lambda: digits_to_int(["1", "-2", "3", "4"]))
+
+    def test_raises_exception_if_digit_larger_than_nine(self):
+        self.assertRaises(ValueError, lambda: digits_to_int([9, 3, 10, 8]))
+        self.assertRaises(ValueError, lambda: digits_to_int(["99999", "2", "3", "4"]))
 
 
 class TestCountIf(unittest.TestCase):

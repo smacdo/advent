@@ -81,6 +81,40 @@ def find_digits(text: str) -> list[int]:
     return list(map(int, filter(str.isdigit, text)))
 
 
+def digits_to_int(digits: Iterable[int | str]) -> int:
+    """
+    Concatenates a collection of digits to an integer.
+
+    Example:
+       digits_to_int([3, 4, 5]) # = 345
+    """
+    result = 0
+    is_negative = False
+
+    for i, d in enumerate(digits):
+        d = int(d)
+
+        if d < 0:
+            if i == 0:
+                is_negative = True
+                d *= -1
+            else:
+                raise ValueError(
+                    f"only first digit can be negative (digits = {digits}, d = {d}, i = {i})"
+                )
+        elif d > 9:
+            raise ValueError(
+                f"digits cannot be larger than 9 (digits = {digits}, d = {d}, i = {i})"
+            )
+
+        result = result * 10 + d
+
+    if is_negative:
+        result *= -1
+
+    return result
+
+
 def new_grid_from_input_lines(lines: Iterable[Iterable[str]]) -> Grid[str]:
     chars = [[c for c in line] for line in lines]
     return Grid(len(chars[0]), len(chars), chars)
