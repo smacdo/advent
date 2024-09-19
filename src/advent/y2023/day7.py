@@ -18,6 +18,7 @@ class Type(IntEnum):
     FiveOfAKind = 7
 
 
+JOKERS_WILD_POWER = 1
 CARD_POWER = {
     "2": 2,
     "3": 3,
@@ -32,7 +33,6 @@ CARD_POWER = {
     "Q": 12,
     "K": 13,
     "A": 14,
-    "X": 1,  # 'J' joker card for part 2.
 }
 
 
@@ -41,37 +41,40 @@ CARD_POWER = {
 class Hand:
     cards: list[str]
     bid: int
+    jokers_are_wild: bool
 
     def type(self) -> Type:
+        # Count the cards and then get a list of the most common cards sorted in
+        # ascending order.
         card_counts = Counter(c for c in self.cards)
         mc = card_counts.most_common()
 
-        # Convert jokers to the most common card if they are present.
-        if "X" in self.cards:
-            # Edge case - convert only when there are non-joker cards present.
-            if len(mc) != 1 or mc[0][0] != "X":
-                # Find most common card that is not a joker.
-                most_common_card = next(filter(lambda x: x[0] != "X", mc))[0]
-                card_counts[most_common_card] += card_counts["X"]
+        # When jokers are wild, treat all of the joker cards as the most common
+        # card except when there are no other cards except for jokers.
+        if self.jokers_are_wild and "J" in self.cards and len(mc) > 1:
+            # Find the most common non-joker card.
+            # NOTE: This will throw an exception if there are no non-joker cards.
+            most_common_card = next(filter(lambda x: x[0] != "J", mc))[0]
 
-                del card_counts["X"]
+            # Make jokers count to the most common non-joker card.
+            card_counts[most_common_card] += card_counts["J"]
 
-                mc = card_counts.most_common()
+            # Remove the joker cards from the count.
+            del card_counts["J"]
 
-        assert len(mc) > 0
-        assert mc[0][1] <= 5
+            # Recount the cards now that the jokers have been transformed.
+            mc = card_counts.most_common()
 
-        logging.debug(f"cards={self.cards}, counts={card_counts}")
-
+        # Find the highest scoring category for this hand.
         if mc[0][1] == 5:
             return Type.FiveOfAKind
         elif mc[0][1] == 4:
             return Type.FourOfAKind
         elif mc[0][1] == 3 and mc[1][1] == 2:
             return Type.FullHouse
-        elif mc[0][1] == 3 and mc[1][1] == 1:  # and mc[2][1] == 1
+        elif mc[0][1] == 3 and mc[1][1] == 1:
             return Type.ThreeOfAKind
-        elif mc[0][1] == 2 and mc[1][1] == 2:  # and mc[2][1] == 1
+        elif mc[0][1] == 2 and mc[1][1] == 2:
             return Type.TwoPair
         elif mc[0][1] == 2 and mc[1][1] == 1:
             return Type.OnePair
@@ -86,6 +89,12 @@ class Hand:
         return f"cards=[{"".join(self.cards)}], type={self.type()}, bid={self.bid}"
 
     def __le__(self, other: "Hand") -> bool:
+        def card_power(c: str) -> int:
+            if self.jokers_are_wild and c == "J":
+                return JOKERS_WILD_POWER
+            else:
+                return CARD_POWER[c]
+
         my_rank = int(self.type())
         other_rank = int(other.type())
 
@@ -97,17 +106,19 @@ class Hand:
                 other_card = other.cards[i]
 
                 if my_card != other_card:
-                    return CARD_POWER[my_card] < CARD_POWER[other_card]
+                    return card_power(my_card) < card_power(other_card)
 
             raise Exception(f"cards are equal, self = {self.cards}, other = {other}")
 
 
-def parse_input(input: str) -> list[Hand]:
+def parse_input(input: str, jokers_are_wild: bool = False) -> list[Hand]:
     hands: list[Hand] = []
 
     for line in input.splitlines():
         cards_str, bid_str = split(line, " ")
-        hands.append(Hand([c for c in cards_str], int(bid_str)))
+        hands.append(
+            Hand([c for c in cards_str], int(bid_str), jokers_are_wild=jokers_are_wild)
+        )
 
     return hands
 
@@ -141,10 +152,7 @@ class Day7Solver(AbstractSolver):
         return total_winnings
 
     def part_two(self, input: str) -> int | str | None:
-        # swap out jokers J -> X to keep the same scoring code in part 1 and 2.
-        input = input.replace("J", "X")
-
-        hands = parse_input(input)
+        hands = parse_input(input, jokers_are_wild=True)
         hands.sort()
 
         total_winnings = 0
