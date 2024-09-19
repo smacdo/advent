@@ -2,8 +2,12 @@
 - Investigate tox for test running
 - Build oatmeal with optimizations when used as python module
 - Build oatmeal with sanitizers when used in C++ tests
+- Stand up CI testing
+ - Run python unit tests
+ - Run available solutions against cached answers
 
 ## Improve cli
+- `advent_cli solve` with no arguments should run any solver with no cached answer
 - `advent_cli solve [year] day` should solve specific puzzle (rather than all)
 - `advent_cli solve --all [year]` should solve all puzzles for year or all puzzles
 - Print the amount of time it took to solve each puzzle. The time should also
