@@ -83,9 +83,6 @@ class Direction(IntEnum):
     @classmethod
     def from_point(cls, pt: Point) -> "Direction":
         """Convert from a unit point to a direction or throw an exception."""
-        if not isinstance(pt, Point):
-            raise NotImplementedError
-
         if pt.x == 1 and pt.y == 0:
             return Direction.East
         elif pt.x == 0 and pt.y == -1:
@@ -95,7 +92,7 @@ class Direction(IntEnum):
         elif pt.x == 0 and pt.y == 1:
             return Direction.South
         else:
-            raise Exception(
+            raise ValueError(
                 f"Expected a unit point but got {pt} when converting to Direction"
             )
 
@@ -125,7 +122,7 @@ class Grid(Generic[T]):
         self,
         x_count: int,
         y_count: int,
-        initial: Union[T, Callable[[], T], list[list[T]]],
+        initial: Union[T, Callable[[int, int], T], list[list[T]]],
     ):
         if x_count < 1:
             raise ValueError("Column count `x_count` must be larger than zero")
@@ -151,15 +148,12 @@ class Grid(Generic[T]):
             # Copy rows.
             self.cells = [c for row in initial for c in row]
         elif callable(initial):
-            self.cells = [initial() for _ in range(x_count * y_count)]
+            self.cells = [initial(x, y) for y in range(y_count) for x in range(x_count)]
         else:
             self.cells = [copy.deepcopy(initial) for _ in range(x_count * y_count)]
 
     def check_in_bounds(self, pt: Point) -> bool:
         """Test if a point is a valid cell position."""
-        if not isinstance(pt, Point):
-            raise TypeError("argument `pt` must be type `Point`")
-
         return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
 
     def _validate_in_bounds(self, pt: Point) -> None:
@@ -171,9 +165,6 @@ class Grid(Generic[T]):
 
     def col(self, x_col: int) -> Iterable[T]:
         """Returns an iterator across all the cells in column `x_col`"""
-        if not isinstance(x_col, int):
-            raise TypeError("argument `x_col` must be type `int`")
-
         if x_col < 0 or x_col >= self.x_count:
             raise ValueError(f"col {x_col} is out of bounds")
 
@@ -182,9 +173,6 @@ class Grid(Generic[T]):
 
     def row(self, y_row: int) -> Iterable[T]:
         """Returns an iterator across all the cells in row `y_row`"""
-        if not isinstance(y_row, int):
-            raise TypeError("argument `y_col` must be type `int`")
-
         if y_row < 0 or y_row >= self.y_count:
             raise ValueError(f"row {y_row} is out of bounds")
 

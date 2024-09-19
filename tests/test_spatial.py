@@ -43,11 +43,8 @@ class TestDirection(unittest.TestCase):
         self.assertEqual(Direction.West, Direction.from_point(Point(-1, 0)))
         self.assertEqual(Direction.South, Direction.from_point(Point(0, 1)))
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             Direction.from_point(Point(1, 1))
-
-        with self.assertRaises(NotImplementedError):
-            Direction.from_point((1, 1))  # type: ignore
 
 
 class TestGrid(unittest.TestCase):
@@ -58,14 +55,10 @@ class TestGrid(unittest.TestCase):
         self.assertSequenceEqual(["f", "f", "f", "f", "f", "f"], g.cells)
 
     def test_create_grid_from_callable(self):
-        counter = 0
+        def foo(x: int, y: int):
+            return y * 10 + x
 
-        def foo():
-            nonlocal counter
-            counter += 1  # noqa: F823
-            return counter
-
-        self.assertSequenceEqual([1, 2, 3, 4, 5, 6], Grid(3, 2, foo).cells)
+        self.assertSequenceEqual([0, 1, 2, 10, 11, 12], Grid(3, 2, foo).cells)
 
     def test_create_grid_from_2d_array(self):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
