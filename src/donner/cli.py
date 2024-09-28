@@ -108,14 +108,6 @@ def output(args):
     pass
 
 
-def cli_solve(args):
-    registry = get_global_solver_registry()
-
-    for year in registry.all_years():
-        for day in registry.all_days(year):
-            solve(year=year, day=day)
-
-
 # TODO: Modularize this code.
 # TODO: Inject a fake AOC client and then test it as well!
 # TODO: Inject a fake module discovery interface.
@@ -190,6 +182,8 @@ def sync(args):
 
 
 def cli_main():
+    registry = get_global_solver_registry()
+
     # Argument parsing.
     parser = argparse.ArgumentParser()
 
@@ -218,6 +212,16 @@ def cli_main():
     output_parser.set_defaults(func=output)
 
     solve_parser = subparsers.add_parser("solve")
+    solve_parser.add_argument(
+        "days", type=int, nargs="+", default=[], help="a list of days to solve for"
+    )
+    solve_parser.add_argument(
+        "-y",
+        "--year",
+        type=int,
+        default=max(registry.all_years()),
+        help="the year to solve for",
+    )
     solve_parser.set_defaults(func=solve)
 
     sync_parser = subparsers.add_parser("sync")
@@ -232,11 +236,17 @@ def cli_main():
     # TODO: Intercept common exceptions and print out helpful remediation messages.
     # TODO: cryptography.fernet.InvalidToken --> (probably) incorrect password
     # TODO: .aoc_config password or session_id missing
+
     try:
         if args.subparser_name == "output":
             pass
         elif args.subparser_name == "solve":
-            return cli_solve(args)
+            year = args.year
+            days = args.days if len(args.days) > 0 else registry.all_days(year)
+
+            for day in days:
+                solve(year=year, day=day)
+
         elif args.subparser_name == "sync":
             return sync(args)
         else:
