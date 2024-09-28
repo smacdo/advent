@@ -140,7 +140,7 @@ class Day8Solver(AbstractSolver):
         start_nodes = [n for n in map.network.values() if n.is_start()]
         path_lengths = [path_length(map, n.name) for n in start_nodes]
 
-        logging.info(f"{map.network}")
+        logging.debug(f"{map.network}")
 
         for start_node, plen in zip(start_nodes, path_lengths):
             logging.info(f"{start_node} length = {plen}")
