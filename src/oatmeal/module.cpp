@@ -1,3 +1,4 @@
+#include "grid.h"
 #include "point.h"
 
 #include <pybind11/operators.h>
@@ -11,6 +12,7 @@ namespace py = pybind11;
 PYBIND11_MODULE(_oatmeal, m) {
   m.doc() =
       "An assortment of boring but essential tools written in C++ for speed";
+
   py::class_<Point>(m, "Point")
       .def(py::init<int, int>())
       .def_property(
@@ -57,4 +59,38 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(py::self / int())
       .def(py::self % int())
       .def(-py::self);
+
+  py::class_<Grid<py::object>>(m, "Grid")
+      .def(py::init<size_t, size_t, py::object>())
+      .def(py::init<size_t, size_t, py::function>())
+      .def(py::init([](size_t x_count, size_t y_count, py::list initial) {
+        if (initial.size() != y_count) {
+          throw py::value_error(
+              "list row count must match grid y_count when constructing");
+        }
+
+        return Grid<py::object>(
+            x_count, y_count, [initial, x_count](size_t x, size_t y) {
+              const auto& row = py::cast<py::list>(initial[y]);
+
+              if (row.size() != x_count) {
+                throw py::value_error(
+                    "list col count must match grid x_count when constructing");
+              }
+
+              const auto index = y * x_count + x;
+              return row[x];
+            });
+      }))
+      .def_property_readonly("x_count", &Grid<py::object>::x_count)
+      .def_property_readonly("y_count", &Grid<py::object>::y_count)
+      .def("col_count", &Grid<py::object>::col_count)
+      .def("row_count", &Grid<py::object>::row_count)
+      .def(
+          "__getitem__",
+          [](const Grid<py::object>& self, Point p) { return self[p]; })
+      .def(
+          "__setitem__",
+          [](Grid<py::object>& self, Point p, py::object v) { self[p] = v; })
+      .def("__len__", [](Grid<py::object>& self) { return self.count(); });
 }

@@ -38,6 +38,7 @@ set(oatmeal_sources
 )
 
 set(oatmeal_tests
+  src/oatmeal/grid.tests.cpp
   src/oatmeal/point.tests.cpp
 )
 
@@ -67,7 +68,7 @@ add_executable(oatmeal_test
   ${oatmeal_tests}
 )
 target_compile_features(oatmeal_test PUBLIC cxx_std_20)
-target_link_libraries(oatmeal_test gtest_main)
+target_link_libraries(oatmeal_test gtest_main gmock)
 
 enable_testing()
 add_test(NAME    oatmeal_test 
