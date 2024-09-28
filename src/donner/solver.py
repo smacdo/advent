@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+import time
 
 from donner.client import AocClient, SubmitResponse
 from donner.data import AnswerResponse, PartAnswerCache, PuzzleData
@@ -127,18 +128,28 @@ class RunSolverResult:
 
 class SolverEventHandlers(ABC):
     @abstractmethod
-    def on_examples_passed(self, solver_metadata: SolverMetadata):
+    def on_examples_passed(
+        self, solver_metadata: SolverMetadata, elapsed_seconds: float
+    ):
         pass
 
     @abstractmethod
     def on_part_ok(
-        self, answer: MaybeAnswerType, solver_metadata: SolverMetadata, part: Part
+        self,
+        answer: MaybeAnswerType,
+        solver_metadata: SolverMetadata,
+        elapsed_seconds: float,
+        part: Part,
     ):
         pass
 
     @abstractmethod
     def on_part_wrong(
-        self, result: CheckResult, solver_metadata: SolverMetadata, part: Part
+        self,
+        result: CheckResult,
+        solver_metadata: SolverMetadata,
+        elapsed_seconds: float,
+        part: Part,
     ):
         pass
 
@@ -152,6 +163,7 @@ def run_solver(
     run_result = RunSolverResult()
 
     # Validate any examples first to check the state of the solver.
+    example_start_time = time.time()
     parts = (Part.One, Part.Two)
 
     for part in parts:
@@ -170,16 +182,24 @@ def run_solver(
                 )
 
                 events.on_part_wrong(
-                    result=result, solver_metadata=solver_metadata, part=part
+                    result=result,
+                    solver_metadata=solver_metadata,
+                    part=part,
+                    elapsed_seconds=time.time() - example_start_time,
                 )
 
                 return run_result
 
-    events.on_examples_passed(solver_metadata=solver_metadata)
+    events.on_examples_passed(
+        solver_metadata=solver_metadata,
+        elapsed_seconds=time.time() - example_start_time,
+    )
 
     # Run the solver twice - the first time to get the part one answer, and the
     # second time to get the part two answer.
     for part in parts:
+        part_start_time = time.time()
+
         solver = solver_metadata.create_solver_instance()
         answer = solver.get_part_func(part)(puzzle.input)
 
@@ -194,11 +214,19 @@ def run_solver(
         run_result.set_result(part, result)
 
         if result.is_ok():
-            events.on_part_ok(answer=answer, solver_metadata=solver_metadata, part=part)
+            events.on_part_ok(
+                answer=answer,
+                solver_metadata=solver_metadata,
+                part=part,
+                elapsed_seconds=time.time() - part_start_time,
+            )
         else:
             # Answer is not correct - bail out to exit early.
             events.on_part_wrong(
-                result=result, solver_metadata=solver_metadata, part=part
+                result=result,
+                solver_metadata=solver_metadata,
+                part=part,
+                elapsed_seconds=time.time() - part_start_time,
             )
             break
 

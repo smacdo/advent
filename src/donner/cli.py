@@ -39,18 +39,28 @@ logger = logging.getLogger(__name__)
 
 
 class TerminalSolverEventHandlers(SolverEventHandlers):
-    def on_examples_passed(self, solver_metadata: SolverMetadata):
+    def on_examples_passed(
+        self, solver_metadata: SolverMetadata, elapsed_seconds: float
+    ):
         print(
-            f"👍 Tested the examples for year {solver_metadata.year()} day {solver_metadata.day()} in the solver"
+            f"👍 Tested the examples for year {solver_metadata.year()} day {solver_metadata.day()} [{elapsed_seconds:2f}s]"
         )
 
     def on_part_ok(
-        self, answer: MaybeAnswerType, solver_metadata: SolverMetadata, part: Part
+        self,
+        answer: MaybeAnswerType,
+        solver_metadata: SolverMetadata,
+        elapsed_seconds: float,
+        part: Part,
     ):
-        print(f"✅ {part}: {answer}")
+        print(f"✅ {part}: {answer} [{elapsed_seconds:2f}s]")
 
     def on_part_wrong(
-        self, result: CheckResult, solver_metadata: SolverMetadata, part: Part
+        self,
+        result: CheckResult,
+        solver_metadata: SolverMetadata,
+        elapsed_seconds: float,
+        part: Part,
     ):
         if type(result) is CheckResult_ExampleFailed:
             print(
@@ -62,18 +72,18 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
             if result.hint is None:
                 if result.expected_answer is None:
                     print(
-                        f"❌ Wrong answer for {str(result.part).lower()}: {result.actual_answer}"
+                        f"❌ Wrong answer for {str(result.part).lower()}: {result.actual_answer} [{elapsed_seconds:2f}s]"
                     )
                 else:
                     print(
-                        f"❌ Wrong answer for {str(result.part).lower()}\n"
+                        f"❌ Wrong answer for {str(result.part).lower()} [{elapsed_seconds:2f}s]\n"
                         f"       Expected: {result.expected_answer}\n"
                         f"         Actual: {result.actual_answer}"
                     )
             else:
                 too_what = "low" if result.hint == CheckHint.TooLow else "high"
                 print(
-                    f"❌ Wrong answer for {str(result.part).lower()}: {result.actual_answer} is too {too_what}"
+                    f"❌ Wrong answer for {str(result.part).lower()}: {result.actual_answer} is too {too_what} [{elapsed_seconds:2f}s]"
                 )
 
 

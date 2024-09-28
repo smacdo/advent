@@ -96,16 +96,26 @@ class MockSolverEventHandlers(SolverEventHandlers):
         self.part_ok_calls = []
         self.part_wrong_calls = []
 
-    def on_examples_passed(self, solver_metadata: SolverMetadata):
+    def on_examples_passed(
+        self, solver_metadata: SolverMetadata, elapsed_seconds: float
+    ):
         self.examples_passed_calls.append(solver_metadata)
 
     def on_part_ok(
-        self, answer: MaybeAnswerType, solver_metadata: SolverMetadata, part: Part
+        self,
+        answer: MaybeAnswerType,
+        solver_metadata: SolverMetadata,
+        elapsed_seconds: float,
+        part: Part,
     ):
         self.part_ok_calls.append((answer, solver_metadata, part))
 
     def on_part_wrong(
-        self, result: CheckResult, solver_metadata: SolverMetadata, part: Part
+        self,
+        result: CheckResult,
+        solver_metadata: SolverMetadata,
+        elapsed_seconds: float,
+        part: Part,
     ):
         self.part_wrong_calls.append((result, solver_metadata, part))
 
