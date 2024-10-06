@@ -68,12 +68,8 @@ class Day${DAY}Solver(AbstractSolver):
 - Grid.diagonal_neighbors
 
 # Improvements
-- rework solver flow. Instead of running all examples first, instead run part 1
-  examples, then solve part1, then run part 2, etc.
 
 # Utils
 - Add alternate `end = ...` and `last = ...` parameters to the Range constructor.
 
 # Bugs
-- Status message "Tested the examples for ..." should not be printed if solver
-  does not have any examples.

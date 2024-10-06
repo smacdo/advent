@@ -40,7 +40,7 @@ class DecoratedTestSolution(AbstractSolver):
     def part_two(self, input: str) -> MaybeAnswerType:
         if input == "part_two_fail" or input == "fail":
             return "part_two_bad_output"
-        elif input == "part_two_high" or input == "part_one_low":
+        elif input == "part_two_high":
             return 128
         elif input == "part_two_not_finished" or input == "not_finished":
             return None
@@ -947,10 +947,13 @@ class RunSolverTests(unittest.TestCase):
         self.assertEqual(answer_cache[0], PartAnswerCache(correct_answer="part_one_ok"))
         self.assertEqual(answer_cache[1], PartAnswerCache(high_boundary=128))
 
-        # Part one and two have wrong answers. Both parts are run.
+        # Part one is too high but part two is fine.
         client = MockAocClient(part_one_response=SubmitResponse.TooLow)
         events = MockSolverEventHandlers()
-        answer_cache = [PartAnswerCache(), PartAnswerCache()]
+        answer_cache = [
+            PartAnswerCache(),
+            PartAnswerCache(correct_answer="part_two_ok"),
+        ]
 
         result = run_solver(
             solver_m,
@@ -972,12 +975,7 @@ class RunSolverTests(unittest.TestCase):
                     expected_answer=None,
                     hint=CheckHint.TooLow,
                 ),
-                part_two_result=CheckResult_Wrong(
-                    part=Part.Two,
-                    actual_answer=128,
-                    expected_answer=None,
-                    hint=CheckHint.TooHigh,
-                ),
+                part_two_result=CheckResult_Ok(Part.One, "part_two_ok"),
             ),
         )
 
@@ -991,7 +989,7 @@ class RunSolverTests(unittest.TestCase):
             events.finish_part_calls,
             [
                 (solver_m, Part.One, result.part_one),
-                (solver_m, Part.Two, result.part_one),
+                (solver_m, Part.Two, result.part_two),
             ],
         )
 
@@ -1002,4 +1000,4 @@ class RunSolverTests(unittest.TestCase):
 
         # Verify answer cache has recorded the submitted answer.
         self.assertEqual(answer_cache[0], PartAnswerCache(low_boundary=-50))
-        self.assertEqual(answer_cache[1], PartAnswerCache())
+        self.assertEqual(answer_cache[1], PartAnswerCache(correct_answer="part_two_ok"))

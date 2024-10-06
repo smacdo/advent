@@ -86,10 +86,13 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
     def on_start_part(self, solver_metadata: SolverMetadata, part: Part):
         self.solver_start_times[solver_metadata].set_part_start_time(part, time.time())
 
-    def on_part_examples_pass(self, solver_metadata: SolverMetadata, part: Part):
-        print(
-            f"👍 Tested the examples for year {solver_metadata.year()} day {solver_metadata.day()} {str(part).lower()}"
-        )
+    def on_part_examples_pass(
+        self, solver_metadata: SolverMetadata, part: Part, count: int
+    ):
+        if count > 0:
+            print(
+                f"👍 Tested the examples for year {solver_metadata.year()} day {solver_metadata.day()} {str(part).lower()}"
+            )
 
     def on_finish_part(
         self,
