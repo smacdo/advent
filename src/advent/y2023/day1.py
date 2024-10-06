@@ -1,13 +1,11 @@
-from donner.annotations import solver, part_one_example, part_two_example
+from donner.annotations import solver, example
 from donner.solution import AbstractSolver
 from advent.utils import find_digits, first_and_last
 
 
 @solver(day=1, year=2023, name="Trebuchet?!")
-@part_one_example(
-    input=["1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet"], output="142"
-)
-@part_two_example(
+@example(input=["1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet"], part_one="142")
+@example(
     input=[
         "two1nine",
         "eightwothree",
@@ -17,7 +15,7 @@ from advent.utils import find_digits, first_and_last
         "zoneight234",
         "7pqrstsixteen",
     ],
-    output="281",
+    part_two="281",
 )
 class Day1Solver(AbstractSolver):
     def part_one(self, input: str) -> int | str | None:

@@ -4,24 +4,6 @@ from donner.solution import AbstractSolver
 from advent.utils import find_ints
 
 
-def predict(sequence: list[int], index: int) -> int:
-    prediction = 0
-
-    while not all(x == 0 for x in sequence):
-        logging.debug(f"{sequence}, element={sequence[index]} (index {index})")
-        assert len(sequence) > 1
-
-        prediction += sequence[index]
-
-        for i in range(1, len(sequence)):
-            sequence[i - 1] = sequence[i] - sequence[i - 1]
-
-        del sequence[index]
-
-    logging.info(f"sequence = {sequence}, index = {index}, prediction = {prediction}")
-    return prediction
-
-
 @solver(day=9, year=2023, name="Mirage Maintenance")
 @example(
     input=[
@@ -30,9 +12,6 @@ def predict(sequence: list[int], index: int) -> int:
         "10 13 16 21 30 45",
     ],
     part_one="114",
-)
-@example(
-    input="10 13 16 21 30 45",
     part_two="2",
 )
 class Day9Solver(AbstractSolver):
@@ -40,7 +19,24 @@ class Day9Solver(AbstractSolver):
         prediction_sum = 0
 
         for line in input.splitlines():
-            prediction_sum += predict(find_ints(line), -1)
+            sequence = find_ints(line)
+            prediction = 0
+
+            while not all(x == 0 for x in sequence):
+                logging.debug(
+                    f"p1: {sequence}, element={sequence[-1]}, p = {prediction}"
+                )
+                assert len(sequence) > 1
+
+                prediction += sequence[-1]
+
+                for i in range(1, len(sequence)):
+                    sequence[i - 1] = sequence[i] - sequence[i - 1]
+
+                del sequence[-1]
+
+            logging.info(f"p1: prediction = {prediction}")
+            prediction_sum += prediction
 
         return prediction_sum
 
@@ -48,6 +44,25 @@ class Day9Solver(AbstractSolver):
         prediction_sum = 0
 
         for line in input.splitlines():
-            prediction_sum += predict(find_ints(line), 0)
+            sequence = find_ints(line)
+            prediction = 0
+
+            while not all(x == 0 for x in sequence):
+                logging.debug(
+                    f"p2: {sequence}, element={sequence[0]}, p = {prediction}"
+                )
+                assert len(sequence) > 1
+
+                prediction = -prediction + sequence[0]
+
+                for i in range(1, len(sequence)):
+                    sequence[i - 1] = sequence[i] - sequence[i - 1]
+
+                del sequence[-1]
+
+            prediction = -prediction
+
+            logging.info(f"p2 prediction = {prediction}")
+            prediction_sum += prediction
 
         return prediction_sum
