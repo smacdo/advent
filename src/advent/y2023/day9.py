@@ -4,6 +4,26 @@ from donner.solution import AbstractSolver
 from advent.utils import find_ints
 
 
+def predict(sequence: list[int], pos: int, modifier: int) -> int:
+    prediction = 0
+
+    while not all(x == 0 for x in sequence):
+        logging.debug(
+            f"predict itr: seq = {sequence}, x = {sequence[pos]}, p = {prediction}, pos = {pos}, mod = {modifier}"
+        )
+        assert len(sequence) > 1
+
+        prediction = modifier * prediction + sequence[pos]
+
+        for i in range(1, len(sequence)):
+            sequence[i - 1] = sequence[i] - sequence[i - 1]
+
+        del sequence[-1]
+
+    logging.info(f"prediction is {prediction}")
+    return modifier * prediction
+
+
 @solver(day=9, year=2023, name="Mirage Maintenance")
 @example(
     input=[
@@ -19,24 +39,7 @@ class Day9Solver(AbstractSolver):
         prediction_sum = 0
 
         for line in input.splitlines():
-            sequence = find_ints(line)
-            prediction = 0
-
-            while not all(x == 0 for x in sequence):
-                logging.debug(
-                    f"p1: {sequence}, element={sequence[-1]}, p = {prediction}"
-                )
-                assert len(sequence) > 1
-
-                prediction += sequence[-1]
-
-                for i in range(1, len(sequence)):
-                    sequence[i - 1] = sequence[i] - sequence[i - 1]
-
-                del sequence[-1]
-
-            logging.info(f"p1: prediction = {prediction}")
-            prediction_sum += prediction
+            prediction_sum += predict(find_ints(line), -1, 1)
 
         return prediction_sum
 
@@ -44,25 +47,6 @@ class Day9Solver(AbstractSolver):
         prediction_sum = 0
 
         for line in input.splitlines():
-            sequence = find_ints(line)
-            prediction = 0
-
-            while not all(x == 0 for x in sequence):
-                logging.debug(
-                    f"p2: {sequence}, element={sequence[0]}, p = {prediction}"
-                )
-                assert len(sequence) > 1
-
-                prediction = -prediction + sequence[0]
-
-                for i in range(1, len(sequence)):
-                    sequence[i - 1] = sequence[i] - sequence[i - 1]
-
-                del sequence[-1]
-
-            prediction = -prediction
-
-            logging.info(f"p2 prediction = {prediction}")
-            prediction_sum += prediction
+            prediction_sum += predict(find_ints(line), 0, -1)
 
         return prediction_sum
