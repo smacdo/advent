@@ -153,9 +153,7 @@ class SolverEventHandlers(ABC):
 
     @abstractmethod
     def on_part_examples_pass(
-        self,
-        solver_metadata: SolverMetadata,
-        part: Part,
+        self, solver_metadata: SolverMetadata, part: Part, count: int
     ):
         pass
 
@@ -175,7 +173,9 @@ def run_solver(
     for part in (Part.One, Part.Two):
         # Validate any examples for the part prior to running the solver on real
         # input.
-        for example in solver_metadata.examples(part):
+        examples = list(solver_metadata.examples(part))
+
+        for example in examples:
             solver = solver_metadata.create_solver_instance()
             answer = str(solver.get_part_func(part)(example.input))
 
@@ -185,6 +185,8 @@ def run_solver(
                     CheckResult_ExampleFailed(actual_answer=answer, example=example),
                 )
 
+                # TODO: Don't early return when the examples fail. Instead skip
+                #       to the next part.
                 events.on_finish_solver(
                     solver_metadata=solver_metadata, result=run_result
                 )
@@ -192,7 +194,9 @@ def run_solver(
                 return run_result
 
         # Notify any listeners that the examples for this part have passed.
-        events.on_part_examples_pass(solver_metadata=solver_metadata, part=part)
+        events.on_part_examples_pass(
+            solver_metadata=solver_metadata, part=part, count=len(examples)
+        )
 
         # Run the solver against real puzzle input.
         events.on_start_part(solver_metadata=solver_metadata, part=part)
