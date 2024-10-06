@@ -1,4 +1,4 @@
-from donner.annotations import solver, part_one_example, part_two_example
+from donner.annotations import solver, example
 from donner.solution import AbstractSolver, Example, MaybeAnswerType, Part
 from donner.solution import get_global_solver_registry
 
@@ -6,9 +6,9 @@ import unittest
 
 
 @solver(day=12, year=2012, name="Puzzles R Awesome", variant="superawesome")
-@part_one_example(input="abc", output="A1B2C2")
-@part_one_example(input="x", output="22")
-@part_two_example(input="89", output="yes")
+@example(input="abc", part_one="A1B2C2")
+@example(input="x", part_one="22")
+@example(input="89", part_two="yes")
 class DecoratedTestSolution(AbstractSolver):
     def part_one(self, input: str) -> MaybeAnswerType:
         return "1A_part_one"

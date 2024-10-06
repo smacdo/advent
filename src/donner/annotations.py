@@ -59,29 +59,3 @@ def example(
         return solver_class
 
     return wrapper
-
-
-def part_one_example(input: str | list[str], output: str):
-    """Add an example input and the expected output for part one answers for this solver."""
-
-    def wrapper(solver_class: type[AbstractSolver]):
-        get_global_solver_registry().add_example(
-            solver_class, Example(input=input, output=output, part=Part.One)
-        )
-
-        return solver_class
-
-    return wrapper
-
-
-def part_two_example(input: str | list[str], output: str):
-    """Add an example input and the expected output for part two answers for this solver."""
-
-    def wrapper(solver_class: type[AbstractSolver]):
-        get_global_solver_registry().add_example(
-            solver_class, Example(input=input, output=output, part=Part.Two)
-        )
-
-        return solver_class
-
-    return wrapper
