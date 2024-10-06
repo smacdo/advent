@@ -10,12 +10,6 @@ type MaybeAnswerType = int | str | None
 type AnswerType = int | str
 
 # TODO: @slow
-# TODO: @part_missing
-
-# TODO: @part_one_missing
-# TODO: @part_one_incomplete
-# TODO: @part_one_example(input=".....", expected="....")
-
 # TODO: PartStatus [Missing, Incomplete, Broken, Finished]
 
 

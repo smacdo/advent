@@ -167,9 +167,6 @@ def output(args):
     pass
 
 
-# TODO: Modularize this code.
-# TODO: Inject a fake AOC client and then test it as well!
-# TODO: Inject a fake module discovery interface.
 def solve(year: int, day: int):
     #
     aoc_client = create_aoc_client()

@@ -242,11 +242,6 @@ def check_solution_part(
     # the provided AOC client to submit the solution and see what the result
     # is.
     if answer_response == AnswerResponse.Unknown:
-        # TODO: Submit an answer if the answer data is missing.
-        # TODO: Store correct answers when answer data is missing.
-        # TODO: Store incorrect answer along with hints.
-        # TODO: Submit the solution and map the response to `answer_response`.
-        # TODO: Write the response to the answer cache.
         submit_response = client.submit_answer(
             year=solver_metadata.year(),
             day=solver_metadata.day(),
