@@ -68,7 +68,6 @@ class Day${DAY}Solver(AbstractSolver):
 - Grid.diagonal_neighbors
 
 # Improvements
-- remove part_one_example, part_two_example -> example
 - rework solver flow. Instead of running all examples first, instead run part 1
   examples, then solve part1, then run part 2, etc.
 

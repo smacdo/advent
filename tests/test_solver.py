@@ -86,43 +86,75 @@ class MockAocClient(AocClient):
 
 
 class MockSolverEventHandlers(SolverEventHandlers):
-    examples_passed_calls: list[SolverMetadata]
-    part_ok_calls: list[tuple[MaybeAnswerType, SolverMetadata, Part]]
-    part_wrong_calls: list[tuple[CheckResult, SolverMetadata, Part]]
+    start_solver_calls: list[SolverMetadata]
+    finish_solver_calls: list[tuple[SolverMetadata, RunSolverResult]]
+
+    start_part_calls: list[tuple[SolverMetadata, Part]]
+    finish_part_calls: list[tuple[SolverMetadata, Part, CheckResult]]
+
+    examples_passed_calls: list[tuple[SolverMetadata, Part]]
 
     def __init__(self):
         super().__init__()
+        self.start_solver_calls = []
+        self.finish_solver_calls = []
+        self.start_part_calls = []
+        self.finish_part_calls = []
         self.examples_passed_calls = []
-        self.part_ok_calls = []
-        self.part_wrong_calls = []
 
-    def on_examples_passed(
-        self, solver_metadata: SolverMetadata, elapsed_seconds: float
-    ):
-        self.examples_passed_calls.append(solver_metadata)
-
-    def on_part_ok(
+    def on_start_solver(
         self,
-        answer: MaybeAnswerType,
         solver_metadata: SolverMetadata,
-        elapsed_seconds: float,
-        part: Part,
     ):
-        self.part_ok_calls.append((answer, solver_metadata, part))
+        self.start_solver_calls.append(solver_metadata)
 
-    def on_part_wrong(
+    def on_finish_solver(
         self,
+        solver_metadata: SolverMetadata,
+        result: RunSolverResult,
+    ):
+        self.finish_solver_calls.append((solver_metadata, result))
+
+    def on_start_part(self, solver_metadata: SolverMetadata, part: Part):
+        self.start_part_calls.append((solver_metadata, part))
+
+    def on_finish_part(
+        self,
+        solver_metadata: SolverMetadata,
+        part: Part,
         result: CheckResult,
+    ):
+        self.finish_part_calls.append((solver_metadata, part, result))
+
+    def on_part_examples_pass(
+        self,
         solver_metadata: SolverMetadata,
-        elapsed_seconds: float,
         part: Part,
     ):
-        self.part_wrong_calls.append((result, solver_metadata, part))
+        self.examples_passed_calls.append((solver_metadata, part))
+
+
+class CheckResultTests(unittest.TestCase):
+    def test_check_actual_answer(self):
+        self.assertEqual(
+            CheckResult_Ok(Part.One, "hello world").actual_answer, "hello world"
+        )
+        self.assertEqual(
+            CheckResult_ExampleFailed(
+                1234, Example("input", "output", Part.One)
+            ).actual_answer,
+            1234,
+        )
+        self.assertEqual(CheckResult_TooSoon(Part.Two, "123").actual_answer, "123")
+        self.assertEqual(CheckResult_NotFinished(Part.One).actual_answer, None)
+        self.assertEqual(
+            CheckResult_Wrong(Part.Two, "foo", "bar", None).actual_answer, "foo"
+        )
 
 
 class RunSolverResultTests(unittest.TestCase):
     def test_get_result(self):
-        part_one_result = CheckResult_Ok(Part.One)
+        part_one_result = CheckResult_Ok(Part.One, "foobar")
         part_two_result = CheckResult_Wrong(Part.One, "actual", 42, hint=None)
 
         r = RunSolverResult(
@@ -136,7 +168,7 @@ class RunSolverResultTests(unittest.TestCase):
         self.assertNotEqual(part_one_result, part_two_result)
 
     def test_set_result(self):
-        part_one_result = CheckResult_Ok(Part.One)
+        part_one_result = CheckResult_Ok(Part.One, "foobar")
         part_two_result = CheckResult_Wrong(Part.One, "actual", 42, hint=None)
 
         r = RunSolverResult(
@@ -176,19 +208,21 @@ class RunSolverTests(unittest.TestCase):
         self.assertEqual(
             result,
             RunSolverResult(
-                part_one_result=CheckResult_Ok(Part.One),
-                part_two_result=CheckResult_Ok(Part.Two),
+                part_one_result=CheckResult_Ok(Part.One, "part_one_ok"),
+                part_two_result=CheckResult_Ok(Part.Two, "part_two_ok"),
             ),
         )
 
         # Verify only expected events fired.
-        self.assertSequenceEqual(events.examples_passed_calls, [solver_m])
         self.assertSequenceEqual(
             events.part_ok_calls,
             [("part_one_ok", solver_m, Part.One), ("part_two_ok", solver_m, Part.Two)],
         )
         self.assertSequenceEqual(events.part_wrong_calls, [])
 
+    # TODO: Rewrite to: part_one_example_fails_and_solver_exits_early
+    #                 : part_two_example_fails_and_only_part_one_is_run
+    # FIXME
     def test_examples_fail_and_solver_exits_early(self):
         # Construct and run solver.
         solver_m = SolverMetadata(
@@ -257,7 +291,6 @@ class RunSolverTests(unittest.TestCase):
             ),
         )
 
-        self.assertSequenceEqual(events.examples_passed_calls, [])
         self.assertSequenceEqual(events.part_ok_calls, [])
         self.assertSequenceEqual(
             events.part_wrong_calls,
@@ -292,6 +325,7 @@ class RunSolverTests(unittest.TestCase):
             part_two_answer=PartAnswerCache(correct_answer="-127"),
         )
 
+        # FIXME
         # Verify both examples pass.
         result = run_solver(solver_m, puzzle, MockAocClient(), events)
         self.assertEqual(
@@ -302,7 +336,6 @@ class RunSolverTests(unittest.TestCase):
             ),
         )
 
-        self.assertSequenceEqual(events.examples_passed_calls, [solver_m])
         self.assertSequenceEqual(
             events.part_ok_calls, [(22, solver_m, Part.One), (-127, solver_m, Part.Two)]
         )
@@ -387,7 +420,6 @@ class RunSolverTests(unittest.TestCase):
             ),
         )
 
-        self.assertSequenceEqual(events.examples_passed_calls, [solver_m])
         self.assertSequenceEqual(events.part_ok_calls, [])
         self.assertSequenceEqual(
             events.part_wrong_calls,
@@ -435,7 +467,6 @@ class RunSolverTests(unittest.TestCase):
             ),
         )
 
-        self.assertSequenceEqual(events.examples_passed_calls, [solver_m])
         self.assertSequenceEqual(
             events.part_ok_calls, [("part_one_ok", solver_m, Part.One)]
         )

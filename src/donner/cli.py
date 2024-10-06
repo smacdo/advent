@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from donner.client import (
     AocClientConfig,
     AocWebClient,
@@ -7,7 +8,6 @@ from donner.data import (
     FileBackedPuzzleStore,
 )
 from donner.solution import (
-    MaybeAnswerType,
     Part,
     SolverMetadata,
     get_global_solver_registry,
@@ -20,13 +20,17 @@ import logging
 import os
 import shutil
 import sys
+import time
 
 from donner.solver import (
     CheckHint,
     CheckResult,
     CheckResult_ExampleFailed,
+    CheckResult_Ok,
     CheckResult_NotFinished,
+    CheckResult_TooSoon,
     CheckResult_Wrong,
+    RunSolverResult,
     SolverEventHandlers,
     run_solver,
 )
@@ -38,31 +42,73 @@ logger = logging.getLogger(__name__)
 #       caught at the top level and then reported as log errors.
 
 
+@dataclass
+class SolverRunInfo:
+    start_time: float
+    part_one_start_time: float | None = None
+    part_two_start_time: float | None = None
+
+    def try_get_part_start_time(self, part: Part) -> float | None:
+        if part == Part.One:
+            return self.part_one_start_time
+        else:
+            return self.part_two_start_time
+
+    def get_part_start_time(self, part: Part) -> float:
+        t = self.try_get_part_start_time(part)
+        assert t is not None
+
+        return t
+
+    def set_part_start_time(self, part: Part, time: float):
+        if part == Part.One:
+            self.part_one_start_time = time
+        else:
+            self.part_two_start_time = time
+
+
 class TerminalSolverEventHandlers(SolverEventHandlers):
-    def on_examples_passed(
-        self, solver_metadata: SolverMetadata, elapsed_seconds: float
+    # example_start_time = time.time()
+    # elapsed_seconds=time.time() - example_start_time,
+    solver_start_times: dict[SolverMetadata, SolverRunInfo]
+
+    def __init__(self) -> None:
+        self.solver_start_times = dict()
+
+    def on_start_solver(self, solver_metadata: SolverMetadata):
+        self.solver_start_times[solver_metadata] = SolverRunInfo(time.time())
+
+    def on_finish_solver(
+        self, solver_metadata: SolverMetadata, result: RunSolverResult
     ):
+        pass
+
+    def on_start_part(self, solver_metadata: SolverMetadata, part: Part):
+        self.solver_start_times[solver_metadata].set_part_start_time(part, time.time())
+
+    def on_part_examples_pass(self, solver_metadata: SolverMetadata, part: Part):
         print(
-            f"👍 Tested the examples for year {solver_metadata.year()} day {solver_metadata.day()} [{elapsed_seconds:2f}s]"
+            f"👍 Tested the examples for year {solver_metadata.year()} day {solver_metadata.day()} {str(part).lower()}"
         )
 
-    def on_part_ok(
+    def on_finish_part(
         self,
-        answer: MaybeAnswerType,
         solver_metadata: SolverMetadata,
-        elapsed_seconds: float,
         part: Part,
-    ):
-        print(f"✅ {part}: {answer} [{elapsed_seconds:2f}s]")
-
-    def on_part_wrong(
-        self,
         result: CheckResult,
-        solver_metadata: SolverMetadata,
-        elapsed_seconds: float,
-        part: Part,
     ):
-        if type(result) is CheckResult_ExampleFailed:
+        elapsed_seconds = time.time() - self.solver_start_times[
+            solver_metadata
+        ].get_part_start_time(part)
+
+        if type(result) is CheckResult_Ok:
+            print(f"✅ {part}: {result.actual_answer} [{elapsed_seconds:2f}s]")
+        elif type(result) is CheckResult_TooSoon:
+            # TODO: better message for too soon
+            print(
+                f"!!! Solution for {part} submitted too soon, please wait a bit before trying again !!!"
+            )
+        elif type(result) is CheckResult_ExampleFailed:
             print(
                 f"👎 The example output for {result.part} is `{result.example.output}` but the solver returned `{result.actual_answer}` using input:\n```\n{result.example.input}\n```"
             )

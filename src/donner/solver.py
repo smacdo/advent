@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-import time
 
 from donner.client import AocClient, SubmitResponse
 from donner.data import AnswerResponse, PartAnswerCache, PuzzleData
@@ -12,9 +11,11 @@ class CheckResult(ABC):
     """Abstract base class for the various conditions that can occur when checking the answer for one of the puzzle parts."""
 
     part: Part
+    actual_answer: MaybeAnswerType
 
-    def __init__(self, part: Part):
+    def __init__(self, part: Part, actual_answer: MaybeAnswerType):
         self.part = part
+        self.actual_answer = actual_answer
 
     def is_ok(self) -> bool:
         """Returns true if the condition is one where the answer is correct, otherwise false if it is not correct."""
@@ -25,8 +26,8 @@ class CheckResult(ABC):
 class CheckResult_Ok(CheckResult):
     """Represents the condition where the answer was correct for the part."""
 
-    def __init__(self, part: Part):
-        super().__init__(part)
+    def __init__(self, part: Part, actual_answer: AnswerType):
+        super().__init__(part, actual_answer)
 
     def is_ok(self) -> bool:
         return True
@@ -36,12 +37,10 @@ class CheckResult_Ok(CheckResult):
 class CheckResult_ExampleFailed(CheckResult):
     """Represents the condition where the output of this part didn't match one of the solution's example outputs"""
 
-    actual_answer: MaybeAnswerType
     example: Example
 
     def __init__(self, actual_answer: MaybeAnswerType, example: Example):
-        super().__init__(example.part)
-        self.actual_answer = actual_answer
+        super().__init__(example.part, actual_answer)
         self.example = example
 
 
@@ -49,8 +48,8 @@ class CheckResult_ExampleFailed(CheckResult):
 class CheckResult_TooSoon(CheckResult):
     """Represents the condition where too many answers are submitted in too short of a timeframe, and the backend judge is telling us to wait before submitting a new answer"""
 
-    def __init__(self, part: Part):
-        super().__init__(part)
+    def __init__(self, part: Part, actual_answer: AnswerType):
+        super().__init__(part, actual_answer)
 
 
 @dataclass
@@ -58,7 +57,7 @@ class CheckResult_NotFinished(CheckResult):
     """Represents the condition where the answer for this part has not been implemented"""
 
     def __init__(self, part: Part):
-        super().__init__(part)
+        super().__init__(part, actual_answer=None)
 
 
 class CheckHint(Enum):
@@ -72,12 +71,10 @@ class CheckResult_Wrong(CheckResult):
     Represents the condition where the answer was not correct.
 
     Slots:
-    `actual_answer`:   The answer that was returned when running the solver.
     `expected_answer`: The correct answer if available, otherwise this will be `None`.
     `hint`:            A hint that `actual_answer` is too low or hi if available, otherwise `None`.
     """
 
-    actual_answer: MaybeAnswerType
     expected_answer: MaybeAnswerType
     hint: CheckHint | None
 
@@ -88,9 +85,8 @@ class CheckResult_Wrong(CheckResult):
         expected_answer: MaybeAnswerType,
         hint: CheckHint | None,
     ):
-        super().__init__(part)
+        super().__init__(part, actual_answer)
 
-        self.actual_answer = actual_answer
         self.expected_answer = expected_answer
         self.hint = hint
 
@@ -128,27 +124,37 @@ class RunSolverResult:
 
 class SolverEventHandlers(ABC):
     @abstractmethod
-    def on_examples_passed(
-        self, solver_metadata: SolverMetadata, elapsed_seconds: float
+    def on_start_solver(
+        self,
+        solver_metadata: SolverMetadata,
     ):
         pass
 
     @abstractmethod
-    def on_part_ok(
+    def on_finish_solver(
         self,
-        answer: MaybeAnswerType,
         solver_metadata: SolverMetadata,
-        elapsed_seconds: float,
+        result: RunSolverResult,
+    ):
+        pass
+
+    @abstractmethod
+    def on_start_part(self, solver_metadata: SolverMetadata, part: Part):
+        pass
+
+    @abstractmethod
+    def on_finish_part(
+        self,
+        solver_metadata: SolverMetadata,
         part: Part,
+        result: CheckResult,
     ):
         pass
 
     @abstractmethod
-    def on_part_wrong(
+    def on_part_examples_pass(
         self,
-        result: CheckResult,
         solver_metadata: SolverMetadata,
-        elapsed_seconds: float,
         part: Part,
     ):
         pass
@@ -162,43 +168,34 @@ def run_solver(
 ) -> RunSolverResult:
     run_result = RunSolverResult()
 
-    # Validate any examples first to check the state of the solver.
-    example_start_time = time.time()
-    parts = (Part.One, Part.Two)
+    # Run the solver twice - the first time to get the part one answer, and the
+    # second time to get the part two answer.
+    events.on_start_solver(solver_metadata=solver_metadata)
 
-    for part in parts:
+    for part in (Part.One, Part.Two):
+        # Validate any examples for the part prior to running the solver on real
+        # input.
         for example in solver_metadata.examples(part):
             solver = solver_metadata.create_solver_instance()
             answer = str(solver.get_part_func(part)(example.input))
 
             if example.output != answer:
-                result = CheckResult_ExampleFailed(
-                    actual_answer=answer, example=example
-                )
-
                 run_result.set_result(
                     part,
-                    result,
+                    CheckResult_ExampleFailed(actual_answer=answer, example=example),
                 )
 
-                events.on_part_wrong(
-                    result=result,
-                    solver_metadata=solver_metadata,
-                    part=part,
-                    elapsed_seconds=time.time() - example_start_time,
+                events.on_finish_solver(
+                    solver_metadata=solver_metadata, result=run_result
                 )
 
                 return run_result
 
-    events.on_examples_passed(
-        solver_metadata=solver_metadata,
-        elapsed_seconds=time.time() - example_start_time,
-    )
+        # Notify any listeners that the examples for this part have passed.
+        events.on_part_examples_pass(solver_metadata=solver_metadata, part=part)
 
-    # Run the solver twice - the first time to get the part one answer, and the
-    # second time to get the part two answer.
-    for part in parts:
-        part_start_time = time.time()
+        # Run the solver against real puzzle input.
+        events.on_start_part(solver_metadata=solver_metadata, part=part)
 
         solver = solver_metadata.create_solver_instance()
         answer = solver.get_part_func(part)(puzzle.input)
@@ -213,24 +210,10 @@ def run_solver(
 
         run_result.set_result(part, result)
 
-        if result.is_ok():
-            events.on_part_ok(
-                answer=answer,
-                solver_metadata=solver_metadata,
-                part=part,
-                elapsed_seconds=time.time() - part_start_time,
-            )
-        else:
-            # Answer is not correct - bail out to exit early.
-            events.on_part_wrong(
-                result=result,
-                solver_metadata=solver_metadata,
-                part=part,
-                elapsed_seconds=time.time() - part_start_time,
-            )
-            break
+        events.on_finish_part(solver_metadata=solver_metadata, part=part, result=result)
 
     # All done - either good or bad return the results.
+    events.on_finish_solver(solver_metadata=solver_metadata, result=run_result)
     return run_result
 
 
@@ -272,9 +255,9 @@ def check_solution_part(
             or submit_response == SubmitResponse.AlreadyAnswered
         ):
             answer_cache.set_correct_answer(str(answer))
-            return CheckResult_Ok(part)
+            return CheckResult_Ok(part, answer)
         elif submit_response == SubmitResponse.TooSoon:
-            return CheckResult_TooSoon(part)
+            return CheckResult_TooSoon(part, answer)
         elif submit_response == SubmitResponse.Wrong:
             answer_cache.add_wrong_answer(str(answer))
             return CheckResult_Wrong(
@@ -307,7 +290,7 @@ def check_solution_part(
     # Check if the answer is OK, and for any result that is not OK return
     # a matching CheckResult value.
     if answer_response == AnswerResponse.Ok:
-        return CheckResult_Ok(part)
+        return CheckResult_Ok(part, answer)
     elif answer_response == AnswerResponse.Wrong:
         return CheckResult_Wrong(
             part=part,
