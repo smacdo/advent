@@ -1,4 +1,5 @@
 from advent.spatial import (
+    ConnectedTile,
     Direction,
     Grid,
     BFS,
@@ -77,12 +78,6 @@ class TestGrid(unittest.TestCase):
         self.assertEqual("$", g[Point(1, 1)])
         self.assertEqual("&", g[Point(0, 2)])
 
-        with self.assertRaises(TypeError):
-            g[(1, 1)]  # type: ignore
-
-        with self.assertRaises(TypeError):
-            g[(1, 1)] = "x"  # type: ignore
-
     def test_to_string(self):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
         self.assertEqual("12\nab\n78", str(g))
@@ -98,9 +93,6 @@ class TestGrid(unittest.TestCase):
         with self.assertRaises(ValueError):
             list(g.col(2))
 
-        with self.assertRaises(TypeError):
-            list(g.col("1"))  # type: ignore
-
     def test_get_row(self):
         g = Grid(2, 3, [["1", "2"], ["a", "b"], ["7", "8"]])
         self.assertSequenceEqual(["1", "2"], list(g.row(0)))
@@ -112,9 +104,6 @@ class TestGrid(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             list(g.row(3))
-
-        with self.assertRaises(TypeError):
-            list(g.row("1"))  # type: ignore
 
     def test_from_input_lines(self):
         g = new_grid_from_input_lines("""hi3\n3$x""".split("\n"))
@@ -203,6 +192,215 @@ class TestGrid(unittest.TestCase):
         )
         self.assertEqual(3, g.row_count())
         self.assertEqual(3, g.col_count())
+
+
+class TestConnectedTile(unittest.TestCase):
+    def test_init_no_connections(self):
+        t = ConnectedTile()
+        self.assertEqual(t.cost, 0)
+
+    def test_init_no_cost(self):
+        t = ConnectedTile()
+        self.assertEqual(t.cost, 0)
+
+    def test_init_set_cost_and_connected_tile(self):
+        t = ConnectedTile(cost=30)
+        self.assertEqual(t.cost, 30)
+
+        t = ConnectedTile(Direction.North, cost=-541)
+        self.assertEqual(t.cost, -541)
+        self.assertNotEqual(t.edge_connections, 0)
+
+        self.assertTrue(t.edge(Direction.North))
+        self.assertFalse(t.edge(Direction.South))
+        self.assertFalse(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+        t = ConnectedTile(Direction.South, Direction.East, cost=-541)
+        self.assertEqual(t.cost, -541)
+
+        self.assertFalse(t.edge(Direction.North))
+        self.assertTrue(t.edge(Direction.South))
+        self.assertTrue(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+    def test_set_edge_true(self):
+        t = ConnectedTile()
+        t.set_edge(True, Direction.West)
+
+        self.assertFalse(t.edge(Direction.North))
+        self.assertFalse(t.edge(Direction.South))
+        self.assertFalse(t.edge(Direction.East))
+        self.assertTrue(t.edge(Direction.West))
+
+        t.set_edge(True, Direction.North)
+
+        self.assertTrue(t.edge(Direction.North))
+        self.assertFalse(t.edge(Direction.South))
+        self.assertFalse(t.edge(Direction.East))
+        self.assertTrue(t.edge(Direction.West))
+
+        t.set_edge(True, Direction.East)
+        t.set_edge(True, Direction.South)
+
+        self.assertTrue(t.edge(Direction.North))
+        self.assertTrue(t.edge(Direction.South))
+        self.assertTrue(t.edge(Direction.East))
+        self.assertTrue(t.edge(Direction.West))
+
+    def test_set_edge_false(self):
+        t = ConnectedTile(Direction.North, Direction.South, Direction.East)
+
+        self.assertTrue(t.edge(Direction.North))
+        self.assertTrue(t.edge(Direction.South))
+        self.assertTrue(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+        t.set_edge(False, Direction.North)
+
+        self.assertFalse(t.edge(Direction.North))
+        self.assertTrue(t.edge(Direction.South))
+        self.assertTrue(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+        t.set_edge(False, Direction.South)
+        t.set_edge(False, Direction.East)
+
+        self.assertFalse(t.edge(Direction.North))
+        self.assertFalse(t.edge(Direction.South))
+        self.assertFalse(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+    def test_set_edges_true(self):
+        t = ConnectedTile()
+        t.set_edges(True, Direction.West)
+
+        self.assertFalse(t.edge(Direction.North))
+        self.assertFalse(t.edge(Direction.South))
+        self.assertFalse(t.edge(Direction.East))
+        self.assertTrue(t.edge(Direction.West))
+
+        t.set_edges(True, Direction.North)
+
+        self.assertTrue(t.edge(Direction.North))
+        self.assertFalse(t.edge(Direction.South))
+        self.assertFalse(t.edge(Direction.East))
+        self.assertTrue(t.edge(Direction.West))
+
+        t.set_edges(True, Direction.East, Direction.South)
+
+        self.assertTrue(t.edge(Direction.North))
+        self.assertTrue(t.edge(Direction.South))
+        self.assertTrue(t.edge(Direction.East))
+        self.assertTrue(t.edge(Direction.West))
+
+    def test_set_edges_false(self):
+        t = ConnectedTile(Direction.North, Direction.South, Direction.East)
+
+        self.assertTrue(t.edge(Direction.North))
+        self.assertTrue(t.edge(Direction.South))
+        self.assertTrue(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+        t.set_edges(False, Direction.North)
+
+        self.assertFalse(t.edge(Direction.North))
+        self.assertTrue(t.edge(Direction.South))
+        self.assertTrue(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+        t.set_edges(False, Direction.South, Direction.West, Direction.East)
+
+        self.assertFalse(t.edge(Direction.North))
+        self.assertFalse(t.edge(Direction.South))
+        self.assertFalse(t.edge(Direction.East))
+        self.assertFalse(t.edge(Direction.West))
+
+    def test_edge_count(self):
+        t = ConnectedTile(Direction.North, Direction.South, Direction.East)
+        self.assertEqual(t.edge_count(), 3)
+
+        t.set_edges(False, Direction.South, Direction.West, Direction.East)
+        self.assertEqual(t.edge_count(), 1)
+
+        t.set_edge(True, Direction.West)
+        self.assertEqual(t.edge_count(), 2)
+
+    def test_all_edges_no_params(self):
+        t = ConnectedTile()
+        self.assertFalse(t.all_edges())
+
+        t = ConnectedTile(Direction.West)
+        self.assertFalse(t.all_edges())
+
+        t = ConnectedTile(
+            Direction.West, Direction.East, Direction.South, Direction.North
+        )
+        self.assertTrue(t.all_edges())
+
+    def test_all_edges_one_param(self):
+        t = ConnectedTile()
+        self.assertFalse(t.all_edges(Direction.West))
+
+        t = ConnectedTile(Direction.West)
+        self.assertTrue(t.all_edges(Direction.West))
+
+        t = ConnectedTile(
+            Direction.West, Direction.East, Direction.South, Direction.North
+        )
+        self.assertTrue(t.all_edges(Direction.West))
+
+    def test_all_edges_multi_param(self):
+        t = ConnectedTile()
+        self.assertFalse(t.all_edges(Direction.West, Direction.East))
+
+        t = ConnectedTile(Direction.West)
+        self.assertFalse(t.all_edges(Direction.West, Direction.East))
+
+        t = ConnectedTile(
+            Direction.West, Direction.East, Direction.South, Direction.North
+        )
+        self.assertTrue(t.all_edges(Direction.West, Direction.East))
+
+    def test_any_edges_no_params(self):
+        t = ConnectedTile()
+        self.assertFalse(t.any_edge())
+
+        t = ConnectedTile(Direction.West)
+        self.assertTrue(t.any_edge())
+
+        t = ConnectedTile(
+            Direction.West, Direction.East, Direction.South, Direction.North
+        )
+        self.assertTrue(t.any_edge())
+
+    def test_any_edges_one_param(self):
+        t = ConnectedTile()
+        self.assertFalse(t.any_edge(Direction.West))
+
+        t = ConnectedTile(Direction.West)
+        self.assertTrue(t.any_edge(Direction.West))
+        self.assertFalse(t.any_edge(Direction.South))
+
+        t = ConnectedTile(
+            Direction.West, Direction.East, Direction.South, Direction.North
+        )
+        self.assertTrue(t.any_edge(Direction.West))
+        self.assertTrue(t.any_edge(Direction.South))
+
+    def test_any_edges_multi_param(self):
+        t = ConnectedTile()
+        self.assertFalse(t.any_edge(Direction.West))
+
+        t = ConnectedTile(Direction.West)
+        self.assertTrue(t.any_edge(Direction.West, Direction.South))
+        self.assertFalse(t.any_edge(Direction.North, Direction.East))
+
+        t = ConnectedTile(
+            Direction.West, Direction.East, Direction.South, Direction.North
+        )
+        self.assertTrue(t.any_edge(Direction.West, Direction.South))
+        self.assertTrue(t.any_edge(Direction.North, Direction.East))
 
 
 class TestPriorityQueue(unittest.TestCase):

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from dataclasses import dataclass
 from enum import IntEnum
 from oatmeal import Point
 from typing import (
@@ -125,9 +126,9 @@ class Grid(Generic[T]):
         initial: Union[T, Callable[[int, int], T], list[list[T]]],
     ):
         if x_count < 1:
-            raise ValueError("Column count `x_count` must be larger than zero")
+            raise ValueError(f"column count {x_count} must be larger than zero")
         if y_count < 1:
-            raise ValueError("Row count `y_count` must be larger than zero")
+            raise ValueError(f"row count {y_count} must be larger than zero")
 
         self.x_count = x_count
         self.y_count = y_count
@@ -155,13 +156,6 @@ class Grid(Generic[T]):
     def check_in_bounds(self, pt: Point) -> bool:
         """Test if a point is a valid cell position."""
         return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
-
-    def _validate_in_bounds(self, pt: Point) -> None:
-        """Throw an exception if the point is not a valid cell position."""
-        if not self.check_in_bounds(pt):
-            raise IndexError(
-                f"Point out of bounds; x: 0<={pt.x}<{self.x_count}, y: 0<={pt.y}<{self.y_count}"
-            )
 
     def col(self, x_col: int) -> Iterable[T]:
         """Returns an iterator across all the cells in column `x_col`"""
@@ -294,17 +288,19 @@ class Grid(Generic[T]):
         self.x_count += 1
 
     def __getitem__(self, pt: Point) -> T:
-        if not isinstance(pt, Point):
-            raise TypeError("argument `pt` must be type `Point`")
+        if pt.x < 0 or pt.y < 0 or pt.x >= self.x_count or pt.y >= self.y_count:
+            raise IndexError(
+                f"Point {pt} out of bounds, x_count={self.x_count}, y_count={self.y_count}"
+            )
 
-        self._validate_in_bounds(pt)
         return self.cells[pt.y * self.x_count + pt.x]
 
     def __setitem__(self, pt: Point, v: T) -> None:
-        if not isinstance(pt, Point):
-            raise TypeError("argument `pt` must be type `Point`")
+        if pt.x < 0 or pt.y < 0 or pt.x >= self.x_count or pt.y >= self.y_count:
+            raise IndexError(
+                f"Point {pt} out of bounds, x_count={self.x_count}, y_count={self.y_count}"
+            )
 
-        self._validate_in_bounds(pt)
         self.cells[pt.y * self.x_count + pt.x] = v
 
     def __delitem__(self, pt: Point) -> None:
@@ -323,8 +319,6 @@ class Grid(Generic[T]):
         )
 
     def __contains__(self, pt: Point) -> bool:
-        if not isinstance(pt, Point):
-            raise TypeError("argument `pt` must be type `Point`")
         return pt.x >= 0 and pt.y >= 0 and pt.x < self.x_count and pt.y < self.y_count
 
 
@@ -379,6 +373,57 @@ class GridMultiRowIterator(Generic[T]):
 
     def __iter__(self):
         return self
+
+
+@dataclass
+class ConnectedTile:
+    __slots__ = ("edge_connections", "cost")
+    edge_connections: int
+    cost: int
+
+    def __init__(self, *connected_dirs: Direction, cost: int = 0):
+        self.cost = cost
+        self.edge_connections = 0
+
+        self.set_edges(True, *connected_dirs)
+
+    def edge(self, dir: Direction) -> bool:
+        return self.edge_connections & (1 << int(dir)) != 0
+
+    def all_edges(self, *dirs: Direction) -> bool:
+        if len(dirs) == 0:
+            return self.edge_connections & 0b1111 == 0b1111
+        else:
+            for d in dirs:
+                if self.edge_connections & (1 << int(d)) == 0:
+                    return False
+            return True
+
+    def any_edge(self, *dirs: Direction) -> bool:
+        if len(dirs) == 0:
+            return self.edge_connections != 0
+        else:
+            for d in dirs:
+                if self.edge_connections & (1 << int(d)) != 0:
+                    return True
+            return False
+
+    def edge_count(self) -> int:
+        return self.edge_connections.bit_count()
+
+    def set_edge(self, is_set: bool, dir: Direction):
+        if is_set:
+            self.edge_connections |= 1 << int(dir)
+        else:
+            self.edge_connections &= ~(1 << int(dir))
+
+    def set_edges(self, is_set: bool, *dirs: Direction):
+        if is_set:
+            for d in dirs:
+                self.edge_connections |= 1 << int(d)
+        else:
+            for d in dirs:
+                self.edge_connections &= ~(1 << int(d))
 
 
 ItemWithCost = Tuple[T, Union[float, int]]

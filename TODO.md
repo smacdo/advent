@@ -68,6 +68,9 @@ class Day${DAY}Solver(AbstractSolver):
 - Grid.diagonal_neighbors
 
 # Improvements
+- warn when a solver is present in dir but not in the imports list
+- warn when a solver is present but the class name number does not match the day
+- warn when multiple solvers have the same day but not the same title
 
 # Utils
 - Add alternate `end = ...` and `last = ...` parameters to the Range constructor.
