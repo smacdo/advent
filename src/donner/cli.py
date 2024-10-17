@@ -215,27 +215,6 @@ def solve(year: int, day: int):
         # TODO: log
         store.set(year, day, puzzle)
 
-    # Print out run time statistics before exiting.
-
-
-def sync(args):
-    # Load the AOC session cookie
-    # TODO: error handling fix
-    login_config = AocClientConfig.load_from_file(".aoc_login")
-
-    if login_config is None:
-        logging.error(".aoc_login file is missing")
-        logging.error(
-            "***** Please copy your adventofcode.com session cookie to .aoc_session *****"
-        )
-        return
-
-    # OK
-    aoc_client = AocWebClient(login_config)
-    print([str(s) for s in aoc_client.fetch_days(2023)])
-
-    print("TODO: sync")
-
 
 def cli_main():
     registry = get_global_solver_registry()
@@ -280,9 +259,6 @@ def cli_main():
     )
     solve_parser.set_defaults(func=solve)
 
-    sync_parser = subparsers.add_parser("sync")
-    sync_parser.set_defaults(func=sync)
-
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)
@@ -302,9 +278,6 @@ def cli_main():
 
             for day in days:
                 solve(year=year, day=day)
-
-        elif args.subparser_name == "sync":
-            return sync(args)
         else:
             parser.print_help(sys.stderr)
             sys.exit(1)
