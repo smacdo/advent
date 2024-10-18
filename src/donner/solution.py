@@ -14,8 +14,8 @@ type AnswerType = int | str
 
 
 class Part(Enum):
-    One = 0
-    Two = 1
+    One = 1
+    Two = 2
 
     def __str__(self) -> str:
         if self == Part.One:

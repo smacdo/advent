@@ -16,6 +16,7 @@ from donner.solver import (
     CheckResult_ExampleFailed,
     CheckResult_NotFinished,
     CheckResult_Ok,
+    CheckResult_Skipped,
     CheckResult_TooSoon,
     CheckResult_Wrong,
     RunSolverResult,
@@ -1034,3 +1035,414 @@ class RunSolverTests(unittest.TestCase):
         # Verify answer cache has recorded the submitted answer.
         self.assertEqual(answer_cache[0], PartAnswerCache(low_boundary=-50))
         self.assertEqual(answer_cache[1], PartAnswerCache(correct_answer="part_two_ok"))
+
+    def test_only_run_part_one(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution,
+            day=5,
+            year=2012,
+            puzzle_name="test puzzle",
+            examples=[
+                Example(input="part_one_ok", output="part_one_ok", part=Part.One),
+                Example(input="part_two_fail", output="part_two_ok", part=Part.Two),
+            ],
+        )
+        events = MockSolverEventHandlers()
+
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="plz_work",
+                part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events,
+            part=Part.One,
+        )
+
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=CheckResult_Ok(Part.One, "part_one_ok"),
+                part_two_result=None,
+            ),
+        )
+
+        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
+        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
+        self.assertSequenceEqual(events.start_part_calls, [(solver_m, Part.One)])
+        self.assertSequenceEqual(
+            events.finish_part_calls,
+            [
+                (solver_m, Part.One, result.part_one),
+            ],
+        )
+
+        self.assertSequenceEqual(
+            events.examples_passed_calls,
+            [(solver_m, Part.One, 1)],
+        )
+
+    def test_only_run_part_two(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution,
+            day=5,
+            year=2012,
+            puzzle_name="test puzzle",
+            examples=[
+                Example(input="part_one_fail", output="part_one_ok", part=Part.One),
+                Example(input="part_two_ok", output="part_two_ok", part=Part.Two),
+            ],
+        )
+        events = MockSolverEventHandlers()
+
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="plz_work",
+                part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events,
+            part=Part.Two,
+        )
+
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=None,
+                part_two_result=CheckResult_Ok(Part.Two, "part_two_ok"),
+            ),
+        )
+
+        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
+        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
+        self.assertSequenceEqual(events.start_part_calls, [(solver_m, Part.Two)])
+        self.assertSequenceEqual(
+            events.finish_part_calls,
+            [
+                (solver_m, Part.Two, result.part_two),
+            ],
+        )
+
+        self.assertSequenceEqual(
+            events.examples_passed_calls,
+            [(solver_m, Part.Two, 1)],
+        )
+
+    def test_only_run_part_one_specific_example(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution,
+            day=5,
+            year=2012,
+            puzzle_name="test puzzle",
+            examples=[
+                Example(input="part_one_fail", output="part_one_ok", part=Part.One),
+                Example(input="part_one_ok", output="part_one_ok", part=Part.One),
+                Example(input="part_one_fail", output="part_one_ok", part=Part.One),
+                Example(input="part_two_fail", output="part_two_ok", part=Part.Two),
+            ],
+        )
+        events = MockSolverEventHandlers()
+
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="plz_work",
+                part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events,
+            part=Part.One,
+            example_index=1,
+        )
+
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=CheckResult_Skipped(
+                    part=Part.One, examples=[list(solver_m.examples(Part.One))[1]]
+                ),
+                part_two_result=None,
+            ),
+        )
+
+        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
+        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
+        self.assertSequenceEqual(events.start_part_calls, [(solver_m, Part.One)])
+        self.assertSequenceEqual(
+            events.finish_part_calls,
+            [
+                (solver_m, Part.One, result.part_one),
+            ],
+        )
+
+        self.assertSequenceEqual(
+            events.examples_passed_calls,
+            [(solver_m, Part.One, 1)],
+        )
+
+    def test_only_run_part_two_specific_example(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution,
+            day=5,
+            year=2012,
+            puzzle_name="test puzzle",
+            examples=[
+                Example(input="part_one_fail", output="part_one_ok", part=Part.One),
+                Example(input="part_two_ok", output="part_two_ok", part=Part.Two),
+                Example(input="part_two_fail", output="part_two_ok", part=Part.Two),
+                Example(input="part_two_fail", output="part_two_ok", part=Part.Two),
+            ],
+        )
+        events = MockSolverEventHandlers()
+
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="plz_work",
+                part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events,
+            part=Part.Two,
+            example_index=0,
+        )
+
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=None,
+                part_two_result=CheckResult_Skipped(
+                    part=Part.Two, examples=[list(solver_m.examples(Part.Two))[0]]
+                ),
+            ),
+        )
+
+        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
+        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
+        self.assertSequenceEqual(events.start_part_calls, [(solver_m, Part.Two)])
+        self.assertSequenceEqual(
+            events.finish_part_calls,
+            [
+                (solver_m, Part.Two, result.part_two),
+            ],
+        )
+
+        self.assertSequenceEqual(
+            events.examples_passed_calls,
+            [(solver_m, Part.Two, 1)],
+        )
+
+    def test_only_run_part_two_specific_example_with_failure(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution,
+            day=5,
+            year=2012,
+            puzzle_name="test puzzle",
+            examples=[
+                Example(input="part_one_fail", output="part_one_ok", part=Part.One),
+                Example(input="part_two_ok", output="part_two_ok", part=Part.Two),
+                Example(input="part_two_fail", output="part_two_ok", part=Part.Two),
+            ],
+        )
+        events = MockSolverEventHandlers()
+
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="plz_work",
+                part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events,
+            part=Part.Two,
+            example_index=1,
+        )
+
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=None,
+                part_two_result=CheckResult_ExampleFailed(
+                    actual_answer="part_two_bad_output",
+                    example=list(solver_m.examples(Part.Two))[1],
+                ),
+            ),
+        )
+
+        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
+        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
+        self.assertSequenceEqual(events.start_part_calls, [(solver_m, Part.Two)])
+        self.assertSequenceEqual(
+            events.finish_part_calls,
+            [
+                (solver_m, Part.Two, result.part_two),
+            ],
+        )
+
+        self.assertSequenceEqual(events.examples_passed_calls, [])
+
+    def test_raise_exception_if_example_index_but_not_part(self):
+        self.assertRaises(
+            ValueError,
+            lambda: run_solver(
+                SolverMetadata(
+                    klass=DecoratedTestSolution,
+                    day=5,
+                    year=2012,
+                    puzzle_name="test puzzle",
+                    examples=[
+                        Example(
+                            input="part_one_ok", output="part_one_ok", part=Part.One
+                        ),
+                        Example(
+                            input="part_two_ok", output="part_two_ok", part=Part.Two
+                        ),
+                    ],
+                ),
+                PuzzleData(
+                    input="plz_work",
+                    part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                    part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+                ),
+                MockAocClient(),
+                MockSolverEventHandlers(),
+                example_index=0,
+            ),
+        )
+
+    def test_raise_exception_if_example_index_out_of_bounds(self):
+        self.assertRaises(
+            IndexError,
+            lambda: run_solver(
+                SolverMetadata(
+                    klass=DecoratedTestSolution,
+                    day=5,
+                    year=2012,
+                    puzzle_name="test puzzle",
+                    examples=[
+                        Example(
+                            input="part_one_ok", output="part_one_ok", part=Part.One
+                        ),
+                        Example(
+                            input="part_two_ok", output="part_two_ok", part=Part.Two
+                        ),
+                    ],
+                ),
+                PuzzleData(
+                    input="plz_work",
+                    part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                    part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+                ),
+                MockAocClient(),
+                MockSolverEventHandlers(),
+                part=Part.One,
+                example_index=1,
+            ),
+        )
+
+    def test_no_submit_raises_exception_if_answer_submitted(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution, day=5, year=2012, puzzle_name="test puzzle"
+        )
+        client = MockAocClient(
+            part_one_response=SubmitResponse.Ok, part_two_response=SubmitResponse.Ok
+        )
+        events = MockSolverEventHandlers()
+        answer_cache = [PartAnswerCache(), PartAnswerCache()]
+
+        self.assertRaises(
+            ValueError,
+            lambda: run_solver(
+                solver_m,
+                PuzzleData(
+                    input="plz_work",
+                    part_one_answer=answer_cache[0],
+                    part_two_answer=answer_cache[1],
+                ),
+                client=client,
+                events=events,
+                submit_answer=False,
+            ),
+        )
+
+        # Check AoC submit has not been called.
+        self.assertEqual(client.submit_answer_calls, [])
+
+        # Check answer cache has not been modified.
+        self.assertEqual(answer_cache[0], PartAnswerCache())
+        self.assertEqual(answer_cache[1], PartAnswerCache())
+
+    def test_custom_input(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution, day=5, year=2012, puzzle_name="test puzzle"
+        )
+        events = MockSolverEventHandlers()
+
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="part_two_fail",
+                part_one_answer=PartAnswerCache(),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events=events,
+            part=Part.Two,
+            input="part_two_ok",
+        )
+
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=None,
+                part_two_result=CheckResult_Ok(Part.Two, "part_two_ok"),
+            ),
+        )
+
+        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
+        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
+
+        self.assertSequenceEqual(events.start_part_calls, [(solver_m, Part.Two)])
+        self.assertSequenceEqual(
+            events.finish_part_calls, [(solver_m, Part.Two, result.part_two)]
+        )
+
+        self.assertSequenceEqual(
+            events.examples_passed_calls, [(solver_m, Part.Two, 0)]
+        )
+
+    def test_custom_input_raises_exception_if_part_not_provided(self):
+        self.assertRaises(
+            ValueError,
+            lambda: run_solver(
+                SolverMetadata(
+                    klass=DecoratedTestSolution,
+                    day=5,
+                    year=2012,
+                    puzzle_name="test puzzle",
+                    examples=[
+                        Example(
+                            input="part_one_ok", output="part_one_ok", part=Part.One
+                        ),
+                        Example(
+                            input="part_two_ok", output="part_two_ok", part=Part.Two
+                        ),
+                    ],
+                ),
+                PuzzleData(
+                    input="plz_work",
+                    part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                    part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+                ),
+                MockAocClient(),
+                MockSolverEventHandlers(),
+                input="",
+            ),
+        )

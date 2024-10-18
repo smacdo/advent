@@ -122,9 +122,8 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
         if type(result) is CheckResult_Ok:
             print(f"✅ {part}: {result.actual_answer} [{elapsed_seconds:2f}s]")
         elif type(result) is CheckResult_TooSoon:
-            # TODO: better message for too soon
             print(
-                f"!!! Solution for {part} submitted too soon, please wait a bit before trying again !!!"
+                f"⏱️ Solution for {part} submitted too soon, please wait a bit before trying again"
             )
         elif type(result) is CheckResult_NotFinished:
             print(f"👻 Answer for {part} is not finished")
@@ -169,7 +168,7 @@ class AdventUserException(Exception):
 class AdventSolutionMissing(AdventUserException):
     def __init__(self, year: int, day: int) -> None:
         super().__init__(
-            f"‼️ There is no code implementing a solution for year {year} day {day} (expected file `advent/solutions/y{year}/day{day}.py`)",
+            f"🔍 There is no code implementing a solution for year {year} day {day} (expected file `advent/solutions/y{year}/day{day}.py`)",
         )
 
 
@@ -178,7 +177,13 @@ def output(args):
     pass
 
 
-def solve(year: int, day: int):
+def solve(
+    year: int,
+    day: int,
+    part: Part | None = None,
+    example_index: int | None = None,
+    input: str | None = None,
+):
     #
     aoc_client = create_aoc_client()
 
@@ -197,7 +202,7 @@ def solve(year: int, day: int):
     # are missing then load the inputs from the network.
     store = FileBackedPuzzleStore(Path("data"), password=aoc_client.config.password)
 
-    if not store.has_day(year, day):
+    if not store.has_day(year, day) and not input:
         logger.debug("puzzle data is missing for year {year} day {day}")
 
         # The puzzle data for this day is missing. Try to load it from the AOC
@@ -216,6 +221,9 @@ def solve(year: int, day: int):
         puzzle=puzzle,
         client=aoc_client,
         events=TerminalSolverEventHandlers(),
+        part=part,
+        example_index=example_index,
+        input=input,
     )
 
     # Check if the puzzle answers were modified. If so then persist the new
@@ -228,11 +236,59 @@ def solve(year: int, day: int):
 
 
 def cli_main():
+    parser = init_argparser()
+    args = parser.parse_args()
+
+    logging.basicConfig(level=args.loglevel)
+
+    # Dispatch subcommand.
+    #
+    # TODO: Intercept common exceptions and print out helpful remediation messages.
+    # TODO: cryptography.fernet.InvalidToken --> (probably) incorrect password
+    # TODO: .aoc_config password or session_id missing
     registry = get_global_solver_registry()
 
-    # Argument parsing.
+    try:
+        if args.subparser_name == "solve":
+            year = args.year
+            days = args.days if len(args.days) > 0 else registry.all_days(year)
+            part = None if args.part is None else Part(args.part)
+            example_index = None if args.example is None else int(args.example)
+            input = None if args.input is None else args.input
+
+            for day in days:
+                solve(
+                    year=year,
+                    day=day,
+                    part=part,
+                    example_index=example_index,
+                    input=input,
+                )
+        else:
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+    except cryptography.fernet.InvalidToken as e:
+        logging.exception(e)
+
+        print("")
+        print("Could not decrypt puzzle inputs stored on the local machine")
+        print(
+            "Try checking the password setting in your .aoc_config to make sure it is correct. If the issue persists you can delete the puzzle data cache and start over."
+        )
+        print("")
+    except ExpectedConfigKeyMissing as e:
+        logging.exception(e)
+
+        print("")
+        print(f"The configuration setting `{e.key}` was missing or empty")
+        print(f"Fix the `{e.key} = ...` line in the file {e.config_path}")
+        print("")
+
+
+def init_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
 
+    # Global arguments.
     parser.add_argument(
         "-d",
         "--debug",
@@ -254,57 +310,40 @@ def cli_main():
 
     subparsers = parser.add_subparsers(title="subcommands", dest="subparser_name")
 
-    output_parser = subparsers.add_parser("output")
-    output_parser.set_defaults(func=output)
-
+    # Solve action.
     solve_parser = subparsers.add_parser("solve")
+    add_runner_args(solve_parser)
+
     solve_parser.add_argument(
-        "days", type=int, nargs="+", default=[], help="a list of days to solve for"
+        "days", type=int, nargs="+", default=[], help="the puzzle days to solve"
     )
-    solve_parser.add_argument(
+
+    solve_parser.set_defaults(func=solve)
+
+    return parser
+
+
+def add_runner_args(parser: argparse.ArgumentParser):
+    parser.add_argument(
         "-y",
         "--year",
         type=int,
-        default=max(registry.all_years()),
-        help="the year to solve for",
+        default=max(get_global_solver_registry().all_years()),
+        help="the puzzle year",
     )
-    solve_parser.set_defaults(func=solve)
-
-    args = parser.parse_args()
-
-    logging.basicConfig(level=args.loglevel)
-
-    # Dispatch subcommand.
-    #
-    # TODO: Intercept common exceptions and print out helpful remediation messages.
-    # TODO: cryptography.fernet.InvalidToken --> (probably) incorrect password
-    # TODO: .aoc_config password or session_id missing
-
-    try:
-        if args.subparser_name == "output":
-            pass
-        elif args.subparser_name == "solve":
-            year = args.year
-            days = args.days if len(args.days) > 0 else registry.all_days(year)
-
-            for day in days:
-                solve(year=year, day=day)
-        else:
-            parser.print_help(sys.stderr)
-            sys.exit(1)
-    except cryptography.fernet.InvalidToken as e:
-        logging.exception(e)
-
-        print("")
-        print("Could not decrypt puzzle inputs stored on the local machine")
-        print(
-            "Try checking the password setting in your .aoc_config to make sure it is correct. If the issue persists you can delete the puzzle data cache and start over."
-        )
-        print("")
-    except ExpectedConfigKeyMissing as e:
-        logging.exception(e)
-
-        print("")
-        print(f"The configuration setting `{e.key}` was missing or empty")
-        print(f"Fix the `{e.key} = ...` line in the file {e.config_path}")
-        print("")
+    parser.add_argument(
+        "-p",
+        "--part",
+        type=int,
+        choices=[1, 2],
+        help="the part to run",
+    )
+    parser.add_argument(
+        "-e",
+        "--example",
+        type=int,
+        help="index of a specific example to run",
+    )
+    parser.add_argument(
+        "-i", "--input", type=str, help="custom input string for the puzzle"
+    )

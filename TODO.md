@@ -8,10 +8,7 @@
 
 ## Improve cli
 - `advent_cli solve` with no arguments should run any solver with no cached answer
-- `advent_cli solve [year] day` should solve specific puzzle (rather than all)
-- `advent_cli solve --all [year]` should solve all puzzles for year or all puzzles
-- Print the amount of time it took to solve each puzzle. The time should also
-  break down each part, eg "solved in X seconds (part 1 took X seconds, part 2 took Y seconds)
+- `advent_cli solve --all [-y year]` should solve all puzzles for year or all puzzles
 - Solve multiple puzzles at once - use as many threads as there are CPU cores.
   - Any threaded solutions should be defered to the end and solved one at a time.
 - Solutions should time out after configurable amount of time.
@@ -66,12 +63,13 @@ class Day${DAY}Solver(AbstractSolver):
 
 # Missing tests
 - Grid.diagonal_neighbors
-- check AocClientConfig.pretend_submit = True prevents submission
 
 # Improvements
 - warn when a solver is present in dir but not in the imports list
 - warn when a solver is present but the class name number does not match the day
 - warn when multiple solvers have the same day but not the same title
+- split `run_solver` tests out of `test_solver.py`
+- rename `PartAnswerCache` to `AnswerCache`
 
 # Utils
 - Add alternate `end = ...` and `last = ...` parameters to the Range constructor.

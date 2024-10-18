@@ -61,6 +61,24 @@ class CheckResult_NotFinished(CheckResult):
         super().__init__(part, actual_answer=None)
 
 
+@dataclass
+class CheckResult_Skipped(CheckResult):
+    """
+    Represents the condition where the answer for this part was not run.
+
+    It is possible that when a part is skipped some or all of the examples
+    were still run prior to skipping the real input. Any examples that were run
+    have passed otherwise this `CheckResult` would be `CheckResult_ExampleFailed`.
+    Check the `examples` attribute to see which examples passed.
+    """
+
+    examples: list[Example]
+
+    def __init__(self, part: Part, examples: list[Example]):
+        super().__init__(part, actual_answer=None)
+        self.examples = examples
+
+
 class CheckHint(Enum):
     TooLow = 1
     TooHigh = 2
@@ -71,9 +89,9 @@ class CheckResult_Wrong(CheckResult):
     """
     Represents the condition where the answer was not correct.
 
-    Slots:
-    `expected_answer`: The correct answer if available, otherwise this will be `None`.
-    `hint`:            A hint that `actual_answer` is too low or hi if available, otherwise `None`.
+    # Slots:
+    - `expected_answer`: The correct answer if available, otherwise this will be `None`.
+    - `hint`:            A hint that `actual_answer` is too low or hi if available, otherwise `None`.
     """
 
     expected_answer: MaybeAnswerType
@@ -124,6 +142,15 @@ class RunSolverResult:
 
 
 class SolverEventHandlers(ABC):
+    """
+    Receives callbacks from the puzzle runner (solver) that can be used to display progress details
+    to the user.
+
+    # Events:
+    - `on_start_solver`: A solver is started for a puzzle.
+    - `on_finish_solver`: A solver has finished a puzzle, correctly or incorrectly.
+    """
+
     @abstractmethod
     def on_start_solver(
         self,
@@ -164,28 +191,82 @@ def run_solver(
     puzzle: PuzzleData,
     client: AocClient,
     events: SolverEventHandlers,
+    submit_answer: bool = True,
+    part: Part | None = None,
+    example_index: int | None = None,
+    input: str | None = None,
 ) -> RunSolverResult:
+    """
+    Runs a solver provided by `solver_metadata` on `puzzle` and upon succesful execution attempts to
+    submit the answer using `client`.
+
+    # Parameters
+    - `solver_metadata`: Metadata about the solver class that should be run for the puzzle.
+    - `puzzle`:          The puzzle that should be solved.
+    - `client`:          Object that can submit answers to the AoC service.
+    - `events`:          A custom event manager that this function will call when certain events
+                         happen while running a solver. See docs for `SolverEventHandlers` to
+                         understand what events would be called.
+    - `submit_answer`:   Optional, defaults to True. If this flag is set to True the runner will
+                         submit answers (using `client`) to the AoC service when the solver returns
+                         succesfully, and the associated answer cache does not have sufficient
+                         information to know if the answer is correct or incorrect.
+    - `part`:            Optional. Tells the runner to only run this part instead of all parts.
+    - `example_index`:   Optional. Tells the runner to only run this example. This argument also
+                         disables running the real puzzle input. It also requires that the `part`
+                         argument be specified.
+    - `input`:           Optional. Overrides the puzzle's default input with this value when running
+                         the solver. Callers must also specify `part` when using this parameter.
+    """
     run_result = RunSolverResult()
 
-    # Run the solver twice - the first time to get the part one answer, and the
-    # second time to get the part two answer.
+    # Make sure if example index is used that part is also passed.
+    if example_index is not None and part is None:
+        raise ValueError(
+            "`example_index` parameter requires caller to also specify `part` parameter"
+        )
+
+    # Custom input also requires that a part is specified.
+    if input is not None and part is None:
+        raise ValueError(
+            "`input` parameter requires caller to also specify `part` parameter"
+        )
+
+    # Run the solver for part one and then part two by default, unless the caller
+    # has specified the specific part to be run.
+    if part is None:
+        parts = (Part.One, Part.Two)
+    else:
+        parts = (part,)
+
+    # Run the selected parts.
     events.on_start_solver(solver_metadata=solver_metadata)
 
-    for part in (Part.One, Part.Two):
+    for part in parts:
         events.on_start_part(solver_metadata=solver_metadata, part=part)
 
-        # Validate any examples for the part prior to running the solver on real
-        # input.
-        examples = list(solver_metadata.examples(part))
+        # Validate examples listed for the current part prior to running the
+        # part on real input. Use all of the examples associated with the solver
+        # unless the caller has requested a specific example be run.
         examples_pass = True
+        examples = list(solver_metadata.examples(part))
 
+        if example_index is not None:
+            if example_index < 0 or example_index >= len(examples):
+                raise IndexError(
+                    f"example index {example_index} is out of range (examples count for {part} is {len(examples)})"
+                )
+
+            examples = [examples[example_index]]
+
+        # Validate the selected examples.
         for example in examples:
             solver = solver_metadata.create_solver_instance()
             answer = str(solver.get_part_func(part)(example.input))
 
             if example.output != answer:
-                # Set the result for this part as "example failed". Stop testing
-                # examples for this part.
+                # Example failed - set the result for this part as
+                # "example failed". Stop testing examples for this part.
                 run_result.set_result(
                     part,
                     CheckResult_ExampleFailed(actual_answer=answer, example=example),
@@ -209,20 +290,29 @@ def run_solver(
 
             continue
 
-        # Run the solver against real puzzle input.
-        solver = solver_metadata.create_solver_instance()
-        answer = solver.get_part_func(part)(puzzle.input)
+        # Run the solver against real puzzle input so long as the caller didn't
+        # request a specific example to be run (implying that the real input
+        # shouldn't be used).
+        if example_index is None:
+            solver = solver_metadata.create_solver_instance()
+            answer = solver.get_part_func(part)(
+                puzzle.input if input is None else input
+            )
 
-        result = check_solution_part(
-            solver_metadata=solver_metadata,
-            part=part,
-            answer=answer,
-            answer_cache=puzzle.get_answer(part=part),
-            client=client,
-        )
+            result = check_solution_part(
+                solver_metadata=solver_metadata,
+                part=part,
+                answer=answer,
+                answer_cache=puzzle.get_answer(part=part),
+                client=client,
+                submit_answer=submit_answer,
+            )
+        else:
+            result = CheckResult_Skipped(part=part, examples=examples)
 
+        # Set the final result for this part and notify the event manager that
+        # the part has finished running.
         run_result.set_result(part, result)
-
         events.on_finish_part(solver_metadata=solver_metadata, part=part, result=result)
 
     # All done - either good or bad return the results.
@@ -236,8 +326,27 @@ def check_solution_part(
     answer: MaybeAnswerType,
     answer_cache: PartAnswerCache,
     client: AocClient,
+    submit_answer: bool,
 ) -> CheckResult:
-    """TODO"""
+    """
+    Checks if the puzzle `answer` is correct or incorrect.
+
+    This function will first check if `answer` is in `answer_cache`. If the cache is unable to
+    determine if the answer is correct it will be submitted to the AoC website using `client`. The
+    response from `client` will be recorded into `answer_cache`, and the result returned to the
+    caller.
+
+    # Parameters
+    - `solver_metadata`: Metadata about the solver class that should be run for the puzzle.
+    - `part`:            Optional. Tells the runner to only run this part instead of all parts.
+    - `answer`:          The output of the solver when run against the puzzle's input.
+    - `answer_cache`:    Object holding previously submitted answers.
+    - `client`:          Object that can submit answers to the AoC service.
+    - `submit_answer`:   Optional, defaults to True. If this flag is set to `True` the runner will
+                         submit answers (using `client`) to the AoC website when the solver returns
+                         succesfully, and `answer_cache` cannot determine if the answer is correct
+                         or incorrect.
+    """
     # `None` indicates the solver hasn't implemented a solution for this part.
     if answer is None:
         return CheckResult_NotFinished(part)
@@ -250,7 +359,7 @@ def check_solution_part(
     # incorrect which means this solution _could_ be the correct answer. Use
     # the provided AOC client to submit the solution and see what the result
     # is.
-    if answer_response == AnswerResponse.Unknown:
+    if answer_response == AnswerResponse.Unknown and submit_answer:
         submit_response = client.submit_answer(
             year=solver_metadata.year(),
             day=solver_metadata.day(),
@@ -320,5 +429,7 @@ def check_solution_part(
             expected_answer=answer_cache.correct_answer,
             hint=CheckHint.TooHigh,
         )
+    elif answer_response == AnswerResponse.Unknown and not submit_answer:
+        raise ValueError("cannot submit answer when `submit_answer == False`")
     else:
         raise ValueError(f"Unhandled enum value `{answer_response}` for AnswerResponse")
