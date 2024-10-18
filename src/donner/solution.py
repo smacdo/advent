@@ -154,6 +154,9 @@ class SolverMetadata:
         else:
             yield from self._part_two_examples
 
+    def __repr__(self) -> str:
+        return f"SolutionMetadata(\n\tday={self._day},\n\tyear={self._year},\n\tname={self._puzzle_name},\n\tvname={self._variant_name},\n\tklass={self.klass},\n\tp1_ex={self._part_one_examples},\n\tp2_ex={self._part_two_examples}\n)"
+
 
 class NoSolversFound(Exception):
     def __init__(self, year: int, day: int):

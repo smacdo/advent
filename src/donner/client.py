@@ -110,10 +110,12 @@ class AocClientConfig:
 
     password: str
     session_id: str
+    pretend_submit: bool
 
     def __init__(self, password: str, session_id: str):
         self.password = password
         self.session_id = session_id
+        self.pretend_submit = True
 
     @staticmethod
     def load_from_str(
@@ -260,6 +262,9 @@ class AocWebClient(AocClient):
         self, year: int, day: int, part: Part, answer: str
     ) -> SubmitResponse:
         logger.info(f"submitting answer `{answer}` for year {year} day {day}")
+
+        if self.config.pretend_submit:
+            raise ClientException("cannot submit answer if `pretend_submit` = False!")
 
         page = parse_http_response(
             requests.post(

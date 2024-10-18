@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
+from advent.utils import not_none
 from donner.client import AocClient, SubmitResponse
 from donner.data import AnswerResponse, PartAnswerCache, PuzzleData
 from donner.solution import AnswerType, Example, MaybeAnswerType, Part, SolverMetadata
@@ -171,36 +172,44 @@ def run_solver(
     events.on_start_solver(solver_metadata=solver_metadata)
 
     for part in (Part.One, Part.Two):
+        events.on_start_part(solver_metadata=solver_metadata, part=part)
+
         # Validate any examples for the part prior to running the solver on real
         # input.
         examples = list(solver_metadata.examples(part))
+        examples_pass = True
 
         for example in examples:
             solver = solver_metadata.create_solver_instance()
             answer = str(solver.get_part_func(part)(example.input))
 
             if example.output != answer:
+                # Set the result for this part as "example failed". Stop testing
+                # examples for this part.
                 run_result.set_result(
                     part,
                     CheckResult_ExampleFailed(actual_answer=answer, example=example),
                 )
 
-                # TODO: Don't early return when the examples fail. Instead skip
-                #       to the next part.
-                events.on_finish_solver(
-                    solver_metadata=solver_metadata, result=run_result
-                )
+                examples_pass = False
+                break
 
-                return run_result
+        # Notify the event manager that examples have passed, otherwise if any
+        # have failed then skip running the part with real input.
+        if examples_pass:
+            events.on_part_examples_pass(
+                solver_metadata=solver_metadata, part=part, count=len(examples)
+            )
+        else:
+            events.on_finish_part(
+                solver_metadata=solver_metadata,
+                part=part,
+                result=not_none(run_result.get_result(part=part)),
+            )
 
-        # Notify any listeners that the examples for this part have passed.
-        events.on_part_examples_pass(
-            solver_metadata=solver_metadata, part=part, count=len(examples)
-        )
+            continue
 
         # Run the solver against real puzzle input.
-        events.on_start_part(solver_metadata=solver_metadata, part=part)
-
         solver = solver_metadata.create_solver_instance()
         answer = solver.get_part_func(part)(puzzle.input)
 

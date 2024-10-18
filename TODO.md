@@ -66,6 +66,7 @@ class Day${DAY}Solver(AbstractSolver):
 
 # Missing tests
 - Grid.diagonal_neighbors
+- check AocClientConfig.pretend_submit = True prevents submission
 
 # Improvements
 - warn when a solver is present in dir but not in the imports list

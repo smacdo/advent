@@ -233,28 +233,84 @@ class RunSolverTests(unittest.TestCase):
             [(solver_m, Part.One, 0), (solver_m, Part.Two, 0)],
         )
 
-    def test_examples_fail_and_solver_exits_early(self):
-        # Construct and run solver.
+    def test_first_part_example_fail_and_first_part_not_run(self):
         solver_m = SolverMetadata(
             klass=DecoratedTestSolution,
             day=5,
             year=2012,
             puzzle_name="test puzzle",
             examples=[
-                Example(input="plz_work", output="part_one_ok", part=Part.One),
-                Example(input="part_two_fail", output="part_two_output", part=Part.Two),
+                Example(input="part_one_fail", output="part_one_ok", part=Part.One),
+                Example(input="part_two_ok", output="part_two_ok", part=Part.Two),
             ],
         )
         events = MockSolverEventHandlers()
 
-        puzzle = PuzzleData(
-            input="plz_work",
-            part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
-            part_two_answer=PartAnswerCache(),
+        # Verify part two example fails and part two solver is never run.
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="plz_work",
+                part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events,
         )
 
+        self.assertEqual(
+            result,
+            RunSolverResult(
+                part_one_result=CheckResult_ExampleFailed(
+                    "part_one_bad_output", list(solver_m.examples(Part.One))[0]
+                ),
+                part_two_result=CheckResult_Ok(Part.Two, "part_two_ok"),
+            ),
+        )
+
+        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
+        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
+        self.assertSequenceEqual(
+            events.start_part_calls, [(solver_m, Part.One), (solver_m, Part.Two)]
+        )
+        self.assertSequenceEqual(
+            events.finish_part_calls,
+            [
+                (solver_m, Part.One, result.part_one),
+                (solver_m, Part.Two, result.part_two),
+            ],
+        )
+
+        self.assertSequenceEqual(
+            events.examples_passed_calls,
+            [(solver_m, Part.Two, 1)],
+        )
+
+    def test_second_part_example_fail_and_second_part_not_run(self):
+        solver_m = SolverMetadata(
+            klass=DecoratedTestSolution,
+            day=5,
+            year=2012,
+            puzzle_name="test puzzle",
+            examples=[
+                Example(input="part_one_ok", output="part_one_ok", part=Part.One),
+                Example(input="part_two_fail", output="part_two_ok", part=Part.Two),
+            ],
+        )
+        events = MockSolverEventHandlers()
+
         # Verify part two example fails and part two solver is never run.
-        result = run_solver(solver_m, puzzle, MockAocClient(), events)
+        result = run_solver(
+            solver_m,
+            PuzzleData(
+                input="plz_work",
+                part_one_answer=PartAnswerCache(correct_answer="part_one_ok"),
+                part_two_answer=PartAnswerCache(correct_answer="part_two_ok"),
+            ),
+            MockAocClient(),
+            events,
+        )
+
         self.assertEqual(
             result,
             RunSolverResult(
@@ -268,44 +324,21 @@ class RunSolverTests(unittest.TestCase):
         self.assertSequenceEqual(events.start_solver_calls, [solver_m])
         self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
 
-        self.assertSequenceEqual(events.start_part_calls, [(solver_m, Part.One)])
+        self.assertSequenceEqual(
+            events.start_part_calls, [(solver_m, Part.One), (solver_m, Part.Two)]
+        )
         self.assertSequenceEqual(
             events.finish_part_calls,
-            [(solver_m, Part.One, result.part_one)],
+            [
+                (solver_m, Part.One, result.part_one),
+                (solver_m, Part.Two, result.part_two),
+            ],
         )
 
         self.assertSequenceEqual(
             events.examples_passed_calls,
             [(solver_m, Part.One, 1)],
         )
-
-        # Adjust test so that the next solver run will cause part one to have an
-        # incorrect example.
-        solver_m.add_example(
-            Example(input="part_one_fail", output="part_one_output", part=Part.One)
-        )
-
-        # Verify part one example fails and exits early without further solving.
-        events = MockSolverEventHandlers()
-        result = run_solver(solver_m, puzzle, MockAocClient(), events=events)
-
-        self.assertEqual(
-            result,
-            RunSolverResult(
-                part_one_result=CheckResult_ExampleFailed(
-                    "part_one_bad_output", list(solver_m.examples(Part.One))[0]
-                ),
-                part_two_result=None,
-            ),
-        )
-
-        self.assertSequenceEqual(events.start_solver_calls, [solver_m])
-        self.assertSequenceEqual(events.finish_solver_calls, [(solver_m, result)])
-
-        self.assertSequenceEqual(events.start_part_calls, [])
-        self.assertSequenceEqual(events.finish_part_calls, [])
-
-        self.assertSequenceEqual(events.examples_passed_calls, [])
 
     def test_example_with_str_when_solver_returns_int(self):
         # Construct and run solver.

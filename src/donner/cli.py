@@ -84,7 +84,7 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
         pass
 
     def on_start_part(self, solver_metadata: SolverMetadata, part: Part):
-        self.solver_start_times[solver_metadata].set_part_start_time(part, time.time())
+        pass
 
     def on_part_examples_pass(
         self, solver_metadata: SolverMetadata, part: Part, count: int
@@ -94,12 +94,27 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
                 f"👍 Tested the examples for year {solver_metadata.year()} day {solver_metadata.day()} {str(part).lower()}"
             )
 
+        # Running the solver with real input happens immediately after this
+        # event, so start the solver timer now.
+        self.solver_start_times[solver_metadata].set_part_start_time(part, time.time())
+
     def on_finish_part(
         self,
         solver_metadata: SolverMetadata,
         part: Part,
         result: CheckResult,
     ):
+        # Catch the examples failed condition early, and print it before trying
+        # to calculate runtime of the solution which isn't possible because the
+        # solution never ran.
+        if type(result) is CheckResult_ExampleFailed:
+            print(
+                f"👎 The example output for {result.part} is `{result.example.output}` but the solver returned `{result.actual_answer}` using input:\n```\n{result.example.input}\n```"
+            )
+            return
+
+        # Calculate the time elapsed since the examples completed and this event
+        # indicating it finished.
         elapsed_seconds = time.time() - self.solver_start_times[
             solver_metadata
         ].get_part_start_time(part)
@@ -110,10 +125,6 @@ class TerminalSolverEventHandlers(SolverEventHandlers):
             # TODO: better message for too soon
             print(
                 f"!!! Solution for {part} submitted too soon, please wait a bit before trying again !!!"
-            )
-        elif type(result) is CheckResult_ExampleFailed:
-            print(
-                f"👎 The example output for {result.part} is `{result.example.output}` but the solver returned `{result.actual_answer}` using input:\n```\n{result.example.input}\n```"
             )
         elif type(result) is CheckResult_NotFinished:
             print(f"👻 Answer for {part} is not finished")
