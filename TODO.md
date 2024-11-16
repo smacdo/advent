@@ -5,6 +5,7 @@
 - Stand up CI testing
  - Run python unit tests
  - Run available solutions against cached answers
+- Make sure README is correct
 
 ## Improve cli
 - `advent_cli solve` with no arguments should run any solver with no cached answer
@@ -70,6 +71,28 @@ class Day${DAY}Solver(AbstractSolver):
 - warn when multiple solvers have the same day but not the same title
 - split `run_solver` tests out of `test_solver.py`
 - rename `PartAnswerCache` to `AnswerCache`
+- split donner into advent-of-code-client and donner (puzzle runner)
+
+# Client API
+```
+import advent-of-code-client as aoc
+
+aoc.get_input(year=2024, day=1)
+aoc.solve(year=2024, day=1, part=1, answer=22)
+
+# maybe builder?
+aoc.puzzle(year=2024, day=1).input()
+aoc.puzzle(year=2024, day=1).solve(part=1, answer=22)
+```
+
+# Configuration
+- Client should look for:
+  - Website cookie identifying the user: `--aoc-session-id`, `AOC_SESSION_ID`, `[client.aoc_session_id]`
+  - Directory to write temporary cache data: `--cache-dir`, `AOC_CACHE_DIR`, `[client.cache_dir]`
+  - Password used to encrypt puzzle input data: `--cache-password`, `AOC_CACHE_PASSWORD`, `[client.cache_password]`
+- Client can override the configuration file per-project with `--config=`
+  - otherwise the config should be: `$XDG_CONFIG_HOME/advent-of-code-client`, `$HOME/.config/advent-of-code-client/config.ini` or `%LOCALAPPDATA%/smacdo.com/advent-of-code-client/config.ini`
+
 
 # Utils
 - Add alternate `end = ...` and `last = ...` parameters to the Range constructor.
