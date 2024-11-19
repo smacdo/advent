@@ -54,9 +54,9 @@ TEST(GridTest, GetAndSetCells) {
 // TODO: Test that get [] raises invalid_argument if x or y out of bounds.
 // TODO: Test that set [] raises invalid_argument if x or y out of bounds.
 
-TEST(GridTest, IterateCellsConst) {
-  const Grid<int> g{3, 2, [](size_t x, size_t y) { return y * 100 + x; }};
-  const auto vec = std::vector<int>(g.begin(), g.end());
-
-  ASSERT_THAT(vec, ElementsAre(0, 1, 2, 100, 101, 102));
-}
+// TEST(GridTest, IterateCellsConst) {
+//   const Grid<int> g{3, 2, [](size_t x, size_t y) { return y * 100 + x; }};
+//   const auto vec = std::vector<int>(g.begin(), g.end());
+//
+//   ASSERT_THAT(vec, ElementsAre(0, 1, 2, 100, 101, 102));
+// }

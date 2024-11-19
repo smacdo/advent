@@ -93,6 +93,15 @@ struct Point {
   }
 };
 
+template<> class std::formatter<Point> {
+public:
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  template<typename Context>
+  constexpr auto format(const Point& p, Context& ctx) const {
+    return format_to(ctx.out(), "{}, {}", p.x, p.y);
+  }
+};
+
 template<> struct std::hash<Point> {
   std::size_t operator()(const Point& p) const noexcept {
     std::size_t h1 = std::hash<int>{}(p.x);

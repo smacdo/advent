@@ -35,11 +35,14 @@ FetchContent_MakeAvailable(pybind11)
 set(oatmeal_sources
   src/oatmeal/point.cpp
   src/oatmeal/point.h
+  src/oatmeal/vector.cpp
+  src/oatmeal/vector.h
 )
 
 set(oatmeal_tests
   src/oatmeal/grid.tests.cpp
   src/oatmeal/point.tests.cpp
+  src/oatmeal/vector.tests.cpp
 )
 
 #==============================================================================#

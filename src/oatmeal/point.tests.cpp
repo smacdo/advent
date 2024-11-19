@@ -130,3 +130,7 @@ TEST(PointTest, AbsoluteValue) {
   EXPECT_EQ(abs(Point(12, -4)), Point(12, 4));
   EXPECT_EQ(abs(Point(-7, -123)), Point(7, 123));
 }
+
+TEST(PointTest, Format) {
+  EXPECT_EQ(std::string("812, -5123"), std::format("{}", Point(812, -5123)));
+}

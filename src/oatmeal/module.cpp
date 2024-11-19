@@ -1,5 +1,6 @@
 #include "grid.h"
 #include "point.h"
+#include "vector.h"
 
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -58,6 +59,58 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(py::self * int())
       .def(py::self / int())
       .def(py::self % int())
+      .def(-py::self);
+
+  py::class_<Vec2>(m, "Vec2")
+      .def(py::init<float, float>())
+      .def_property(
+          "x",
+          [](const Vec2& v) { return v.x; },
+          [](Vec2& v, int newX) { v.x = newX; })
+      .def_property(
+          "y",
+          [](const Vec2& v) { return v.y; },
+          [](Vec2& v, int newY) { v.y = newY; })
+      .def(py::pickle(
+          [](const Vec2& v) { // __getstate__
+            return py::make_tuple(v.x, v.y);
+          },
+          [](py::tuple t) { // __setstate__
+            if (t.size() != 2) {
+              throw std::runtime_error("invalid state");
+            }
+
+            return Vec2(t[0].cast<float>(), t[1].cast<float>());
+          }))
+      .def(
+          "dot",
+          [](const Vec2& self, const Vec2& other) { return self.dot(other); })
+      .def("length", [](const Vec2& self) { return self.length(); })
+      .def("length_squared", [](const Vec2& self) { return self.length(); })
+      .def("normalized", [](const Vec2& self) { return self.normalized(); })
+      .def("clone", [](const Vec2& self) { return Vec2(self); })
+      .def(
+          "__repr__",
+          [](const Vec2& v) {
+            return std::format("oatmeal.Vec2({}, {})", v.x, v.y);
+          })
+      .def(
+          "__str__",
+          [](const Vec2& v) { return std::format("{}, {}", v.x, v.y); })
+      .def("__copy__", [](const Vec2& v) { return Vec2(v); })
+      .def("__hash__", [](const Vec2& v) { return std::hash<Vec2>{}(v); })
+      .def("__getitem__", [](const Vec2& v, int i) { return v[i]; })
+      .def("__setitem__", [](Vec2& v, int i, int val) { v[i] = val; })
+      .def("__abs__", [](const Vec2& self) { return abs(self); })
+      .def("__floordiv__", [](const Vec2& lhs, int rhs) { return lhs / rhs; })
+      .def(py::self == py::self)
+      .def(py::self != py::self)
+      .def(py::self += py::self)
+      .def(py::self + py::self)
+      .def(py::self -= py::self)
+      .def(py::self - py::self)
+      .def(py::self * float())
+      .def(py::self / float())
       .def(-py::self);
 
   py::class_<Grid<py::object>>(m, "Grid")

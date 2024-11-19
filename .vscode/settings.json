@@ -61,6 +61,11 @@
     "valarray": "cpp",
     "variant": "cpp",
     "vector": "cpp",
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "any": "cpp",
+    "condition_variable": "cpp",
+    "csignal": "cpp",
+    "memory": "cpp",
+    "print": "cpp"
   }
 }
