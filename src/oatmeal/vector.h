@@ -15,11 +15,12 @@ template<typename T> struct TVec2 {
   T x;
   T y;
 
-  constexpr TVec2() : x(0), y(0) {}
-  constexpr TVec2(const T x, const T y) : x(x), y(y) {}
+  constexpr TVec2() noexcept : x(0), y(0) {}
+  constexpr TVec2(const T x, const T y) noexcept : x(x), y(y) {}
+  constexpr TVec2(const TVec2&) noexcept = default;
 
-  constexpr T length() const {
-    return static_cast<T>(std::sqrt(length_squared()));
+  template<typename U = T> constexpr U length() const {
+    return static_cast<U>(std::sqrt(length_squared()));
   }
 
   constexpr T length_squared() const { return x * x + y * y; }
@@ -139,6 +140,16 @@ template<typename T> struct std::hash<TVec2<T>> {
 
 template<typename T> inline constexpr TVec2<T> abs(const TVec2<T>& v) {
   return TVec2(std::abs(v.x), std::abs(v.y));
+}
+
+template<typename T>
+inline constexpr T distance_squared(const TVec2<T>& a, const TVec2<T>& b) {
+  return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
+}
+
+template<typename T, typename U = T>
+inline constexpr U distance(const TVec2<T>& a, const TVec2<T>& b) {
+  return static_cast<U>(std::sqrt(distance_squared(a, b)));
 }
 
 template<> inline constexpr TVec2<float> TVec2<float>::Zero{0.f, 0.f};

@@ -146,4 +146,7 @@ PYBIND11_MODULE(_oatmeal, m) {
           "__setitem__",
           [](Grid<py::object>& self, Point p, py::object v) { self[p] = v; })
       .def("__len__", [](Grid<py::object>& self) { return self.count(); });
+
+  m.def("distance_squared", &distance_squared<float>);
+  m.def("distance", &distance<float>);
 }

@@ -27,6 +27,13 @@ TEST(VectorTest, ConstructorSetsXY) {
   EXPECT_EQ(p.y, -2);
 }
 
+TEST(VectorTest, CopyConstructor) {
+  constexpr Vec2 a(8.2f, 15.1f);
+  constexpr Vec2 b(a);
+
+  EXPECT_EQ(a, b);
+}
+
 TEST(VectorTest, VectorLength) {
   {
     // A simple vector length example.
@@ -246,28 +253,45 @@ TEST(VectorTest, Normalize) {
   }
 }
 
-TEST(VectorTest, Equals) {
-  constexpr Vec2 p{5, -2};
+TEST(VectorTest, Equality) {
+  {
+    // A vector equals itself.
+    EXPECT_TRUE(Vec2(5, -2) == Vec2(5, -2));
+    EXPECT_TRUE(Vec2(5, -2) == Vec2(4 + 1, 0 - 2));
 
-  EXPECT_TRUE(Vec2(5, -2) == Vec2(5, -2));
-  EXPECT_TRUE(Vec2(5, -2) == Vec2(4 + 1, 0 - 2));
+    EXPECT_FALSE(Vec2(5, -2) != Vec2(5, -2));
+    EXPECT_FALSE(Vec2(5, -2) != Vec2(4 + 1, 0 - 2));
+  }
 
-  EXPECT_FALSE(Vec2(5, -2) == Vec2(5, 0));
-  EXPECT_FALSE(Vec2(5, -2) == Vec2(0, -2));
-  EXPECT_FALSE(Vec2(5, -2) == Vec2(-2, 5));
-  EXPECT_FALSE(Vec2(5, -2) == Vec2(5, 2));
-}
+  // The X and Y components of a vector must match for it to be equal.
+  {
+    EXPECT_FALSE(Vec2(5, -2) == Vec2(5, 0));
+    EXPECT_FALSE(Vec2(5, -2) == Vec2(0, -2));
+    EXPECT_FALSE(Vec2(5, -2) == Vec2(-2, 5));
+    EXPECT_FALSE(Vec2(5, -2) == Vec2(5, 2));
 
-TEST(VectorTest, NotEquals) {
-  constexpr Vec2 p{5, -2};
+    EXPECT_TRUE(Vec2(5, -2) != Vec2(5, 0));
+    EXPECT_TRUE(Vec2(5, -2) != Vec2(0, -2));
+    EXPECT_TRUE(Vec2(5, -2) != Vec2(-2, 5));
+    EXPECT_TRUE(Vec2(5, -2) != Vec2(5, 2));
+  }
 
-  EXPECT_FALSE(Vec2(5, -2) != Vec2(5, -2));
-  EXPECT_FALSE(Vec2(5, -2) != Vec2(4 + 1, 0 - 2));
+  {
+    // Equality is exact - there is no "almost equals" for the equality and
+    // inequality operators.
+    constexpr Vec2 small_a(1.0000001, 2.0000001);
+    constexpr Vec2 small_b(1.0000002, 2.0000002);
 
-  EXPECT_TRUE(Vec2(5, -2) != Vec2(5, 0));
-  EXPECT_TRUE(Vec2(5, -2) != Vec2(0, -2));
-  EXPECT_TRUE(Vec2(5, -2) != Vec2(-2, 5));
-  EXPECT_TRUE(Vec2(5, -2) != Vec2(5, 2));
+    EXPECT_FALSE(small_a == small_b);
+    EXPECT_TRUE(small_a != small_b);
+  }
+
+  {
+    // constexpr vectors can be checked for equality.
+    constexpr Vec2 ca(1, 3), cb(1, 2 + 1), cc(0, 0);
+    EXPECT_TRUE(ca == cb);
+    EXPECT_TRUE(ca != cc);
+  }
 }
 
 TEST(VectorTest, Addition) {
@@ -370,4 +394,78 @@ TEST(VectorTest, AbsoluteValue) {
 
 TEST(VectorTest, Format) {
   EXPECT_EQ(std::string("3, 2"), std::format("{}", Vec2(3, 2)));
+}
+
+TEST(VectorTest, Distance) {
+  {
+    // Simple demonstration of the distance between two vectors.
+    Vec2 simple_a(1.f, 2.f);
+    Vec2 simple_b(4.f, 6.f);
+
+    EXPECT_FLOAT_EQ(distance_squared(simple_a, simple_b), 25.f);
+    EXPECT_FLOAT_EQ(distance(simple_a, simple_b), 5.f);
+  }
+
+  {
+    // Distance between two vectors where one vector has negative coordinates.
+    Vec2 negative_a(-1.f, -2.f);
+    Vec2 negative_b(3.f, 4.f);
+
+    EXPECT_FLOAT_EQ(distance_squared(negative_a, negative_b), 52.f);
+    EXPECT_FLOAT_EQ(distance(negative_a, negative_b), sqrt(52.f));
+  }
+
+  {
+    // The distance between two identical vectors is zero.
+    Vec2 same_a(15.f, -5.f);
+    Vec2 same_b(15.f, -5.f);
+
+    EXPECT_FLOAT_EQ(distance_squared(same_a, same_b), 0.f);
+    EXPECT_FLOAT_EQ(distance(same_a, same_b), 0.f);
+  }
+
+  {
+    // The distance between two zero vectors is zero.
+    Vec2 zero_a(0.f, 0.f);
+    Vec2 zero_b(0.f, 0.f);
+
+    EXPECT_FLOAT_EQ(distance_squared(zero_a, zero_b), 0.f);
+    EXPECT_FLOAT_EQ(distance(zero_a, zero_b), 0.f);
+  }
+
+  {
+    // Distance between two vectors on the same x axis.
+    Vec2 xaxis_a(2.f, 3.f);
+    Vec2 xaxis_b(2.f, 6.f);
+
+    EXPECT_FLOAT_EQ(distance_squared(xaxis_a, xaxis_b), 9.f);
+    EXPECT_FLOAT_EQ(distance(xaxis_a, xaxis_b), 3.f);
+  }
+
+  {
+    // Distance between two vectors on the same y axis.
+    Vec2 yaxis_a(2.f, 3.f);
+    Vec2 yaxis_b(5.f, 3.f);
+
+    EXPECT_FLOAT_EQ(distance_squared(yaxis_a, yaxis_b), 9.f);
+    EXPECT_FLOAT_EQ(distance(yaxis_a, yaxis_b), 3.f);
+  }
+
+  {
+    // Distance between two vectors with large coordinates.
+    Vec2 large_a(100000, 200000);
+    Vec2 large_b(300000, 400000);
+
+    EXPECT_FLOAT_EQ(distance_squared(large_a, large_b), 80000000000.f);
+    EXPECT_FLOAT_EQ(distance(large_a, large_b), sqrt(80000000000.f));
+  }
+
+  {
+    // Distance between two vectors with small coordinates.
+    Vec2 small_a(1e-6f, 1e-6f);
+    Vec2 small_b(2e-6f, 2e-6f);
+
+    EXPECT_FLOAT_EQ(distance_squared(small_a, small_b), 2e-12f);
+    EXPECT_FLOAT_EQ(distance(small_a, small_b), sqrt(2e-12f));
+  }
 }
