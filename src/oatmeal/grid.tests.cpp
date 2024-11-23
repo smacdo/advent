@@ -3,8 +3,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <vector>
-
 using namespace ::testing;
 
 TEST(GridTest, ConstructorCreatesGridOfSizeXY) {
@@ -51,8 +49,52 @@ TEST(GridTest, GetAndSetCells) {
   EXPECT_EQ(g[Point(2, 1)], '!');
 }
 
-// TODO: Test that get [] raises invalid_argument if x or y out of bounds.
-// TODO: Test that set [] raises invalid_argument if x or y out of bounds.
+TEST(GridTest, GetThrowsIfOutOfRange) {
+  Grid<char> g(3, 2, ' ');
+
+  EXPECT_THROW({ const auto bad = g[Point(-1, 0)]; }, std::out_of_range);
+  EXPECT_THROW({ const auto bad = g[Point(0, -9)]; }, std::out_of_range);
+  EXPECT_THROW({ const auto bad = g[Point(210, 1)]; }, std::out_of_range);
+  EXPECT_THROW({ const auto bad = g[Point(2, 2)]; }, std::out_of_range);
+  EXPECT_THROW({ const auto bad = g[Point(3, 2)]; }, std::out_of_range);
+}
+
+TEST(GridTest, SetThrowsIfOutOfRange) {
+  Grid<char> g(3, 2, ' ');
+
+  EXPECT_THROW({ g[Point(-1, 0)] = 'x'; }, std::out_of_range);
+  EXPECT_THROW({ g[Point(0, -9)] = 'x'; }, std::out_of_range);
+  EXPECT_THROW({ g[Point(210, 1)] = 'x'; }, std::out_of_range);
+  EXPECT_THROW({ g[Point(2, 2)] = 'x'; }, std::out_of_range);
+  EXPECT_THROW({ g[Point(3, 2)] = 'x'; }, std::out_of_range);
+}
+
+TEST(GridTest, PointInBounds) {
+  Grid<char> g(3, 2, ' ');
+
+  EXPECT_TRUE(g.contains_point(Point(0, 0)));
+  EXPECT_TRUE(g.contains_point(Point(2, 0)));
+  EXPECT_TRUE(g.contains_point(Point(0, 1)));
+  EXPECT_TRUE(g.contains_point(Point(2, 1)));
+
+  EXPECT_FALSE(g.contains_point(Point(-1, 0)));
+  EXPECT_FALSE(g.contains_point(Point(0, -1)));
+  EXPECT_FALSE(g.contains_point(Point(-1, -1)));
+
+  EXPECT_FALSE(g.contains_point(Point(3, 1)));
+  EXPECT_FALSE(g.contains_point(Point(1, 2)));
+  EXPECT_FALSE(g.contains_point(Point(6, 4)));
+
+  EXPECT_FALSE(g.contains_point(Point(-3213213, 123)));
+}
+
+TEST(GridTest, IteratePointsX) {
+  GridRectPoints::Iterator itr(Point(3, 2), 1);
+  EXPECT_EQ(*itr, Point(3, 2));
+
+  itr++;
+  EXPECT_EQ(*itr, Point(3, 3));
+}
 
 // TEST(GridTest, IterateCellsConst) {
 //   const Grid<int> g{3, 2, [](size_t x, size_t y) { return y * 100 + x; }};

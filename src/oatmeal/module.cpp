@@ -147,6 +147,10 @@ PYBIND11_MODULE(_oatmeal, m) {
           [](Grid<py::object>& self, Point p, py::object v) { self[p] = v; })
       .def("__len__", [](Grid<py::object>& self) { return self.count(); });
 
-  m.def("distance_squared", &distance_squared<float>);
-  m.def("distance", &distance<float>);
+  m.def("distance_squared", [](const TVec2<float>& a, const TVec2<float>& b) {
+    return distance_squared(a, b);
+  });
+  m.def("distance", [](const TVec2<float>& a, const TVec2<float>& b) {
+    return distance(a, b);
+  });
 }

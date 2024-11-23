@@ -66,6 +66,7 @@
     "condition_variable": "cpp",
     "csignal": "cpp",
     "memory": "cpp",
-    "print": "cpp"
+    "print": "cpp",
+    "iterator": "cpp"
   }
 }

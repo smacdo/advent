@@ -4,67 +4,215 @@
 
 #include <cassert>
 #include <functional>
+#include <iterator>
+#include <type_traits>
 #include <vector>
 
-// TODO: move constructor and move assignment.
-
+/// A 2d array.
 template<typename T> class Grid {
 public:
-  Grid(size_t x_count, size_t y_count, T defaultValue)
+  using value_type = T;
+  using size_type = std::size_t;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+
+  /// Initialize a grid of `x_count` columns, `y_count` rows, and set each
+  /// cell's value to `defaultValue`.
+  Grid(size_type x_count, size_type y_count, value_type defaultValue)
       : x_count_(x_count),
         y_count_(y_count),
         cells_(x_count * y_count, defaultValue) {}
 
-  template<typename InitFunc = T(size_t, size_t)>
-  Grid(size_t x_count, size_t y_count, InitFunc init)
+  /// Initialize a grid of `x_count` columns, `y_count` rows, and set each cell
+  /// to the value returned by invoking `init` on the cell's position.
+  template<typename InitFunc = value_type(size_type, size_type)>
+  Grid(size_type x_count, size_type y_count, InitFunc init)
       : x_count_(x_count),
         y_count_(y_count),
         cells_() {
     cells_.reserve(x_count_ * y_count_);
-    for (size_t y = 0; y < y_count_; ++y) {
-      for (size_t x = 0; x < x_count_; ++x) {
+    for (size_type y = 0; y < y_count_; ++y) {
+      for (size_type x = 0; x < x_count_; ++x) {
         cells_[xy_index(Point(x, y))] = init(x, y);
       }
     }
   }
 
+  /// Default move constructor.
+  Grid(Grid&& t) = default;
+
+  /// Default assignment operator.
+  Grid& operator=(Grid&& other) = default;
+
+  /// Default destructor.
   ~Grid() = default;
 
-  size_t x_count() const { return x_count_; }
-  size_t col_count() const { return x_count(); }
+  /// Returns the number of columns in the grid.
+  size_type x_count() const { return x_count_; }
 
-  size_t y_count() const { return y_count_; }
-  size_t row_count() const { return y_count(); }
+  /// Returns the number of columns in the grid.
+  size_type col_count() const { return x_count(); }
 
-  size_t count() const { return cells_.size(); }
+  /// Returns the number of rows in the grid.
+  size_type y_count() const { return y_count_; }
 
-  T& operator[](Point index) { return cells_[xy_index(index)]; }
+  /// Returns the number of rows in the grid.
+  size_type row_count() const { return y_count(); }
 
-  const T& operator[](Point index) const { return cells_[xy_index(index)]; }
+  /// Returns the number of cells in the grid.
+  size_type count() const { return cells_.size(); }
 
-  T* begin() { return cells_.begin(); }
-  T* end() { return cells_.end(); }
+  /// Returns true if point `p` refers to a valid cell in this grid, otherwise
+  /// returns false to indicate out of bounds.
+  bool contains_point(Point p) const {
+    return p.x >= 0 && p.y >= 0 && p.x < x_count_ && p.y < y_count_;
+  }
 
-  typename std::vector<T>::const_iterator begin() const {
+  /// Returns a reference to the cell at point `p`.
+  reference operator[](Point p) { return cells_[xy_index(p)]; }
+
+  /// Returns a const reference to the cell at point `p`.
+  const_reference operator[](Point p) const { return cells_[xy_index(p)]; }
+
+  pointer begin() { return cells_.begin(); }
+  pointer end() { return cells_.end(); }
+
+  typename std::vector<value_type>::const_iterator begin() const {
     return cells_.begin();
   }
-  typename std::vector<T>::const_iterator end() const { return cells_.end(); }
 
-private:
-  constexpr size_t xy_index(Point p) const {
-    if (p.x >= x_count_) {
-      throw std::invalid_argument("x offset out of bounds");
-    }
-
-    if (p.y >= y_count_) {
-      throw std::invalid_argument("y offset out of bounds");
-    }
-
-    return p.y * x_count_ + p.x;
+  typename std::vector<value_type>::const_iterator end() const {
+    return cells_.end();
   }
 
 private:
+  /// Convert a (x,y) index to a 1d offset into the grid's array of cells.
+  /// Throws an exception if the point is out of bounds.
+  constexpr size_type xy_index(Point p) const { return xy_index(p.x, p.y); }
+
+  /// Convert a (x,y) index to a 1d offset into the grid's array of cells.
+  /// Throws an exception if the point is out of bounds.
+  constexpr size_t xy_index(const int x, const int y) const {
+    if (x < 0) {
+      throw std::out_of_range("x must be a positive value");
+    }
+    if (y < 0) {
+      throw std::out_of_range("y must be a positive value");
+    }
+
+    if (x >= x_count_) {
+      throw std::out_of_range("x must be less than number of columns in grid");
+    }
+
+    if (y >= y_count_) {
+      throw std::out_of_range("y must be less than number of rows in grid");
+    }
+
+    return unchecked_xy_index(x, y);
+  }
+
+  /// Convert a (x,y) index to a 1d offset into the grid's array of cells.
+  constexpr size_type unchecked_xy_index(Point p) const {
+    return unchecked_xy_index(p.x, p.y);
+  }
+
+  /// Convert a (x,y) index to a 1d offset into the grid's array of cells.
+  constexpr size_type unchecked_xy_index(const int x, const int y) const {
+    return y * x_count_ + x;
+  }
+
+private:
+  size_type x_count_;
+  size_type y_count_;
+  std::vector<value_type> cells_;
+};
+
+struct GridRectPoints {
+public:
+  struct Iterator {
+  public:
+    using difference_type = std::ptrdiff_t;
+    using element_type = Point;
+    using pointer = element_type*;
+    using reference = element_type&;
+
+    constexpr Iterator() = default;
+
+    constexpr Iterator(Point begin, size_t x_count)
+        : current_(begin),
+          x_count_(x_count),
+          start_x_(begin.x) {
+      assert(x_count > 0);
+    }
+
+    constexpr Iterator(Point begin)
+        : current_(begin),
+          x_count_(0),
+          start_x_(begin.x) {}
+
+    constexpr element_type operator*() const { return current_; }
+
+    constexpr element_type const* operator->() const { return &current_; }
+
+    constexpr Iterator& operator++() {
+      if (current_.x - start_x_ + 1 >= x_count_) {
+        current_.x = start_x_;
+        current_.y += 1;
+      } else {
+        current_.x += 1;
+      }
+
+      return *this;
+    }
+
+    constexpr Iterator operator++(int) {
+      const auto tmp(*this);
+      ++(*this);
+
+      return tmp;
+    }
+
+    constexpr friend bool operator==(const Iterator& a, const Iterator& b) {
+      return a.current_ == b.current_;
+    }
+
+    constexpr friend bool operator!=(const Iterator& a, const Iterator& b) {
+      return a.current_ != b.current_;
+    }
+
+  protected:
+    Point current_;
+    size_t x_count_;
+    int start_x_;
+  };
+
+public:
+  constexpr GridRectPoints(Point begin, size_t x_count, size_t y_count)
+      : begin_(begin),
+        x_count_(x_count),
+        y_count_(y_count) {
+    assert(x_count > 0);
+    assert(y_count > 0);
+  }
+
+  constexpr Iterator begin() const { return Iterator(begin_, x_count_); }
+
+  constexpr Iterator cbegin() const { return Iterator(begin_, x_count_); }
+
+  constexpr Iterator end() const {
+    return Iterator(Point(begin_.x, begin_.y + y_count_));
+  }
+
+  constexpr Iterator cend() const {
+    return Iterator(Point(begin_.x, begin_.y + y_count_));
+  }
+
+protected:
+  Point begin_;
   size_t x_count_;
   size_t y_count_;
-  std::vector<T> cells_;
 };
+
+static_assert(std::is_nothrow_move_constructible_v<Grid<int>>);
+static_assert(std::is_nothrow_move_assignable_v<Grid<int>>);

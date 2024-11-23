@@ -2,6 +2,13 @@
 
 #include <gtest/gtest.h>
 
+TEST(PointTest, DefaultConstructorIsZero) {
+  constexpr Point p;
+
+  EXPECT_EQ(p.x, 0);
+  EXPECT_EQ(p.y, 0);
+}
+
 TEST(PointTest, ConstructorSetsXY) {
   constexpr Point p{5, -2};
 
