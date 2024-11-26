@@ -1,6 +1,7 @@
 from oatmeal import Point
 import unittest
 import copy
+import pickle
 
 
 class TestPoint(unittest.TestCase):
@@ -9,7 +10,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(p.x, -16)
         self.assertEqual(p.y, 2)
 
-    def test_point_copy(self):
+    def test_copy(self):
         p = Point(-16, 2)
         a = p
         b = copy.copy(p)
@@ -21,7 +22,24 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(22, a.x)
         self.assertEqual(13, b.x)
 
-    def test_point_clone(self):
+    def test_deep_copy(self):
+        p = Point(-16, 2)
+        a = p
+        b = copy.deepcopy(p)
+
+        a.x = 22
+        b.x = 13
+
+        self.assertEqual(22, p.x)
+        self.assertEqual(22, a.x)
+        self.assertEqual(13, b.x)
+
+    def test_pickle(self):
+        a = Point(317, -18)
+        b = pickle.loads(pickle.dumps(a))
+        self.assertEqual(a, b)
+
+    def test_clone(self):
         p = Point(-16, 2)
         a = p
         b = p.clone()
@@ -33,10 +51,10 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(22, a.x)
         self.assertEqual(13, b.x)
 
-    def test_point_to_string(self):
+    def test_to_string(self):
         self.assertEqual("-4, -123", f"{Point(-4, -123)}")
 
-    def test_point_repr(self):
+    def test_repr(self):
         self.assertEqual("oatmeal.Point(-4, -123)", repr(Point(-4, -123)))
 
     def test_get_set_by_index(self):

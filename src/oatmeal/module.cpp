@@ -80,6 +80,8 @@ PYBIND11_MODULE(_oatmeal, m) {
             return Point(t[0].cast<int>(), t[1].cast<int>());
           }))
       .def("clone", [](const Point& self) { return Point(self); })
+      .def("__copy__", [](const Point& p) { return Point(p); })
+      .def("__deepcopy__", [](const Point& p, py::dict) { return Point(p); })
       .def(
           "__repr__",
           [](const Point& p) {
@@ -88,7 +90,6 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(
           "__str__",
           [](const Point& p) { return std::format("{}, {}", p.x, p.y); })
-      .def("__copy__", [](const Point& p) { return Point(p); })
       .def("__hash__", [](const Point& p) { return std::hash<Point>{}(p); })
       .def("__getitem__", [](const Point& p, int i) { return p[i]; })
       .def("__setitem__", [](Point& p, int i, int v) { p[i] = v; })
@@ -133,6 +134,8 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def("length_squared", [](const Vec2& self) { return self.length(); })
       .def("normalized", [](const Vec2& self) { return self.normalized(); })
       .def("clone", [](const Vec2& self) { return Vec2(self); })
+      .def("__copy__", [](const Vec2& v) { return Vec2(v); })
+      .def("__deepcopy__", [](const Vec2& v, py::dict) { return Vec2(v); })
       .def(
           "__repr__",
           [](const Vec2& v) {
@@ -141,7 +144,6 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(
           "__str__",
           [](const Vec2& v) { return std::format("{}, {}", v.x, v.y); })
-      .def("__copy__", [](const Vec2& v) { return Vec2(v); })
       .def("__hash__", [](const Vec2& v) { return std::hash<Vec2>{}(v); })
       .def("__getitem__", [](const Vec2& v, int i) { return v[i]; })
       .def("__setitem__", [](Vec2& v, int i, int val) { v[i] = val; })
@@ -190,6 +192,8 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def("length_squared", [](const Vec3& self) { return self.length(); })
       .def("normalized", [](const Vec3& self) { return self.normalized(); })
       .def("clone", [](const Vec3& self) { return Vec3(self); })
+      .def("__copy__", [](const Vec3& v) { return Vec3(v); })
+      .def("__deepcopy__", [](const Vec3& v, py::dict) { return Vec3(v); })
       .def(
           "__repr__",
           [](const Vec3& v) {
@@ -200,7 +204,6 @@ PYBIND11_MODULE(_oatmeal, m) {
           [](const Vec3& v) {
             return std::format("{}, {}, {}", v.x, v.y, v.z);
           })
-      .def("__copy__", [](const Vec3& v) { return Vec3(v); })
       .def("__hash__", [](const Vec3& v) { return std::hash<Vec3>{}(v); })
       .def("__getitem__", [](const Vec3& v, int i) { return v[i]; })
       .def("__setitem__", [](Vec3& v, int i, int val) { v[i] = val; })
