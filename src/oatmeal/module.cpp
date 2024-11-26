@@ -14,6 +14,50 @@ PYBIND11_MODULE(_oatmeal, m) {
   m.doc() =
       "An assortment of boring but essential tools written in C++ for speed";
 
+  py::class_<Grid<py::object>>(m, "Grid")
+      .def(py::init([](size_t x_count, size_t y_count, py::function init) {
+        return Grid<py::object>(
+            x_count, y_count, [&init](auto x, auto y) { return init(x, y); });
+      }))
+      .def(py::init([](size_t x_count, size_t y_count, py::list initial) {
+        // TODO: test!
+        if (initial.size() != y_count) {
+          throw py::value_error(
+              "list row count must match grid y_count when constructing");
+        }
+
+        return Grid<py::object>(
+            x_count, y_count, [initial, x_count](size_t x, size_t y) {
+              const auto& row = py::cast<py::list>(initial[y]);
+
+              if (row.size() != x_count) {
+                throw py::value_error(
+                    "list col count must match grid x_count when constructing");
+              }
+
+              const auto index = y * x_count + x;
+              return row[x];
+            });
+      }))
+      .def(py::init<size_t, size_t, py::object>())
+      .def_property_readonly("x_count", &Grid<py::object>::x_count)
+      .def_property_readonly("y_count", &Grid<py::object>::y_count)
+      .def_property_readonly("col_count", &Grid<py::object>::col_count)
+      .def_property_readonly("row_count", &Grid<py::object>::row_count)
+      .def(
+          "__getitem__",
+          [](const Grid<py::object>& self, Point p) { return self[p]; })
+      .def(
+          "__setitem__",
+          [](Grid<py::object>& self, Point p, py::object v) { self[p] = v; })
+      .def(
+          "__iter__",
+          [](const Grid<py::object>& self) {
+            return py::make_iterator(self.begin(), self.end());
+          },
+          py::keep_alive<0, 1>())
+      .def("__len__", [](Grid<py::object>& self) { return self.count(); });
+
   py::class_<Point>(m, "Point")
       .def(py::init<int, int>())
       .def_property(
@@ -171,40 +215,6 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(py::self * float())
       .def(py::self / float())
       .def(-py::self);
-
-  py::class_<Grid<py::object>>(m, "Grid")
-      .def(py::init<size_t, size_t, py::object>())
-      .def(py::init<size_t, size_t, py::function>())
-      .def(py::init([](size_t x_count, size_t y_count, py::list initial) {
-        if (initial.size() != y_count) {
-          throw py::value_error(
-              "list row count must match grid y_count when constructing");
-        }
-
-        return Grid<py::object>(
-            x_count, y_count, [initial, x_count](size_t x, size_t y) {
-              const auto& row = py::cast<py::list>(initial[y]);
-
-              if (row.size() != x_count) {
-                throw py::value_error(
-                    "list col count must match grid x_count when constructing");
-              }
-
-              const auto index = y * x_count + x;
-              return row[x];
-            });
-      }))
-      .def_property_readonly("x_count", &Grid<py::object>::x_count)
-      .def_property_readonly("y_count", &Grid<py::object>::y_count)
-      .def("col_count", &Grid<py::object>::col_count)
-      .def("row_count", &Grid<py::object>::row_count)
-      .def(
-          "__getitem__",
-          [](const Grid<py::object>& self, Point p) { return self[p]; })
-      .def(
-          "__setitem__",
-          [](Grid<py::object>& self, Point p, py::object v) { self[p] = v; })
-      .def("__len__", [](Grid<py::object>& self) { return self.count(); });
 
   m.def("distance_squared", [](const TVec2<float>& a, const TVec2<float>& b) {
     return distance_squared(a, b);

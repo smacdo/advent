@@ -179,7 +179,7 @@ public:
     cells_.reserve(x_count_ * y_count_);
     for (size_type y = 0; y < y_count_; ++y) {
       for (size_type x = 0; x < x_count_; ++x) {
-        cells_[xy_index(Point(x, y))] = init(x, y);
+        cells_.emplace_back(init(x, y));
       }
     }
   }
@@ -252,14 +252,23 @@ public:
 
   // TODO: consider taking iterator GridRectPoints iterator []
 
-  pointer begin() { return cells_.begin(); }
-  pointer end() { return cells_.end(); }
+  typename std::vector<value_type>::iterator begin() { return cells_.begin(); }
+
+  typename std::vector<value_type>::iterator end() { return cells_.end(); }
 
   typename std::vector<value_type>::const_iterator begin() const {
     return cells_.begin();
   }
 
   typename std::vector<value_type>::const_iterator end() const {
+    return cells_.end();
+  }
+
+  typename std::vector<value_type>::const_iterator cbegin() const {
+    return cells_.begin();
+  }
+
+  typename std::vector<value_type>::const_iterator cend() const {
     return cells_.end();
   }
 

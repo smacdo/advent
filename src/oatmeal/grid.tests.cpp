@@ -25,13 +25,13 @@ TEST(GridTest, ConstructorInitsToDefaultValue) {
 TEST(GridTest, ConstructorInitWithFunc) {
   Grid<int> g{3, 2, [](size_t x, size_t y) { return y * 100 + x; }};
 
-  g[Point(0, 0)] = 0;
-  g[Point(1, 0)] = 1;
-  g[Point(2, 0)] = 2;
+  EXPECT_EQ(g[Point(0, 0)], 0);
+  EXPECT_EQ(g[Point(1, 0)], 1);
+  EXPECT_EQ(g[Point(2, 0)], 2);
 
-  g[Point(0, 0)] = 100;
-  g[Point(1, 0)] = 101;
-  g[Point(2, 0)] = 102;
+  EXPECT_EQ(g[Point(0, 1)], 100);
+  EXPECT_EQ(g[Point(1, 1)], 101);
+  EXPECT_EQ(g[Point(2, 1)], 102);
 }
 
 TEST(GridTest, GetAndSetCells) {
@@ -88,7 +88,18 @@ TEST(GridTest, PointInBounds) {
   EXPECT_FALSE(g.contains_point(Point(-3213213, 123)));
 }
 
-TEST(GridTest, IteratePointsX) {
+TEST(GridTest, IterateCellsInGrid) {
+  Grid<int> g{3, 2, [](size_t x, size_t y) { return y * 100 + x; }};
+
+  const auto expected = std::vector<int>{0, 1, 2, 100, 101, 102};
+
+  EXPECT_EQ(std::distance(g.begin(), g.end()), 6);
+
+  EXPECT_EQ(std::vector<int>(g.begin(), g.end()), expected);
+  EXPECT_EQ(std::vector<int>(g.cbegin(), g.cend()), expected);
+}
+
+TEST(GridTest, IteratePointsIterator) {
   GridRectPoints::Iterator itr(Point(3, 2), 1);
   EXPECT_EQ(*itr, Point(3, 2));
 
