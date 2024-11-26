@@ -54,3 +54,17 @@ TEST(GridRectPointsTest, IteratorBeginEndMagic) {
 
   EXPECT_EQ(std::vector<Point>(points.begin(), points.end()), expected);
 }
+
+TEST(GridRectPointsTest, ConstructorWithZeroPoint) {
+  GridRectPoints(Point(0, 0), 1, 1);
+}
+
+TEST(GridRectPointsTest, ConstructorWithSizeZeroCountThrowsException) {
+  EXPECT_THROW({ GridRectPoints(Point(1, 3), 0, 1); }, std::invalid_argument);
+  EXPECT_THROW({ GridRectPoints(Point(1, 3), 1, 0); }, std::invalid_argument);
+}
+
+TEST(GridRectPointsTest, IterateConstructorWithSizeZeroCountThrowsException) {
+  EXPECT_THROW(
+      { GridRectPoints::Iterator itr(Point(3, 5), 0); }, std::invalid_argument);
+}

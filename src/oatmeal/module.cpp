@@ -113,6 +113,65 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(py::self / float())
       .def(-py::self);
 
+  py::class_<Vec3>(m, "Vec3")
+      .def(py::init<float, float, float>())
+      .def_property(
+          "x",
+          [](const Vec3& v) { return v.x; },
+          [](Vec3& v, int newX) { v.x = newX; })
+      .def_property(
+          "y",
+          [](const Vec3& v) { return v.y; },
+          [](Vec3& v, int newY) { v.y = newY; })
+      .def_property(
+          "z",
+          [](const Vec3& v) { return v.z; },
+          [](Vec3& v, int newZ) { v.z = newZ; })
+      .def(py::pickle(
+          [](const Vec3& v) { // __getstate__
+            return py::make_tuple(v.x, v.y, v.z);
+          },
+          [](py::tuple t) { // __setstate__
+            if (t.size() != 3) {
+              throw std::runtime_error("invalid state");
+            }
+
+            return Vec3(
+                t[0].cast<float>(), t[1].cast<float>(), t[2].cast<float>());
+          }))
+      .def(
+          "dot",
+          [](const Vec3& self, const Vec3& other) { return self.dot(other); })
+      .def("length", [](const Vec3& self) { return self.length(); })
+      .def("length_squared", [](const Vec3& self) { return self.length(); })
+      .def("normalized", [](const Vec3& self) { return self.normalized(); })
+      .def("clone", [](const Vec3& self) { return Vec3(self); })
+      .def(
+          "__repr__",
+          [](const Vec3& v) {
+            return std::format("oatmeal.Vec3({}, {}. {})", v.x, v.y, v.z);
+          })
+      .def(
+          "__str__",
+          [](const Vec3& v) {
+            return std::format("{}, {}, {}", v.x, v.y, v.z);
+          })
+      .def("__copy__", [](const Vec3& v) { return Vec3(v); })
+      .def("__hash__", [](const Vec3& v) { return std::hash<Vec3>{}(v); })
+      .def("__getitem__", [](const Vec3& v, int i) { return v[i]; })
+      .def("__setitem__", [](Vec3& v, int i, int val) { v[i] = val; })
+      .def("__abs__", [](const Vec3& self) { return abs(self); })
+      .def("__floordiv__", [](const Vec3& lhs, int rhs) { return lhs / rhs; })
+      .def(py::self == py::self)
+      .def(py::self != py::self)
+      .def(py::self += py::self)
+      .def(py::self + py::self)
+      .def(py::self -= py::self)
+      .def(py::self - py::self)
+      .def(py::self * float())
+      .def(py::self / float())
+      .def(-py::self);
+
   py::class_<Grid<py::object>>(m, "Grid")
       .def(py::init<size_t, size_t, py::object>())
       .def(py::init<size_t, size_t, py::function>())

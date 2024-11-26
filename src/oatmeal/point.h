@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <type_traits>
 
+/// @brief A 2d point value containing X and Y components.
 struct Point {
   using value_type = int;
   using size_type = std::size_t;
@@ -14,23 +15,48 @@ struct Point {
   using pointer = value_type*;
   using const_pointer = const value_type*;
 
+  /// @brief The number of components in a 2d point.
   static constexpr size_type kComponentCount = 2;
 
+  /// @brief A point with the X and Y coordinates set to zero.
   static const Point Zero;
+
+  /// @brief A point with the X and Y coordinates set to one.
   static const Point One;
+
+  /// @brief A point describing the positive X axis (X = 1 and Y = 0).
   static const Point UnitX;
+
+  /// @brief A point describing the positive Y axis (X = 0 and Y = 1).
   static const Point UnitY;
 
+  /// @brief The X coordinate of this point.
   value_type x;
+
+  /// @brief The Y coordinate of this point.
   value_type y;
 
-  constexpr Point() noexcept : x(0), y(0) {}
-  constexpr Point(const value_type x, const value_type y) noexcept
+  /// @brief Constructs a default point with X and Y set to zero.
+  constexpr Point() noexcept(std::is_nothrow_constructible_v<value_type>)
+      : x(0),
+        y(0) {}
+
+  /// @brief Constructs a point with X and Y from `x` and `y`.
+  /// @param x The X value to set.
+  /// @param y The Y value to set.
+  constexpr Point(const value_type x, const value_type y) noexcept(
+      std::is_nothrow_constructible_v<value_type>)
       : x(x),
         y(y) {}
 
-  constexpr bool operator==(const Point&) const = default;
-  constexpr bool operator!=(const Point&) const = default;
+  /// @brief Constructs a point with X and Y copied from `other`.
+  /// @param other The point to copy from.
+  constexpr Point(const Point& other) noexcept(
+      std::is_nothrow_copy_constructible_v<value_type>) = default;
+
+  friend void PrintTo(const Point& p, std::ostream* os) {
+    *os << "(" << p.x << ", " << p.y << ")";
+  }
 
   constexpr friend Point operator-(Point lhs) { return Point(-lhs.x, -lhs.y); }
 
@@ -89,7 +115,7 @@ struct Point {
     return lhs;
   }
 
-  constexpr reference operator[](size_type component_index) {
+  constexpr reference operator[](const size_type component_index) {
     switch (component_index) {
       case 0:
         return x;
@@ -100,7 +126,7 @@ struct Point {
     }
   }
 
-  constexpr const_reference operator[](size_type component_index) const {
+  constexpr const_reference operator[](const size_type component_index) const {
     switch (component_index) {
       case 0:
         return x;
@@ -112,10 +138,6 @@ struct Point {
   }
 
   constexpr auto operator<=>(const Point&) const = default;
-
-  friend void PrintTo(const Point& p, std::ostream* os) {
-    *os << "(" << p.x << ", " << p.y << ")";
-  }
 };
 
 template<> class std::formatter<Point> {

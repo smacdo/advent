@@ -96,9 +96,63 @@ TEST(GridTest, IteratePointsX) {
   EXPECT_EQ(*itr, Point(3, 3));
 }
 
-// TEST(GridTest, IterateCellsConst) {
-//   const Grid<int> g{3, 2, [](size_t x, size_t y) { return y * 100 + x; }};
-//   const auto vec = std::vector<int>(g.begin(), g.end());
-//
-//   ASSERT_THAT(vec, ElementsAre(0, 1, 2, 100, 101, 102));
-// }
+TEST(GridTest, IterateRows) {
+  Grid<char> g(3, 4, ' ');
+  auto r = g.rows();
+
+  EXPECT_EQ(r.count(), 4);
+
+  const auto expected = std::vector<size_t>{0, 1, 2, 3};
+  EXPECT_EQ(std::vector(r.begin(), r.end()), expected);
+}
+
+TEST(GridTest, RowAccessorThrowsExceptionIfIndexOutOfRange) {
+  Grid<char> g(3, 4, ' ');
+  EXPECT_THROW({ const auto itr = g.row(4); }, std::out_of_range);
+  EXPECT_THROW({ const auto itr = g.row(10); }, std::out_of_range);
+}
+
+TEST(GridTest, IterateCellsInRow) {
+  Grid<char> g(3, 4, ' ');
+  const auto points = g.row(2);
+
+  const auto expected =
+      std::vector<Point>{Point(0, 2), Point(1, 2), Point(2, 2)};
+  EXPECT_EQ(std::vector(points.begin(), points.end()), expected);
+}
+
+TEST(GridTest, IterateCellsInRowWithRowIterator) {
+  Grid<char> g(3, 4, ' ');
+  const auto points = g.row(Grid<char>::RowIterator(0));
+
+  const auto expected =
+      std::vector<Point>{Point(0, 0), Point(1, 0), Point(2, 0)};
+  EXPECT_EQ(std::vector(points.begin(), points.end()), expected);
+}
+
+TEST(GridTest, IterateRowSubset) {
+  Grid<char> g(4, 10, ' ');
+  const auto rows = g.rows(3, 4);
+  const auto expected = std::vector<size_t>{3, 4, 5, 6};
+  EXPECT_EQ(std::vector(rows.begin(), rows.end()), expected);
+}
+
+TEST(GridTest, IterateRowSubsetX) {
+  Grid<char> g(4, 10, ' ');
+
+  for (const auto row : g.rows()) {
+    // for (const auto p : g.row())
+  }
+}
+
+TEST(GridTest, RowsThrowsExceptionIfOutOfBounds) {
+  EXPECT_THROW({ Grid<char>(3, 5, ' ').rows(5, 4); }, std::out_of_range);
+  EXPECT_THROW({ Grid<char>(3, 5, ' ').rows(4, 2); }, std::out_of_range);
+  EXPECT_THROW({ Grid<char>(3, 5, ' ').rows(4, 3); }, std::out_of_range);
+  EXPECT_THROW({ Grid<char>(3, 5, ' ').rows(1, 9); }, std::out_of_range);
+}
+
+TEST(GridTest, RowsConstructorThrowsExceptionIfEndSmallerThanBegin) {
+  EXPECT_THROW({ Grid<char>::Rows(5, 5); }, std::out_of_range);
+  EXPECT_THROW({ Grid<char>::Rows(5, 4); }, std::out_of_range);
+}
