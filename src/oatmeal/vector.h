@@ -262,7 +262,8 @@ template<typename T> struct TVec3 {
   /// @brief Constructs a default vector with X, Y and Z set to zero.
   constexpr TVec3() noexcept(std::is_nothrow_constructible_v<value_type>)
       : x(0),
-        y(0) {}
+        y(0),
+        z(0) {}
 
   /// @brief Constructs a vector with X, Y and Z from `x`, `y` and `z`.
   /// @param x The X value to set.
@@ -300,6 +301,17 @@ template<typename T> struct TVec3 {
   /// @brief Returns a dot product of this vector and `other`.
   constexpr value_type dot(const TVec3& other) const {
     return x * other.x + y * other.y + z * other.z;
+  }
+
+  /// @brief Returns the cross product of this vector and `other`.
+  ///
+  /// The cross product result is a vector that is perpendicular to the two
+  /// vectors used in the cross product calculation.
+  constexpr TVec3 cross(const TVec3& other) const {
+    return TVec3(
+        y * other.z - z * other.y,
+        z * other.x - x * other.z,
+        x * other.y - y * other.x);
   }
 
   /// @brief Returns a vector with values normalized from this vector.

@@ -5,36 +5,36 @@
 
 #include <gtest/gtest.h>
 
-TEST(VectorTest, Zero) { EXPECT_EQ(Vec2(0.0f, 0.0f), Vec2::Zero); }
+TEST(VectorTest2, Zero) { EXPECT_EQ(Vec2(0.0f, 0.0f), Vec2::Zero); }
 
-TEST(VectorTest, One) { EXPECT_EQ(Vec2(1.0f, 1.0f), Vec2::One); }
+TEST(VectorTest2, One) { EXPECT_EQ(Vec2(1.0f, 1.0f), Vec2::One); }
 
-TEST(VectorTest, UnitX) { EXPECT_EQ(Vec2(1.0f, 0.0f), Vec2::UnitX); }
+TEST(VectorTest2, UnitX) { EXPECT_EQ(Vec2(1.0f, 0.0f), Vec2::UnitX); }
 
-TEST(VectorTest, UnitY) { EXPECT_EQ(Vec2(0.0f, 1.0f), Vec2::UnitY); }
+TEST(VectorTest2, UnitY) { EXPECT_EQ(Vec2(0.0f, 1.0f), Vec2::UnitY); }
 
-TEST(VectorTest, DefaultConstructorIsZero) {
+TEST(VectorTest2, DefaultConstructorIsZero) {
   constexpr Vec2 p;
 
   EXPECT_EQ(p.x, 0);
   EXPECT_EQ(p.y, 0);
 }
 
-TEST(VectorTest, ConstructorSetsXY) {
+TEST(VectorTest2, ConstructorSetsXY) {
   constexpr Vec2 p{5, -2};
 
   EXPECT_EQ(p.x, 5);
   EXPECT_EQ(p.y, -2);
 }
 
-TEST(VectorTest, CopyConstructor) {
+TEST(VectorTest2, CopyConstructor) {
   constexpr Vec2 a(8.2f, 15.1f);
   constexpr Vec2 b(a);
 
   EXPECT_EQ(a, b);
 }
 
-TEST(VectorTest, VectorLength) {
+TEST(VectorTest2, VectorLength) {
   {
     // A simple vector length example.
     Vec2 simple(1, 1);
@@ -109,7 +109,7 @@ TEST(VectorTest, VectorLength) {
   }
 }
 
-TEST(VectorTest, Dot) {
+TEST(VectorTest2, Dot) {
   {
     // Simple dot product demonstration.
     Vec2 vec_a(3.f, 4.f);
@@ -189,7 +189,7 @@ TEST(VectorTest, Dot) {
   }
 }
 
-TEST(VectorTest, Normalize) {
+TEST(VectorTest2, Normalize) {
   {
     // Simple vector normalization example.
     const Vec2 v(3.f, 4.f);
@@ -253,7 +253,7 @@ TEST(VectorTest, Normalize) {
   }
 }
 
-TEST(VectorTest, Equality) {
+TEST(VectorTest2, Equality) {
   {
     // A vector equals itself.
     EXPECT_TRUE(Vec2(5, -2) == Vec2(5, -2));
@@ -294,7 +294,7 @@ TEST(VectorTest, Equality) {
   }
 }
 
-TEST(VectorTest, Addition) {
+TEST(VectorTest2, Addition) {
   constexpr Vec2 a(3, 8);
   constexpr Vec2 b(-5, 2);
   constexpr Vec2 r = a + b;
@@ -307,7 +307,7 @@ TEST(VectorTest, Addition) {
   EXPECT_EQ(r1, Vec2(-1, 7));
 }
 
-TEST(VectorTest, Subtraction) {
+TEST(VectorTest2, Subtraction) {
   constexpr Vec2 a(3, 8);
   constexpr Vec2 b(-5, 2);
   constexpr Vec2 r = a - b;
@@ -320,7 +320,7 @@ TEST(VectorTest, Subtraction) {
   EXPECT_EQ(r1, Vec2(7, 9));
 }
 
-TEST(VectorTest, Multiplication) {
+TEST(VectorTest2, Multiplication) {
   constexpr Vec2 a(3, -8);
   constexpr Vec2 r = a * 4;
 
@@ -332,7 +332,7 @@ TEST(VectorTest, Multiplication) {
   EXPECT_EQ(r1, Vec2(-24, 64));
 }
 
-TEST(VectorTest, Division) {
+TEST(VectorTest2, Division) {
   constexpr Vec2 a(-24, 64);
   constexpr Vec2 r = a / -2;
 
@@ -344,7 +344,7 @@ TEST(VectorTest, Division) {
   EXPECT_EQ(r1, Vec2(3, -8));
 }
 
-TEST(VectorTest, Modulo) {
+TEST(VectorTest2, Modulo) {
   constexpr TVec2<int> a(8, 10);
   constexpr TVec2<int> r = a % 3;
 
@@ -356,7 +356,7 @@ TEST(VectorTest, Modulo) {
   EXPECT_EQ(r1, TVec2<int>(0, 1));
 }
 
-TEST(VectorTest, GetComponent) {
+TEST(VectorTest2, GetComponent) {
   constexpr Vec2 a(8, 10);
 
   constexpr auto x = a[0];
@@ -366,12 +366,12 @@ TEST(VectorTest, GetComponent) {
   EXPECT_EQ(y, 10);
 }
 
-TEST(VectorTest, GetComponentThrowsIfIndexOutOfRange) {
+TEST(VectorTest2, GetComponentThrowsIfIndexOutOfRange) {
   constexpr Vec2 a(8, 10);
   EXPECT_THROW({ const auto bad = a[2]; }, std::out_of_range);
 }
 
-TEST(VectorTest, SetComponent) {
+TEST(VectorTest2, SetComponent) {
   Vec2 a(0, 0);
   a[0] = 3123;
   a[1] = -918;
@@ -380,23 +380,23 @@ TEST(VectorTest, SetComponent) {
   EXPECT_EQ(a[1], -918);
 }
 
-TEST(VectorTest, SetComponentThrowsIfIndexOutOfRange) {
+TEST(VectorTest2, SetComponentThrowsIfIndexOutOfRange) {
   Vec2 a(8, 10);
   EXPECT_THROW({ a[2] = 0; }, std::out_of_range);
 }
 
-TEST(VectorTest, AbsoluteValue) {
+TEST(VectorTest2, AbsoluteValue) {
   EXPECT_EQ(abs(Vec2(3, 6)), Vec2(3, 6));
   EXPECT_EQ(abs(Vec2(-4, 10)), Vec2(4, 10));
   EXPECT_EQ(abs(Vec2(12, -4)), Vec2(12, 4));
   EXPECT_EQ(abs(Vec2(-7, -123)), Vec2(7, 123));
 }
 
-TEST(VectorTest, Format) {
+TEST(VectorTest2, Format) {
   EXPECT_EQ(std::string("3, 2"), std::format("{}", Vec2(3, 2)));
 }
 
-TEST(VectorTest, Distance) {
+TEST(VectorTest2, Distance) {
   {
     // Simple demonstration of the distance between two vectors.
     Vec2 simple_a(1.f, 2.f);

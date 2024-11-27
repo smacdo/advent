@@ -5,7 +5,7 @@ import pickle
 
 
 class TestPoint(unittest.TestCase):
-    def test_new_points(self):
+    def test_new_point(self):
         p = Point(-16, 2)
         self.assertEqual(p.x, -16)
         self.assertEqual(p.y, 2)

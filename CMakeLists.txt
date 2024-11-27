@@ -43,7 +43,9 @@ set(oatmeal_tests
   src/oatmeal/grid.tests.cpp
   src/oatmeal/grid_rect_points.tests.cpp
   src/oatmeal/point.tests.cpp
-  src/oatmeal/vector.tests.cpp
+  src/oatmeal/vector2.tests.cpp
+  src/oatmeal/vector3.tests.cpp
+  src/oatmeal/vector4.tests.cpp
 )
 
 #==============================================================================#

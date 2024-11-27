@@ -188,6 +188,9 @@ PYBIND11_MODULE(_oatmeal, m) {
       .def(
           "dot",
           [](const Vec3& self, const Vec3& other) { return self.dot(other); })
+      .def(
+          "cross",
+          [](const Vec3& self, const Vec3& other) { return self.cross(other); })
       .def("length", [](const Vec3& self) { return self.length(); })
       .def("length_squared", [](const Vec3& self) { return self.length(); })
       .def("normalized", [](const Vec3& self) { return self.normalized(); })
